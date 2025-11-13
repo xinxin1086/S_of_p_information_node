@@ -1,0 +1,19 @@
+依赖：
+npm install vue
+npm install pinia
+npm install axios
+npm install element-plus
+
+
+
+
+
+
+
+
+
+
+
+
+            // 注意请求令牌的设置，不要忘记格式规范例如后端判断'Bearer '前端不能少传输空格
+            config.headers['Authorization'] = `Bearer ${token}`
