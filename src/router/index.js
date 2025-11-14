@@ -20,7 +20,9 @@ const routes = [
       { path: 'info/notice', component: () => import('../views/admin/components/AdminNotice.vue') },
       { path: 'info/head', component: () => import('../views/admin/components/AdminHeader.vue') },
       { path: 'apply/poor', component: () => import('../views/admin/components/AdminPoorApply.vue') },
-      { path: 'user/admin', component: AdminUserAdmin }
+      { path: 'user/admin', component: AdminUserAdmin },
+      { path: 'user/add', component: () => import('../views/admin/user/AdminUserAdd.vue') },
+      { path: 'user/edit', component: () => import('../views/admin/user/AdminUserEdit.vue') }
     ]
   }
 ]

@@ -115,7 +115,7 @@ const handleLogin = async () => {
   try {
     isLoading.value = true
     errorMsg.value = ''
-    const apiUrl = 'http://localhost:5000/api/login'
+    const apiUrl = 'http://localhost:5000/api/admin/login'
     console.log('【登录请求】地址（检查端口）：', apiUrl)
     console.log('【登录参数】', {
       account: account.value.trim(),
