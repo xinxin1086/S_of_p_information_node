@@ -58,7 +58,7 @@
           <template #default="scope">
             <img
                 v-if="scope.row.avatar && scope.row.avatar !== '无'"
-                :src="scope.row.avatar"
+                :src="'http://localhost:5000/' + scope.row.avatar"
                 class="avatar"
                 alt="头像"
             >
@@ -95,7 +95,7 @@
       <span>共 {{ total }} 条</span>
       <button :disabled="currentPage === 1" @click="handlePageChange(currentPage - 1)">&lt;</button>
       <button class="current-page">{{ currentPage }}</button>
-      <button :disabled="currentPage === totalPage" @click="handlePageChange(currentPage + 1)">&gt;</button>
+      <button :disabled="currentPage >= totalPage" @click="handlePageChange(currentPage + 1)">&gt;</button>
     </div>
   </div>
 </template>
@@ -105,6 +105,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { BASE_URL } from '@/config.js'; // 引入公共域名
 
 const router = useRouter()
 
@@ -145,7 +146,7 @@ const fetchData = async () => {
   showTable.value = false // 隐藏表格，避免加载中显示旧数据
   try {
     // 调用后端独立查询接口（GET方法）
-    const response = await axios.get('http://localhost:5000/api/admin/list', {
+    const response = await axios.get(`${BASE_URL}/api/admin/list`, {
       params: {
         page: currentPage.value, // 分页参数（后端若未实现分页，可忽略，但保留参数兼容）
         size: pageSize.value,
@@ -212,7 +213,7 @@ const handleDelete = async (id) => {
     kwargs: { id }
   }
   try {
-    const response = await axios.post('http://localhost:5000/api/admin/operate', params)
+    const response = await axios.post(`${BASE_URL}/api/admin/operate`, params)
     if (response.data.success) {
       alert(response.data.message || '删除成功')
       fetchData() // 重新加载列表
@@ -241,7 +242,7 @@ const handleBatchDelete = async () => {
       kwargs: { id }
     }
     try {
-      const response = await axios.post('http://localhost:5000/api/admin/operate', params)
+      const response = await axios.post(`${BASE_URL}/api/admin/operate`, params)
       if (response.data.success) successCount++
     } catch (error) {
       console.error(`删除ID=${id}失败：`, error)
@@ -252,11 +253,22 @@ const handleBatchDelete = async () => {
   fetchData()
 }
 
-// 分页切换（保留原有逻辑）
-const handlePageChange = (page) => {
-  currentPage.value = page
-  fetchData()
+// 分页切换
+const handlePageChange = async (page) => {
+  if (currentPage.value >= totalPage.value) {
+    errorMessage.value = '您已经到了最后一页'
+    return
+  }
+
+  try {
+    currentPage.value = page
+    await fetchData()
+  } catch (error) {
+    errorMessage.value = error.response?.data?.message || '分页加载失败'
+    console.error('分页加载失败：', error)
+  }
 }
+
 </script>
 
 <style scoped>

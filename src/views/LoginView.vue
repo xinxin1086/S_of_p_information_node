@@ -80,6 +80,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMainStore } from '@/store'
 import axios from 'axios'
+import { BASE_URL } from '@/config.js'; // 引入公共域名
 
 const router = useRouter()
 const store = useMainStore()
@@ -115,7 +116,7 @@ const handleLogin = async () => {
   try {
     isLoading.value = true
     errorMsg.value = ''
-    const apiUrl = 'http://localhost:5000/api/admin/login'
+    const apiUrl = `${BASE_URL}/api/admin/login`
     console.log('【登录请求】地址（检查端口）：', apiUrl)
     console.log('【登录参数】', {
       account: account.value.trim(),

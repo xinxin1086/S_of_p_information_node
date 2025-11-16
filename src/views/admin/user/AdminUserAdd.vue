@@ -65,26 +65,29 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { uploadImage } from '@/utils/upload.js' // 引入公共上传方法
+import { BASE_URL } from '@/config.js'; // 引入公共域名
 
 const router = useRouter()
-const formRef = ref(null) // 表单引用，用于验证
+const formRef = ref(null)
 
-// 表单数据（严格对应后端模型字段）
+// 表单数据
 const form = ref({
-  account: '',       // 登录账号（唯一，必填）
-  password: '',      // 密码（前端明文，后端加密）
-  username: '',      // 用户名称（唯一，必填）
-  phone: '',         // 电话（必填，后端约束）
-  email: '',         // 邮箱（可选）
-  role: '',          // 角色（必填，默认空，强制选择）
-  avatar: ''         // 头像（可选，base64预览）
+  account: '',
+  password: '',
+  username: '',
+  phone: '',
+  email: '',
+  role: '',
+  avatar: '',        // 本地预览的base64
+  avatarFile: null  // 选中的文件对象，用于上传
 })
 
 // 状态控制
 const isLoading = ref(false)
 const errorMessage = ref('')
 
-// 表单验证规则（适配后端字段约束）
+// 表单验证规则
 const formRules = reactive({
   account: [
     { required: true, message: '请输入账号', trigger: 'blur' },
@@ -110,51 +113,63 @@ const formRules = reactive({
   ]
 })
 
-// 头像本地预览
+// 头像本地预览与文件存储
 const handleAvatarChange = (uploadFile) => {
-  // 验证文件大小（2MB以内）
   if (uploadFile.size > 2 * 1024 * 1024) {
     errorMessage.value = '文件大小不能超过2MB'
     return
   }
-  // 读取文件为base64预览
   const reader = new FileReader()
   reader.onload = (e) => {
     form.value.avatar = e.target.result
     errorMessage.value = ''
   }
   reader.readAsDataURL(uploadFile.raw)
+  form.value.avatarFile = uploadFile.raw // 存储文件对象
 }
 
-// 提交新增
+// 提交新增（先上传图片，再提交表单）
+// 提交新增（先上传图片，再提交表单）
 const handleSubmit = async () => {
-  // 先执行表单验证
   const valid = await formRef.value.validate().catch(() => false)
-  if (!valid) return // 验证失败则不提交
+  if (!valid) return
 
   isLoading.value = true
   errorMessage.value = ''
   try {
+    let avatarUrl = ''
+    // 若选择了头像，调用公共方法上传
+    if (form.value.avatarFile) {
+      avatarUrl = await uploadImage(form.value.avatarFile)
+      //console.log('【图片上传】图片链接信息：', avatarUrl)
+    }
+
+    // 构造新增参数
     const params = {
       table_name: 'admin_info',
       operate_type: 'add',
-      kwargs: form.value // 包含所有字段，后端会处理password加密
+      kwargs: {
+        ...form.value,
+        avatar: avatarUrl, // 上传后的图片URL
+      }
     }
-    const result = await axios.post('http://localhost:5000/api/admin/operate', params)
+    delete params.kwargs.avatarFile // 移除临时文件字段
+
+    const result = await axios.post(`${BASE_URL}/api/admin/operate`, params)
     if (result.data.success) {
       alert('新增管理员成功！')
-      router.push('/admin/user/admin') // 跳回列表页
+      router.push('/admin/user/admin')
     } else {
       throw new Error(result.data.message || '新增失败')
     }
   } catch (error) {
-    // 捕获后端返回的具体错误（如账号已存在）
-    errorMessage.value = error.response?.data?.message || error.message || '网络错误'
+    errorMessage.value = error.message || error.response?.data?.message || '网络错误'
     console.error('新增失败：', error)
   } finally {
     isLoading.value = false
   }
 }
+
 
 // 取消操作
 const handleCancel = () => {
