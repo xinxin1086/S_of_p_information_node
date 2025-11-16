@@ -29,3 +29,12 @@ export const uploadImage = async (file) => {
 
     return response.data.data.image_url
 }
+export const avatarUrl = (avatar) => {
+    return `${BASE_URL}/${avatar}`;
+}
+
+export const handleImageError = (event) => {
+    event.target.onerror = null; // 防止重复触发
+    event.target.src = ''; // 或者设置为一个默认错误图片的URL
+    console.error('图片加载失败：', event.target.src);
+}

@@ -58,9 +58,10 @@
           <template #default="scope">
             <img
                 v-if="scope.row.avatar && scope.row.avatar !== '无'"
-                :src="'http://localhost:5000/' + scope.row.avatar"
+                :src="avatarUrl(scope.row.avatar)"
                 class="avatar"
                 alt="头像"
+                @error="handleImageError"
             >
             <span v-else class="avatar-placeholder">{{ scope.row.avatar || '无' }}</span>
           </template>
@@ -101,11 +102,11 @@
 </template>
 
 <script setup>
-// 原有逻辑基本不变，仅修改数据请求相关代码
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { BASE_URL } from '@/config.js'; // 引入公共域名
+import { avatarUrl,handleImageError } from '@/utils/upload.js';
 
 const router = useRouter()
 
