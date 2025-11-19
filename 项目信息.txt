@@ -3,10 +3,14 @@ npm install vue
 npm install pinia
 npm install axios
 npm install element-plus
+npm install vue-router
+npm install vue-cropper@1.1.4
 
 
 
+npm cache verify
 
+cd g:/VueActivity/S_of_p_information_node
 
 
 

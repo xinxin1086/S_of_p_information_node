@@ -1,6 +1,6 @@
 <template>
   <div class="info-container">
-    <h3 class="info-form-title">编辑管理员</h3>
+    <h3 class="info-form-title">编辑用户</h3>
     <el-form :model="form" class="info-form" :rules="formRules" ref="formRef">
       <el-form-item label="账号" required prop="account" class="info-form-item">
         <el-input v-model="form.account" placeholder="请输入账号" disabled class="info-form-input"></el-input>
@@ -50,8 +50,9 @@
 
       <el-form-item label="角色" required prop="role" class="info-form-item">
         <el-select v-model="form.role" placeholder="请选择角色" :disabled="isLoading" class="info-form-select">
-          <el-option label="管理员" value="admin"></el-option>
-          <el-option label="普通管理员" value="normal_admin"></el-option>
+          <el-option label="农户" value="farmer"></el-option>
+          <el-option label="访客" value="visitor"></el-option>
+          <el-option label="普通用户" value="normal_user"></el-option>
         </el-select>
       </el-form-item>
 
@@ -64,11 +65,7 @@
             :disabled="isLoading"
             accept="image/jpeg,image/png"
         >
-          <img
-              v-if="form.avatar && form.avatar !== '无'"
-              :src="formatAvatarUrl(form.avatar)"
-              class="info-avatar"
-              alt="头像">
+          <img v-if="form.avatar" :src="form.avatar" class="info-avatar">
           <i v-else class="el-icon-plus info-avatar-uploader-icon"></i>
         </el-upload>
         <p class="info-tip">支持JPG、PNG格式，大小不超过2MB；不选择则保持原头像</p>
@@ -88,11 +85,10 @@ import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { getCommonFormRules, useAvatarHandler, useSubmitCommonLogic, fetchEditData } from '@/utils/admin/admin_info_edit.js';
 import '@/styles/admin/admin_info_edit.css';
-import {formatAvatarUrl} from "@/utils/format.js";
 
 const router = useRouter();
 const route = useRoute();
-const adminId = route.query.id;
+const userId = route.query.id;
 const formRef = ref(null);
 
 // 表单数据
@@ -114,8 +110,9 @@ const isLoaded = ref(false);
 
 // 表单验证规则
 const formRules = getCommonFormRules([
-  { label: '管理员', value: 'admin' },
-  { label: '普通管理员', value: 'normal_admin' }
+  { label: '农户', value: 'farmer' },
+  { label: '访客', value: 'visitor' },
+  { label: '普通用户', value: 'normal_user' }
 ]);
 
 // 头像处理
@@ -123,23 +120,23 @@ const handleAvatarChange = useAvatarHandler(form, errorMessage);
 
 // 提交逻辑
 const handleSubmit = useSubmitCommonLogic(
-    'admin_info',
+    'user_info',
     form,
     formRef,
     isLoading,
     errorMessage,
-    () => router.push('/admin/user/admin'),
-    adminId
+    () => router.push('/admin/user/user'),
+    userId
 );
 
 // 取消操作
 const handleCancel = () => {
-  router.push('/admin/user/admin');
+  router.push('/admin/user/user');
 };
 
 // 加载数据
 onMounted(() => {
-  fetchEditData('admin_info', adminId, form, isLoading, errorMessage, isLoaded);
+  fetchEditData('user_info', userId, form, isLoading, errorMessage, isLoaded);
 });
 </script>
 

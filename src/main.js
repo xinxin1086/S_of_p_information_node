@@ -7,6 +7,7 @@ import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 
 const app = createApp(App)
+app.use(ElementPlus);
 
 // 基础令牌传递
 axios.interceptors.request.use(

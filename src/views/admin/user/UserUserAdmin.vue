@@ -14,7 +14,7 @@
 
     <!-- 操作栏 -->
     <div class="info-list-action-bar">
-      <button class="info-btn add-btn" @click="handleAdd">新增管理员</button>
+      <button class="info-btn add-btn" @click="handleAdd">新增用户</button>
       <button class="info-btn batch-delete-btn" @click="handleBatchDelete" :disabled="selectedIds.length === 0">批量删除</button>
     </div>
 
@@ -22,9 +22,9 @@
     <div v-if="errorMessage" class="info-global-error">{{ errorMessage }}</div>
 
     <!-- 无数据提示 -->
-    <div v-if="!showTable && !errorMessage" class="info-list-empty-tip">暂无管理员数据</div>
+    <div v-if="!showTable && !errorMessage" class="info-list-empty-tip">暂无用户数据</div>
 
-    <!-- 管理员表格 -->
+    <!-- 用户表格 -->
     <el-table
         :data="tableData"
         v-if="showTable"
@@ -71,8 +71,8 @@
 import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useListCommonLogic } from '@/utils/admin/admin_info_edit.js';
-import { formatAvatarUrl } from '@/utils/format.js';
 import '@/styles/admin/admin_info_edit.css';
+import {formatAvatarUrl} from "@/utils/format.js";
 
 const router = useRouter();
 const {
@@ -80,20 +80,19 @@ const {
   selectedIds, tableData, showTable, errorMessage, tableFields,
   handleSelectionChange, fetchData, handleQuery, handleReset,
   handleDelete, handleBatchDelete, handlePageChange
-} = useListCommonLogic('admin_info', '/api/admin/list');
+} = useListCommonLogic('user_info');
 
 // 新增跳转
 const handleAdd = () => {
-  router.push('/admin/user/admin/add');
+  router.push('/admin/user/user/add');
 };
 
 // 编辑跳转
 const handleEdit = (row) => {
-  router.push({ path: '/admin/user/admin/edit', query: { id: row.id } });
+  router.push({ path: '/admin/user/user/edit', query: { id: row.id } });
 };
 
 // 初始化加载
-
 onMounted(() => {
   fetchData();
 });
