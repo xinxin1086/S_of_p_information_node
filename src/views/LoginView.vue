@@ -2,7 +2,7 @@
   <div class="login-page">
     <div class="login-card">
       <div class="login-header">
-        <h2>助农扶贫系统</h2>
+        <h2>农业快讯站</h2>
         <p>请登录后继续操作</p>
       </div>
 

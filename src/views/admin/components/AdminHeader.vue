@@ -1,7 +1,7 @@
 <template>
   <div class="admin-header">
     <div class="logo">
-      <span>助农扶贫系统 - 管理员后台</span>
+      <span>农业快讯站 - 管理员后台</span>
     </div>
     <div class="user-info">
       欢迎，{{ user?.name }} <button @click="handleLogout">退出登录</button>

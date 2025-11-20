@@ -1,7 +1,7 @@
 <template>
   <div class="about">
-    <h1>关于助农扶贫系统</h1>
-    <p>系统致力于为农户、管理员提供扶贫相关信息管理、申请审核等服务</p>
+    <h1>关于农业快讯站</h1>
+    <p>系统致力于为农户提供农业最新资讯服务</p>
     <p>版本：v1.0.0</p>
     <router-link to="/" class="back-home">返回首页</router-link>
   </div>

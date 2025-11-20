@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <h1>助农扶贫系统 - 首页</h1>
+    <h1>农业快讯站 - 首页</h1>
     <div class="nav-links">
       <router-link to="/login">前往登录</router-link>
       <router-link to="/register">用户注册</router-link>
