@@ -35,11 +35,7 @@ export const useMainStore = defineStore('main', {
                 ]
             }
         ],
-        notices: [
-            { id: 1, content: '今天系统正式上线，开始内测', date: '2023-09-05' },
-            { id: 2, content: '所有功能都已完成，可以正常使用', date: '2023-09-05' },
-            { id: 3, content: '系统将于每日凌晨2点进行维护，请勿操作', date: '2023-09-06' }
-        ]
+        notices: []
     }),
     actions: {
         login(userInfo) {
@@ -52,6 +48,10 @@ export const useMainStore = defineStore('main', {
             this.role = '';
             this.token = '';
             localStorage.removeItem('user_token'); // 清除token
+        },
+        // 新增：设置公告数据
+        setNotices(noticeList) {
+            this.notices = noticeList;
         }
     }
 })

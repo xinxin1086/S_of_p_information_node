@@ -23,7 +23,7 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true },
     children: [
       { path: 'dashboard', component: () => import('../views/admin/AdminMainContent.vue') },
-      { path: 'info/notice', component: () => import('../views/admin/components/AdminNotice.vue') },
+      { path: 'info/notice', component: () => import('../views/admin/infomanage/AdminNotice.vue') },
       { path: 'info/head', component: () => import('../views/admin/components/AdminHeader.vue') },
       { path: 'apply/poor', component: () => import('../views/admin/components/AdminPoorApply.vue') },
       // 管理员信息页面（原路径不变）

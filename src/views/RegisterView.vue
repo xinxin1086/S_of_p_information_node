@@ -23,7 +23,7 @@
         <div class="radio-group">
           <label class="radio-item">
             <input type="radio" value="farmer" v-model="form.role" required>
-            <span>农户</span>
+            <span>捕鱼人</span>
           </label>
           <label class="radio-item">
             <input type="radio" value="visitor" v-model="form.role">

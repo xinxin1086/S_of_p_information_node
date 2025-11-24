@@ -15,7 +15,7 @@
             :class="{ 'sub-menu': true, 'open': isOpen[index] }"
         >
           <li v-for="(sub, i) in menu.children" :key="i">
-            <!-- 严格绑定 sub.path，无任何硬编码 -->
+            <!-- 严格绑定 sub.path -->
             <router-link :to="sub.path" class="sub-link">
               {{ sub.title }}
             </router-link>

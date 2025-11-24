@@ -7,7 +7,10 @@ import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 
 const app = createApp(App)
-app.use(ElementPlus);
+app.use(createPinia())
+    .use(router)
+    .use(ElementPlus)
+    .mount('#app')
 
 // 基础令牌传递
 axios.interceptors.request.use(
@@ -36,5 +39,3 @@ axios.interceptors.response.use(
         return Promise.reject(error)
     }
 )
-
-app.use(createPinia()).use(router).use(ElementPlus).mount('#app')

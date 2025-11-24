@@ -1,7 +1,7 @@
 <template>
   <div class="admin-header">
     <div class="logo">
-      <span>农业快讯站 - 管理员后台</span>
+      <span>汉江垂钓站 - 管理员后台</span>
     </div>
     <div class="user-info">
       欢迎，{{ user?.name }} <button @click="handleLogout">退出登录</button>
@@ -13,17 +13,29 @@
 defineOptions({ name: "AdminHeader" })
 import { useMainStore } from '@/store'
 import { useRouter } from 'vue-router'
-
+import axios from 'axios';
 const store = useMainStore()
 const router = useRouter()
 const user = store.user
 
 const handleLogout = () => {
-  store.logout() // 清空Pinia用户信息
-  localStorage.removeItem('user_token') // 删除令牌
-  delete axios.defaults.headers.common['Authorization'] // 清除请求头
-  router.push('/login')
-}
+  try {
+    // 1. 清空Pinia用户信息
+    store.logout();
+    // 2. 删除本地存储令牌
+    localStorage.removeItem('user_token');
+    // 3. 清除请求头Authorization（兼容axios实例）
+    if (axios.defaults.headers.common) {
+      delete axios.defaults.headers.common['Authorization'];
+    }
+    // 4. 跳转登录页（强制替换历史记录，避免回退）
+    router.replace('/login');
+  } catch (error) {
+    console.error('退出登录失败：', error);
+    // 异常时仍强制跳转登录页
+    router.replace('/login');
+  }
+};
 </script>
 
 <style scoped>

@@ -2,7 +2,7 @@
   <div class="login-page">
     <div class="login-card">
       <div class="login-header">
-        <h2>农业快讯站</h2>
+        <h2>汉江垂钓站</h2>
         <p>请登录后继续操作</p>
       </div>
 
@@ -46,7 +46,7 @@
             </label>
             <label class="role-item">
               <input type="radio" value="farmer" v-model="role">
-              <span>农户</span>
+              <span>捕鱼人</span>
             </label>
             <label class="role-item">
               <input type="radio" value="visitor" v-model="role">
@@ -55,7 +55,6 @@
           </div>
         </div>
 
-        <!-- 新增：记住信息复选框 -->
         <div class="form-group">
           <label class="remember-item">
             <input type="checkbox" v-model="remember">
@@ -102,7 +101,14 @@ const accountError = ref('')
 const passwordError = ref('')
 const errorMsg = ref('')
 
-// 表单验证逻辑不变
+// 角色与API路径映射（核心配置：同一端口，不同路径）
+const roleApiMap = {
+  admin: '/api/admin/login',    // 管理员API路径
+  farmer: '/api/user/login',    // 捕鱼人API路径
+  visitor: '/api/visitor/login' // 访客API路径
+}
+
+// 表单验证逻辑
 const validateAccount = () => {
   accountError.value = account.value.trim() ? (account.value.length < 3 ? '账号至少3个字符' : '') : '请输入账号'
 }
@@ -142,9 +148,10 @@ const loadRememberInfo = () => {
   }
 }
 
-// 登录逻辑（新增记住信息存储）
+// 登录逻辑
 const handleLogin = async () => {
-  localStorage.removeItem('user_token')
+  // 清除本地存储的令牌
+  //localStorage.removeItem('user_token')
 
   validateAccount()
   validatePassword()
@@ -156,7 +163,8 @@ const handleLogin = async () => {
   try {
     isLoading.value = true
     errorMsg.value = ''
-    const apiUrl = `${BASE_URL}/api/admin/login`
+    const apiPath = roleApiMap[role.value] || '/api/admin/login'
+    const apiUrl = `${BASE_URL}${apiPath}`
 
     const response = await axios.post(
         apiUrl,
@@ -176,26 +184,28 @@ const handleLogin = async () => {
 
     if (response.data.success === true) {
       const { token, user } = response.data.data
+      // 登录成功后清除本地存储的令牌
       localStorage.removeItem('user_token')
-      localStorage.setItem('user_token', token)
 
-      // 核心：登录成功后存储记住的信息
-      saveRememberInfo()
+      localStorage.setItem('user_token', token)
 
       store.login({
         id: user.id,
         account: user.account,
+        name: user.name || user.account,
         role: role.value
       })
 
-      if (role.value === 'admin') {
-        router.push('/admin/dashboard')
-      } else if (role.value === 'farmer') {
-        router.push('/farmer/dashboard')
-      } else {
-        router.push('/home')
+      // 登录成功后存储记住的信息
+      saveRememberInfo()
+
+      const roleRoutes = {
+        admin: '/admin/dashboard',
+        farmer: '/farmer/dashboard',
+        visitor: '/home'
       }
-      alert('登录成功！')
+      router.push(roleRoutes[role.value] || '/home')
+      //alert('登录成功！')
     } else {
       errorMsg.value = response.data.message || '登录失败'
       console.log('【登录失败】后端提示：', errorMsg.value)
@@ -208,7 +218,9 @@ const handleLogin = async () => {
     } else if (error.response) {
       errorMsg.value = `登录失败（状态码：${error.response.status}）`
     } else if (error.request) {
-      errorMsg.value = '网络连接失败（检查后端端口是否为5000）'
+      errorMsg.value = `API请求失败（路径：${roleApiMap[role.value]}）`
+    } else if (error.response?.status === 404) {
+      errorMsg.value = `角色API路径不存在（${roleApiMap[role.value]}）`
     } else {
       errorMsg.value = `登录出错：${error.message}`
     }
@@ -226,11 +238,12 @@ onMounted(() => {
   const user = store.user
   console.log('【页面加载】本地存储令牌：', token)
   if (token && user) {
-    if (user.role === 'admin') {
-      router.push('/admin/dashboard')
-    } else if (user.role === 'farmer') {
-      router.push('/farmer/dashboard')
+    const roleRoutes = {
+      admin: '/admin/dashboard',
+      farmer: '/farmer/dashboard',
+      visitor: '/home'
     }
+    router.push(roleRoutes[user.role] || '/home')
   }
 })
 </script>

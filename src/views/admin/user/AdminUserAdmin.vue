@@ -49,7 +49,7 @@
           <template #default="scope">{{ scope.row[key] ?? '-' }}</template>
         </el-table-column>
       </template>
-      <el-table-column label="操作" width="120">
+      <el-table-column label="操作" width="160">
         <template #default="scope">
           <button class="info-btn edit-btn" @click="handleEdit(scope.row)">编辑</button>
           <button class="info-btn delete-btn" @click="handleDelete(scope.row.id)">删除</button>
