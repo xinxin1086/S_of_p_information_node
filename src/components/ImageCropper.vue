@@ -1,3 +1,4 @@
+<!-- ./src/components/ImageCropper.vue -->
 <template>
   <!-- 头像上传触发按钮 -->
   <div class="avatar-upload-trigger" @click="openUpload">
@@ -78,7 +79,7 @@
 import { ref, nextTick, onUnmounted, watch } from 'vue';
 import { VueCropper } from 'vue-cropper';
 import 'vue-cropper/dist/index.css';
-import { formatAvatarUrl } from '@/utils/format.js';
+import { formatAvatarUrl } from '@/utils/common/format.js';
 
 // Props
 const props = defineProps({

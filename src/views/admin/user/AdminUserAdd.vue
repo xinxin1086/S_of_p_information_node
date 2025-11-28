@@ -1,3 +1,4 @@
+<!-- ./src/views/admin/user/AdminUserAdd.vue -->
 <template>
   <div class="info-container">
     <h3 class="info-form-title">新增管理员</h3>

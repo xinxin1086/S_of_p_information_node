@@ -1,3 +1,4 @@
+<!--./src/views/admin/AdminDashboard.vue -->
 <template>
   <div class="dashboard">
     <AdminHeader />

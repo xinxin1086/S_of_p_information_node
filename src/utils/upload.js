@@ -1,4 +1,4 @@
-// src/utils/upload.js
+// ./src/utils/admin/upload.js
 import axios from 'axios'
 import { BASE_URL } from '@/config.js'; // 引入公共域名
 /**

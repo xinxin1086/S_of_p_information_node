@@ -168,7 +168,18 @@ export const useListCommonLogic = (tableName, listApi = '') => {
                 errorMessage.value = response.data.message || '删除失败';
             }
         } catch (error) {
-            errorMessage.value = error.response?.data?.message || '删除失败';
+            let errorMsg = '删除失败';
+
+            // 针对外键约束错误提供更友好的提示
+            if (error.response?.data?.message && error.response.data.message.includes('foreign key constraint')) {
+                errorMsg = `删除失败：该${tableName === 'admin_info' ? '管理员' : '用户'}有关联数据，无法直接删除。\n建议：\n1. 先删除或转移该用户的关联数据\n2. 或使用软删除功能标记该用户为已删除`;
+            } else if (error.response?.data?.message) {
+                errorMsg = error.response.data.message;
+            } else if (error.message) {
+                errorMsg = `删除失败：${error.message}`;
+            }
+
+            errorMessage.value = errorMsg;
             console.error('删除失败：', error);
         }
     };
@@ -181,6 +192,9 @@ export const useListCommonLogic = (tableName, listApi = '') => {
         if (!confirm(`确定删除选中的${selectedIds.value.length}条记录吗？`)) return;
 
         let successCount = 0;
+        let foreignKeyErrors = 0;
+        let otherErrors = 0;
+
         for (const id of selectedIds.value) {
             try {
                 const response = await axios.post(`${BASE_URL}/api/admin/operate`, {
@@ -191,9 +205,27 @@ export const useListCommonLogic = (tableName, listApi = '') => {
                 if (response.data.success) successCount++;
             } catch (error) {
                 console.error(`删除ID=${id}失败：`, error);
+                if (error.response?.data?.message && error.response.data.message.includes('foreign key constraint')) {
+                    foreignKeyErrors++;
+                } else {
+                    otherErrors++;
+                }
             }
         }
-        alert(`批量删除完成，成功${successCount}条，失败${selectedIds.value.length - successCount}条`);
+
+        let resultMsg = `批量删除完成：\n成功：${successCount}条`;
+        if (foreignKeyErrors > 0) {
+            resultMsg += `\n因关联数据删除失败：${foreignKeyErrors}条`;
+        }
+        if (otherErrors > 0) {
+            resultMsg += `\n其他错误：${otherErrors}条`;
+        }
+
+        if (foreignKeyErrors > 0) {
+            resultMsg += `\n\n提示：有关联数据的${tableName === 'admin_info' ? '管理员' : '用户'}无法直接删除，请先处理其关联数据。`;
+        }
+
+        alert(resultMsg);
         selectedIds.value = [];
         fetchData();
     };

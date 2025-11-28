@@ -1,0 +1,442 @@
+<template>
+  <div class="public-home">
+    <!-- 首页轮播图 -->
+    <section class="hero-section">
+      <el-carousel height="400px" :interval="5000" arrow="hover">
+        <el-carousel-item v-for="item in carouselItems" :key="item.id">
+          <div class="carousel-item" :style="{ backgroundImage: `url(${item.image})` }">
+            <div class="carousel-content">
+              <h2>{{ item.title }}</h2>
+              <p>{{ item.description }}</p>
+              <el-button type="primary" size="large" @click="handleCarouselClick(item)">
+                了解更多
+              </el-button>
+            </div>
+          </div>
+        </el-carousel-item>
+      </el-carousel>
+    </section>
+
+    <!-- 快速导航 -->
+    <section class="quick-nav">
+      <div class="container">
+        <h2 class="section-title">快速导航</h2>
+        <div class="nav-cards">
+          <div class="nav-card" @click="$router.push('/notice')">
+            <el-icon class="nav-icon"><Bell /></el-icon>
+            <h3>公告中心</h3>
+            <p>查看最新公告信息</p>
+          </div>
+          <div class="nav-card" @click="$router.push('/science')">
+            <el-icon class="nav-icon"><Reading /></el-icon>
+            <h3>科普知识</h3>
+            <p>学习专业知识</p>
+          </div>
+          <div class="nav-card" @click="$router.push('/activities')">
+            <el-icon class="nav-icon"><Calendar /></el-icon>
+            <h3>活动信息</h3>
+            <p>了解最新活动</p>
+          </div>
+          <div class="nav-card" @click="$router.push('/about')">
+            <el-icon class="nav-icon"><InfoFilled /></el-icon>
+            <h3>关于平台</h3>
+            <p>了解我们</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 最新公告 -->
+    <section class="latest-notices">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">最新公告</h2>
+          <el-link type="primary" @click="$router.push('/notice')">查看更多 →</el-link>
+        </div>
+        <div class="notice-list">
+          <div v-for="notice in latestNotices" :key="notice.id" class="notice-item">
+            <div class="notice-content">
+              <h4>{{ notice.title }}</h4>
+              <p>{{ notice.content }}</p>
+              <span class="notice-time">{{ formatDate(notice.release_time) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 热门活动 -->
+    <section class="hot-activities">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">热门活动</h2>
+          <el-link type="primary" @click="$router.push('/activities')">查看更多 →</el-link>
+        </div>
+        <div class="activity-grid">
+          <div v-for="activity in hotActivities" :key="activity.id" class="activity-card">
+            <div class="activity-image">
+              <img :src="activity.cover_image || '/placeholder-activity.jpg'" :alt="activity.title" />
+            </div>
+            <div class="activity-info">
+              <h4>{{ activity.title }}</h4>
+              <p class="activity-desc">{{ activity.description }}</p>
+              <div class="activity-meta">
+                <span><el-icon><Location /></el-icon>{{ activity.location }}</span>
+                <span><el-icon><Clock /></el-icon>{{ formatDate(activity.start_time) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { Bell, Reading, Calendar, InfoFilled, Location, Clock } from '@element-plus/icons-vue'
+import dayjs from 'dayjs'
+
+const router = useRouter()
+
+// 轮播图数据
+const carouselItems = ref([
+  {
+    id: 1,
+    title: '欢迎来到社区交流平台',
+    description: '连接邻里，共享美好生活',
+    image: '/images/banner1.jpg'
+  },
+  {
+    id: 2,
+    title: '最新活动火热报名中',
+    description: '精彩活动，不容错过',
+    image: '/images/banner2.jpg'
+  }
+])
+
+// 最新公告
+const latestNotices = ref([
+  {
+    id: 1,
+    title: '平台维护通知',
+    content: '系统将于今晚22:00-24:00进行维护升级',
+    release_time: '2024-01-20 10:00:00'
+  }
+])
+
+// 热门活动
+const hotActivities = ref([
+  {
+    id: 1,
+    title: '春季户外运动活动',
+    description: '一起来享受春天的美好时光',
+    location: '城市公园',
+    start_time: '2024-03-15 09:00:00',
+    cover_image: '/images/activity1.jpg'
+  }
+])
+
+// 格式化日期
+const formatDate = (date) => {
+  return dayjs(date).format('YYYY-MM-DD HH:mm')
+}
+
+// 轮播图点击事件
+const handleCarouselClick = (item) => {
+  // 根据轮播图内容跳转到相应页面
+  switch (item.id) {
+    case 1:
+      router.push('/about')
+      break
+    case 2:
+      router.push('/activities')
+      break
+    default:
+      break
+  }
+}
+
+// 组件挂载时加载数据
+onMounted(async () => {
+  try {
+    // 这里可以调用API获取真实数据
+    // const [noticesRes, activitiesRes] = await Promise.all([
+    //   fetchLatestNotices(),
+    //   fetchHotActivities()
+    // ])
+    // latestNotices.value = noticesRes.data
+    // hotActivities.value = activitiesRes.data
+  } catch (error) {
+    console.error('加载数据失败:', error)
+  }
+})
+</script>
+
+<style scoped>
+.public-home {
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* 轮播图样式 */
+.hero-section {
+  margin-bottom: 60px;
+}
+
+.carousel-item {
+  height: 400px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.carousel-content {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+  color: white;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 40px;
+  border-radius: 8px;
+}
+
+.carousel-content h2 {
+  font-size: 32px;
+  margin-bottom: 16px;
+}
+
+.carousel-content p {
+  font-size: 18px;
+  margin-bottom: 24px;
+}
+
+/* 快速导航样式 */
+.quick-nav {
+  padding: 60px 0;
+  background: #f8f9fa;
+}
+
+.section-title {
+  font-size: 28px;
+  text-align: center;
+  margin-bottom: 40px;
+  color: #333;
+}
+
+.nav-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+}
+
+.nav-card {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.nav-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.nav-icon {
+  font-size: 48px;
+  color: #409eff;
+  margin-bottom: 16px;
+}
+
+.nav-card h3 {
+  font-size: 20px;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.nav-card p {
+  color: #666;
+  font-size: 14px;
+}
+
+/* 最新公告样式 */
+.latest-notices {
+  padding: 60px 0;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.notice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.notice-item {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.notice-item:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.notice-content h4 {
+  font-size: 18px;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.notice-content p {
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.notice-time {
+  font-size: 12px;
+  color: #999;
+}
+
+/* 热门活动样式 */
+.hot-activities {
+  padding: 60px 0;
+  background: #f8f9fa;
+}
+
+.activity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+}
+
+.activity-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.activity-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.activity-image {
+  height: 200px;
+  overflow: hidden;
+}
+
+.activity-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.activity-card:hover .activity-image img {
+  transform: scale(1.05);
+}
+
+.activity-info {
+  padding: 20px;
+}
+
+.activity-info h4 {
+  font-size: 18px;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.activity-desc {
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 16px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.activity-meta {
+  display: flex;
+  gap: 20px;
+  font-size: 14px;
+  color: #999;
+}
+
+.activity-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 15px;
+  }
+
+  .carousel-content {
+    margin: 0 15px;
+    padding: 20px;
+  }
+
+  .carousel-content h2 {
+    font-size: 24px;
+  }
+
+  .carousel-content p {
+    font-size: 16px;
+  }
+
+  .section-title {
+    font-size: 24px;
+  }
+
+  .nav-cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  .nav-card {
+    padding: 20px;
+  }
+
+  .nav-icon {
+    font-size: 36px;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .activity-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

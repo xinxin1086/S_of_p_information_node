@@ -1,3 +1,4 @@
+<!-- ./src/views/admin/user/AdminUserEdit.vue -->
 <template>
   <div class="info-container">
     <h3 class="info-form-title">编辑管理员</h3>
@@ -81,7 +82,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { getCommonFormRules, useSubmitCommonLogic, fetchEditData } from '@/utils/admin/admin_info_edit.js';
 import '@/styles/admin/admin_info_edit.css';
-import { formatAvatarUrl } from "@/utils/format.js";
+import { formatAvatarUrl } from "@/utils/common/format.js";
 // 导入 ImageCropper 组件（与新增页一致）
 import ImageCropper from '@/components/ImageCropper.vue';
 import axios from 'axios';

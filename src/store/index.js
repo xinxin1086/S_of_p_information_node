@@ -1,57 +1,146 @@
+// ./src/store/index.js
 import { defineStore } from 'pinia'
+import { ref } from 'vue'
 
-export const useMainStore = defineStore('main', {
-    state: () => ({
-        user: null, // 登录用户信息：{ name: string, role: string }
-        role: '', // 存储用户角色
-        token: '', // 存储token
-        sidebarCollapsed: false, // 侧边栏是否收起
-        isMobile: false, // 是否是移动端
-        // 核心：菜单路径与路由完全一致，无图标，层级匹配路由结构
-        sidebarMenus: [
-            {
-                title: '系统首页',
-                path: '/admin/dashboard' // 无子菜单，直接跳转路由
-            },
-            {
-                title: '信息管理',
-                children: [
-                    { title: '公告信息', path: '/admin/info/notice' }, // 对应路由 /admin/info/notice
-                    { title: '首页信息', path: '/admin/info/head' },    // 对应路由 /admin/info/head
-                    { title: '相关资讯', path: '/admin/info/news' }     // 可扩展，若后续新增路由直接对应
-                ]
-            },
-            {
-                title: '申请管理',
-                children: [
-                    { title: '贫困户申请', path: '/admin/apply/poor' } // 对应路由 /admin/apply/poor
-                ]
-            },
-            {
-                title: '用户管理',
-                children: [
-                    { title: '管理员信息', path: '/admin/user/admin' }, // 对应路由 /admin/user/admin
-                    { title: '普通用户信息', path: '/admin/user/user' }  // 对应路由 /admin/user/user
-                ]
-            }
-        ],
-        notices: []
-    }),
-    actions: {
-        login(userInfo) {
-            this.user = userInfo // 存储登录信息
-            this.role = userInfo.role;
-            this.token = localStorage.getItem('user_token'); // 同步本地存储的token
+// 主store - 管理全局状态
+export const useMainStore = defineStore('main', () => {
+  const user = ref(null)
+  const sidebarCollapsed = ref(false)
+  const isMobile = ref(false)
+  const theme = ref('light')
+
+  // 管理员侧边栏菜单配置
+  const sidebarMenus = ref([
+    {
+      title: '返回首页',
+      path: '/'
+    },
+    {
+      title: '管理员控制台',
+      path: '/admin/dashboard'
+    },
+    {
+      title: '内容管理模块',
+      children: [
+        {
+          title: '内容审核',
+          children: [
+            { title: '公告审核', path: '/admin/content/notice-review' },
+            { title: '科普审核', path: '/admin/content/science-review' },
+            { title: '活动审核', path: '/admin/content/activity-review' }
+          ]
         },
-        logout() {
-            this.user = null // 清除登录信息
-            this.role = '';
-            this.token = '';
-            localStorage.removeItem('user_token'); // 清除token
-        },
-        // 新增：设置公告数据
-        setNotices(noticeList) {
-            this.notices = noticeList;
+        {
+          title: '内容发布',
+          children: [
+            { title: '公告管理', path: '/admin/content/notice' },
+            { title: '科普管理', path: '/admin/content/science' }
+          ]
         }
+      ]
+    },
+    {
+      title: '用户管理模块',
+      children: [
+        {
+          title: '管理员管理',
+          children: [
+            { title: '管理员列表', path: '/admin/user/admin' },
+            { title: '添加管理员', path: '/admin/user/admin/add' }
+          ]
+        },
+        {
+          title: '普通用户管理',
+          children: [
+            { title: '用户列表', path: '/admin/user/user' },
+            { title: '添加用户', path: '/admin/user/user/add' }
+          ]
+        }
+      ]
     }
+  ])
+
+  // 用户侧边栏菜单配置
+  const userMenus = ref([
+    {
+      title: '用户首页',
+      path: '/user/dashboard'
+    },
+    {
+      title: '论坛交流',
+      children: [
+        { title: '论坛首页', path: '/user/forum' },
+        { title: '搜索帖子', path: '/user/forum/search' }
+      ]
+    },
+    {
+      title: '活动中心',
+      children: [
+        { title: '活动列表', path: '/user/activities' },
+        { title: '我的预约', path: '/user/bookings' },
+        { title: '预约历史', path: '/user/booking-history' }
+      ]
+    },
+    {
+      title: '捕鱼者功能',
+      children: [
+        { title: '活动管理', path: '/user/fisher/my-activities' },
+        { title: '创建活动', path: '/user/fisher/create-activity' },
+        { title: '活动统计', path: '/user/fisher/activity-stats' }
+      ]
+    },
+    {
+      title: '个人设置',
+      children: [
+        { title: '个人资料', path: '/user/profile' },
+        { title: '账户设置', path: '/user/settings' }
+      ]
+    }
+  ])
+
+  // 设置用户信息
+  const setUser = (userInfo) => {
+    user.value = userInfo
+  }
+
+  // 清除用户信息
+  const clearUser = () => {
+    user.value = null
+  }
+
+  // 切换侧边栏
+  const toggleSidebar = () => {
+    sidebarCollapsed.value = !sidebarCollapsed.value
+  }
+
+  // 设置移动端状态
+  const setMobile = (mobile) => {
+    isMobile.value = mobile
+  }
+
+  // 切换主题
+  const toggleTheme = () => {
+    theme.value = theme.value === 'light' ? 'dark' : 'light'
+  }
+
+  return {
+    user,
+    sidebarCollapsed,
+    isMobile,
+    theme,
+    sidebarMenus,
+    userMenus,
+    setUser,
+    clearUser,
+    toggleSidebar,
+    setMobile,
+    toggleTheme
+  }
 })
+
+// 导出所有模块
+export { useAuthStore } from './modules/auth'
+export { useForumStore } from './modules/forum'
+export { useActivityStore } from './modules/activity'
+export { useNoticeStore } from './modules/notice'
+export { useScienceStore } from './modules/science'

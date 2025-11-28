@@ -1,3 +1,4 @@
+<!-- ./src/views/admin/user/UserUserEdit.vue -->
 <template>
   <div class="info-container">
     <h3 class="info-form-title">编辑用户</h3>
@@ -50,9 +51,8 @@
 
       <el-form-item label="角色" required prop="role" class="info-form-item">
         <el-select v-model="form.role" placeholder="请选择角色" :disabled="isLoading" class="info-form-select">
-          <el-option label="捕鱼人" value="farmer"></el-option>
-          <el-option label="访客" value="visitor"></el-option>
-          <el-option label="普通用户" value="normal_user"></el-option>
+          <el-option label="组织用户" value="organization"></el-option>
+          <el-option label="普通用户" value="user"></el-option>
         </el-select>
       </el-form-item>
 
@@ -113,9 +113,8 @@ const tempPreviewUrl = ref(''); // 管理临时预览URL
 
 // 表单验证规则
 const formRules = getCommonFormRules([
-  { label: '捕鱼人', value: 'farmer' },
-  { label: '访客', value: 'visitor' },
-  { label: '普通用户', value: 'normal_user' }
+  { label: '组织用户', value: 'organization' },
+  { label: '普通用户', value: 'user' }
 ]);
 
 // 接收裁剪后的文件（与新增组件逻辑一致）

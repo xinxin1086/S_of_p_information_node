@@ -1,3 +1,4 @@
+<!-- ./src/views/admin/infomanage/AdminNotice.vue -->
 <template>
   <div class="info-container">
     <!-- 查询栏（与管理员组件一致：输入框+查询+重置） -->
@@ -44,6 +45,10 @@
     >
       <el-table-column type="selection" width="55" />
       <el-table-column type="index" label="序号" width="60" />
+      <!-- 新增公告ID列 -->
+      <el-table-column prop="id" label="公告ID" width="80">
+        <template #default="scope">{{ scope.row.id ?? '-' }}</template>
+      </el-table-column>
       <!-- 公告字段列（对应管理员组件的tableFields结构） -->
       <el-table-column prop="release_title" label="公告标题" width="200">
         <template #default="scope">{{ scope.row.release_title ?? '-' }}</template>
@@ -53,6 +58,10 @@
       </el-table-column>
       <el-table-column prop="release_time" label="发布时间" width="180">
         <template #default="scope">{{ formatDate(scope.row.release_time) ?? '-' }}</template>
+      </el-table-column>
+      <!-- 新增更新时间列 -->
+      <el-table-column prop="update_time" label="更新时间" width="180">
+        <template #default="scope">{{ formatDate(scope.row.update_time) ?? '-' }}</template>
       </el-table-column>
       <el-table-column prop="expiration" label="过期时间" width="180">
         <template #default="scope">
@@ -257,7 +266,7 @@ const handlePageChange = (page) => {
 
 // 表格选择事件
 const handleSelectionChange = (val) => {
-  selectedIds.value = val.map(item => item.id || item.release_time); // 用唯一标识作为ID
+  selectedIds.value = val.map(item => item.id); // 使用新的自增ID
 };
 
 // 新增公告
@@ -271,7 +280,7 @@ const handleAdd = () => {
 const handleEdit = (notice) => {
   isEdit.value = true;
   form.value = {
-    id: notice.id || notice.release_time,
+    id: notice.id, // 使用新的自增ID
     release_title: notice.release_title,
     notice_type: notice.notice_type,
     release_notice: notice.release_notice,
@@ -288,7 +297,7 @@ const handleDelete = async (notice) => {
     const response = await axios.post(`${BASE_URL}/api/admin/operate`, {
       table_name: 'notice',
       operate_type: 'delete',
-      kwargs: { id: notice.id || notice.release_time }
+      kwargs: { id: notice.id } // 使用新的自增ID
     });
     if (response.data.success) {
       alert('删除成功！');
@@ -334,20 +343,38 @@ const submitForm = async () => {
     await formRef.value.validate();
     isLoading.value = true;
 
-    const operateType = isEdit.value ? 'edit' : 'add';
-    const params = {
-      table_name: 'notice',
-      operate_type: operateType,
-      kwargs: {
-        release_title: form.value.release_title.trim(),
-        notice_type: form.value.notice_type,
-        release_notice: form.value.release_notice.trim(),
-        expiration: form.value.expiration,
-        release_time: new Date().toISOString()
-      }
-    };
+    let params;
 
-    if (isEdit.value) params.kwargs.id = form.value.id;
+    if (isEdit.value) {
+      // 编辑操作需要查询条件和更新内容
+      params = {
+        table_name: 'notice',
+        operate_type: 'edit',
+        query_conditions: {
+          id: form.value.id // 使用自增ID查询
+        },
+        update_content: {
+          release_title: form.value.release_title.trim(),
+          notice_type: form.value.notice_type,
+          release_notice: form.value.release_notice.trim(),
+          expiration: form.value.expiration
+          // 注意：release_time 不可变更，update_time 数据库自动维护
+        }
+      };
+    } else {
+      // 新增操作
+      params = {
+        table_name: 'notice',
+        operate_type: 'add',
+        kwargs: {
+          release_title: form.value.release_title.trim(),
+          notice_type: form.value.notice_type,
+          release_notice: form.value.release_notice.trim(),
+          expiration: form.value.expiration
+          // 注意：id、release_time、update_time 均由数据库自动生成
+        }
+      };
+    }
 
     const response = await axios.post(`${BASE_URL}/api/admin/operate`, params);
     if (response.data.success) {

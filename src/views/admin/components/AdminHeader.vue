@@ -1,3 +1,4 @@
+<!-- ./src/views/admin/components/AdminHeader.vue -->
 <template>
   <div class="admin-header">
     <div class="logo">
@@ -21,19 +22,19 @@ const user = store.user
 const handleLogout = () => {
   try {
     // 1. 清空Pinia用户信息
-    store.logout();
+    store.clearUser();
     // 2. 删除本地存储令牌
     localStorage.removeItem('user_token');
     // 3. 清除请求头Authorization（兼容axios实例）
     if (axios.defaults.headers.common) {
       delete axios.defaults.headers.common['Authorization'];
     }
-    // 4. 跳转登录页（强制替换历史记录，避免回退）
-    router.replace('/login');
+    // 4. 跳转到首页/#/，完全退出登录状态
+    window.location.href = '/#/';
   } catch (error) {
     console.error('退出登录失败：', error);
-    // 异常时仍强制跳转登录页
-    router.replace('/login');
+    // 异常时仍强制跳转到首页
+    window.location.href = '/#/';
   }
 };
 </script>

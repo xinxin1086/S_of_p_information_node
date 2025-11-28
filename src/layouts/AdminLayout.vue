@@ -1,3 +1,4 @@
+<!-- ./src/layouts/AdminLayout.vue -->
 <template>
   <div class="admin-layout">
     <!-- 顶部栏位：AdminHeader -->

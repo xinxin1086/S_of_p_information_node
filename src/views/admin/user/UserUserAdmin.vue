@@ -1,3 +1,4 @@
+<!-- ./src/views/admin/user/UserUserAdmin.vue -->
 <template>
   <div class="info-container">
     <!-- 查询栏 -->
@@ -72,7 +73,7 @@ import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useListCommonLogic } from '@/utils/admin/admin_info_edit.js';
 import '@/styles/admin/admin_info_edit.css';
-import {formatAvatarUrl} from "@/utils/format.js";
+import {formatAvatarUrl} from "@/utils/common/format.js";
 
 const router = useRouter();
 const {
