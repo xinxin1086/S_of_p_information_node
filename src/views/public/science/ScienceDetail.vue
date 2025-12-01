@@ -31,8 +31,8 @@
             <el-tag :type="getArticleTypeTag(article.category)" size="small">
               {{ getArticleTypeText(article.category) }}
             </el-tag>
-            <span class="article-author">{{ article.author || '管理员' }}</span>
-            <span class="article-date">{{ formatDate(article.createdAt) }}</span>
+            <span class="article-author">{{ article.author }}</span>
+            <span class="article-date">{{ formatDate(article.publishedAt || article.createdAt) }}</span>
           </div>
         </div>
 
@@ -85,9 +85,11 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, View, Star } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { useScienceStore } from '@/store/modules/science'
 
 const route = useRoute()
 const router = useRouter()
+const scienceStore = useScienceStore()
 
 const loading = ref(false)
 const article = ref(null)
@@ -98,136 +100,60 @@ const articleId = computed(() => parseInt(route.params.id))
 const fetchArticleDetail = async () => {
   loading.value = true
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 500))
+    const result = await scienceStore.fetchScience(articleId.value)
 
-    // 模拟数据
-    const mockArticles = {
-      1: {
-        id: 1,
-        title: '新手钓鱼入门：装备选择与基础技巧',
-        author: '钓鱼专家',
-        content: `
-          <h2>前言</h2>
-          <p>钓鱼是一项既能放松身心又能锻炼耐性的户外活动。对于初学者来说，选择合适的装备和掌握基础技巧是成功的关键。本文将为您详细介绍钓鱼入门需要了解的一切。</p>
-
-          <h2>第一章：基础装备选择</h2>
-          <h3>1.1 鱼竿选择</h3>
-          <p>鱼竿是钓鱼最重要的装备。初学者建议选择：</p>
-          <ul>
-            <li><strong>长度</strong>：2.7-3.6米的碳素竿</li>
-            <li><strong>调性</strong>：中调或软调，便于掌握</li>
-            <li><strong>材质</strong>：碳素材质，轻便且灵敏</li>
-          </ul>
-
-          <h3>1.2 鱼线选择</h3>
-          <p>鱼线的选择要考虑目标鱼种和钓场环境：</p>
-          <ul>
-            <li><strong>线号</strong>：新手建议2-3号线</li>
-            <li><strong>材质</strong>：尼龙线，性价比高</li>
-            <li><strong>长度</strong>：100米左右，便于更换</li>
-          </ul>
-
-          <h3>1.3 鱼钩选择</h3>
-          <p>鱼钩大小要匹配目标鱼种：</p>
-          <ul>
-            <li><strong>小钩</strong>：适合鲫鱼、白条等小鱼</li>
-            <li><strong>中钩</strong>：适合鲤鱼、草鱼等中型鱼</li>
-            <li><strong>大钩</strong>：适合青鱼、鲢鱼等大鱼</li>
-          </ul>
-
-          <h2>第二章：基础钓法技巧</h2>
-          <h3>2.1 立钓姿势</h3>
-          <p>正确的立钓姿势能够提高钓鱼效率：</p>
-          <ul>
-            <li>保持身体平衡，双脚分开与肩同宽</li>
-            <li>持竿姿势要自然，手腕放松</li>
-            <li>注意观察浮漂信号，及时提竿</li>
-          </ul>
-
-          <h3>2.2 抛竿技巧</h3>
-          <p>准确的抛竿是成功钓鱼的关键：</p>
-          <ul>
-            <li>瞄准目标点，用力均匀</li>
-            <li>利用手腕发力，而非整个手臂</li>
-            <li>注意抛竿后的线线松弛度</li>
-          </ul>
-
-          <h2>第三章：注意事项</h2>
-          <h3>3.1 安全事项</h3>
-          <ul>
-            <li>注意防滑，选择安全的钓位</li>
-            <li>注意防晒，带好防晒用品</li>
-            <li>保管好装备，避免丢失</li>
-          </ul>
-
-          <h3>3.2 环保意识</h3>
-          <ul>
-            <li>垃圾要带走，保护环境</li>
-            <li>小鱼要放生，保护生态</li>
-            <li>遵守当地钓鱼规定</li>
-          </ul>
-
-          <h2>总结</h2>
-          <p>钓鱼是一项需要耐心和技巧的活动。通过不断练习和学习，您一定能成为一名优秀的钓手。记住，享受过程比收获更重要！</p>
-        `,
-        category: 'basic',
-        createdAt: '2024-01-15T10:00:00Z',
-        views: 1234,
-        likes: 89,
-        isLiked: false
-      },
-      2: {
-        id: 2,
-        title: '春季钓鲤鱼的最佳时机和方法',
-        author: '经验钓手',
-        content: `
-          <h2>春季鲤鱼习性分析</h2>
-          <p>春季是鲤鱼活跃的季节，了解其习性对于成功钓获至关重要。</p>
-
-          <h3>最佳钓时</h3>
-          <ul>
-            <li><strong>早晨</strong>：6-9点，温度适宜</li>
-            <li><strong>傍晚</strong>：17-19点，光线昏暗</li>
-            <li><strong>阴天</strong>：全天可钓，鲤鱼更活跃</li>
-          </ul>
-
-          <h2>春季钓法技巧</h2>
-          <p>详细内容待完善...</p>
-        `,
-        category: 'technique',
-        createdAt: '2024-01-12T14:30:00Z',
-        views: 856,
-        likes: 67,
-        isLiked: false
+    if (result.success && result.data) {
+      // 适配数据格式到前端显示
+      article.value = {
+        id: result.data.id,
+        title: result.data.title,
+        author: result.data.author_account || '管理员',
+        content: result.data.content,
+        category: result.data.category || 'basic',
+        createdAt: result.data.created_at,
+        publishedAt: result.data.published_at,
+        views: result.data.view_count,
+        likes: result.data.like_count,
+        isLiked: false,
+        coverImage: result.data.cover_image
       }
-    }
 
-    article.value = mockArticles[articleId.value] || null
-
-    // 模拟相关文章
-    if (article.value) {
-      relatedArticles.value = [
-        {
-          id: 2,
-          title: '春季钓鲤鱼的最佳时机和方法',
-          summary: '分析春季鲤鱼的习性特点，推荐有效的钓法技巧和饵料搭配。',
-          category: 'technique',
-          createdAt: '2024-01-12T14:30:00Z'
-        },
-        {
-          id: 3,
-          title: '环保钓鱼：保护水域生态的重要性',
-          summary: '倡导环保钓鱼理念，介绍如何在不影响环境的前提下享受垂钓乐趣。',
-          category: 'environment',
-          createdAt: '2024-01-08T09:15:00Z'
-        }
-      ].filter(item => item.id !== articleId.value)
+      // 获取相关文章
+      fetchRelatedArticles()
+    } else {
+      console.error('获取文章详情失败:', result.error)
+      article.value = null
     }
   } catch (error) {
     console.error('获取文章详情失败:', error)
+    article.value = null
   } finally {
     loading.value = false
+  }
+}
+
+const fetchRelatedArticles = async () => {
+  try {
+    const result = await scienceStore.fetchSciences({
+      page: 1,
+      size: 3,
+      status: 'published'
+    })
+
+    if (result.success) {
+      relatedArticles.value = (result.data || [])
+        .filter(item => item.id !== articleId.value)
+        .slice(0, 2)
+        .map(item => ({
+          id: item.id,
+          title: item.title,
+          summary: item.summary || item.content?.substring(0, 100) + '...',
+          category: item.category || 'basic',
+          createdAt: item.created_at
+        }))
+    }
+  } catch (error) {
+    console.error('获取相关文章失败:', error)
   }
 }
 

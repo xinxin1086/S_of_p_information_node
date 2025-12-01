@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { scienceApi, adminApi } from '@/api'
 
 export const useScienceStore = defineStore('science', () => {
   const sciences = ref([])
@@ -10,15 +11,15 @@ export const useScienceStore = defineStore('science', () => {
   const fetchSciences = async (params = {}) => {
     loading.value = true
     try {
-      const queryString = new URLSearchParams(params).toString()
-      const response = await fetch(`/api/sciences?${queryString}`)
+      const response = await scienceApi.getScienceList(params)
 
-      if (response.ok) {
-        const data = await response.json()
-        sciences.value = data.sciences
-        return { success: true, data }
+      if (response.success) {
+        // 处理嵌套的数据结构：{data: {items: [...], total: 2}}
+        const items = response.data?.items || []
+        sciences.value = items
+        return { success: true, data: items }
       } else {
-        return { success: false, error: '获取科普内容失败' }
+        return { success: false, error: response.message || '获取科普内容失败' }
       }
     } catch (error) {
       console.error('Fetch sciences error:', error)
@@ -32,14 +33,13 @@ export const useScienceStore = defineStore('science', () => {
   const fetchScience = async (id) => {
     loading.value = true
     try {
-      const response = await fetch(`/api/sciences/${id}`)
+      const response = await scienceApi.getScienceDetail(id)
 
-      if (response.ok) {
-        const data = await response.json()
-        currentScience.value = data.science
-        return { success: true, data }
+      if (response.success) {
+        currentScience.value = response.data
+        return { success: true, data: response.data }
       } else {
-        return { success: false, error: '获取科普详情失败' }
+        return { success: false, error: response.message || '获取科普详情失败' }
       }
     } catch (error) {
       console.error('Fetch science error:', error)
@@ -52,23 +52,15 @@ export const useScienceStore = defineStore('science', () => {
   // 创建科普内容（管理员功能）
   const createScience = async (scienceData) => {
     try {
-      const token = localStorage.getItem('user_token')
-      const response = await fetch('/api/admin/sciences', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(scienceData)
-      })
+      const response = await adminApi.science.create(scienceData)
 
-      if (response.ok) {
-        const data = await response.json()
-        sciences.value.unshift(data.science)
-        return { success: true, data }
+      if (response.success) {
+        if (response.data) {
+          sciences.value.unshift(response.data)
+        }
+        return { success: true, data: response.data }
       } else {
-        const errorData = await response.json()
-        return { success: false, error: errorData.message || '创建科普内容失败' }
+        return { success: false, error: response.message || '创建科普内容失败' }
       }
     } catch (error) {
       console.error('Create science error:', error)
@@ -79,28 +71,21 @@ export const useScienceStore = defineStore('science', () => {
   // 更新科普内容（管理员功能）
   const updateScience = async (id, scienceData) => {
     try {
-      const token = localStorage.getItem('user_token')
-      const response = await fetch(`/api/admin/sciences/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(scienceData)
-      })
+      const response = await adminApi.science.update(id, scienceData)
 
-      if (response.ok) {
-        const data = await response.json()
-        const index = sciences.value.findIndex(science => science.id === id)
-        if (index !== -1) {
-          sciences.value[index] = data.science
+      if (response.success) {
+        if (response.data) {
+          const index = sciences.value.findIndex(science => science.id === id)
+          if (index !== -1) {
+            sciences.value[index] = response.data
+          }
+          if (currentScience.value?.id === id) {
+            currentScience.value = response.data
+          }
         }
-        if (currentScience.value?.id === id) {
-          currentScience.value = data.science
-        }
-        return { success: true, data }
+        return { success: true, data: response.data }
       } else {
-        return { success: false, error: '更新科普内容失败' }
+        return { success: false, error: response.message || '更新科普内容失败' }
       }
     } catch (error) {
       console.error('Update science error:', error)
@@ -111,22 +96,16 @@ export const useScienceStore = defineStore('science', () => {
   // 删除科普内容（管理员功能）
   const deleteScience = async (id) => {
     try {
-      const token = localStorage.getItem('user_token')
-      const response = await fetch(`/api/admin/sciences/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
+      const response = await adminApi.science.delete(id)
 
-      if (response.ok) {
+      if (response.success) {
         sciences.value = sciences.value.filter(science => science.id !== id)
         if (currentScience.value?.id === id) {
           currentScience.value = null
         }
         return { success: true }
       } else {
-        return { success: false, error: '删除科普内容失败' }
+        return { success: false, error: response.message || '删除科普内容失败' }
       }
     } catch (error) {
       console.error('Delete science error:', error)

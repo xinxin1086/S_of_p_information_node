@@ -54,11 +54,44 @@
           <el-link type="primary" @click="$router.push('/notice')">查看更多 →</el-link>
         </div>
         <div class="notice-list">
-          <div v-for="notice in latestNotices" :key="notice.id" class="notice-item">
-            <div class="notice-content">
-              <h4>{{ notice.title }}</h4>
-              <p>{{ notice.content }}</p>
-              <span class="notice-time">{{ formatDate(notice.release_time) }}</span>
+          <!-- 加载状态 -->
+          <div v-if="noticeLoading" class="loading-notice">
+            <el-icon class="is-loading"><Loading /></el-icon>
+            <span>加载中...</span>
+          </div>
+
+          <!-- 无公告状态 -->
+          <div v-else-if="latestNotices.length === 0" class="empty-notice">
+            <el-icon><Document /></el-icon>
+            <p>暂无公告</p>
+          </div>
+
+          <!-- 公告列表 -->
+          <div v-else>
+            <div
+              v-for="notice in latestNotices"
+              :key="notice.id"
+              class="notice-item-simple"
+              @click="goToNoticeDetail(notice.id)"
+            >
+              <div class="notice-top">
+                <!-- 左侧红色标签 -->
+                <div class="notice-tag">
+                  {{ getNoticeTypeText(notice.type) }}
+                </div>
+
+                <!-- 中间标题 -->
+                <h4 class="notice-title-simple">{{ notice.title }}</h4>
+
+                <!-- 右侧时间和箭头 -->
+                <div class="notice-right">
+                  <span class="notice-time-simple">{{ formatDate(notice.createdAt || notice.release_time) }}</span>
+                  <el-icon class="notice-arrow-simple"><Right /></el-icon>
+                </div>
+              </div>
+
+              <!-- 分割线 -->
+              <div class="notice-divider"></div>
             </div>
           </div>
         </div>
@@ -95,8 +128,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Bell, Reading, Calendar, InfoFilled, Location, Clock } from '@element-plus/icons-vue'
-import dayjs from 'dayjs'
+import { Bell, Reading, Calendar, InfoFilled, Location, Clock, Document, Right, Loading } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { fetchNoticeList, getNoticeTypeTag, getNoticeTypeText } from '@/utils/notice'
 
 const router = useRouter()
 
@@ -117,14 +151,8 @@ const carouselItems = ref([
 ])
 
 // 最新公告
-const latestNotices = ref([
-  {
-    id: 1,
-    title: '平台维护通知',
-    content: '系统将于今晚22:00-24:00进行维护升级',
-    release_time: '2024-01-20 10:00:00'
-  }
-])
+const latestNotices = ref([])
+const noticeLoading = ref(false)
 
 // 热门活动
 const hotActivities = ref([
@@ -138,9 +166,33 @@ const hotActivities = ref([
   }
 ])
 
-// 格式化日期
-const formatDate = (date) => {
-  return dayjs(date).format('YYYY-MM-DD HH:mm')
+// 获取最新公告
+const fetchLatestNotices = async () => {
+  noticeLoading.value = true
+  try {
+    const result = await fetchNoticeList(1, 5) // 只取前5条最新公告
+    latestNotices.value = result.items.slice(0, 5)
+  } catch (error) {
+    console.error('获取最新公告失败:', error)
+    ElMessage.error('获取最新公告失败')
+  } finally {
+    noticeLoading.value = false
+  }
+}
+
+// 自定义日期格式化函数（匹配图片中的 2025/12/01 格式）
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}/${month}/${day}`
+}
+
+// 跳转到公告详情
+const goToNoticeDetail = (noticeId) => {
+  router.push(`/notice/${noticeId}`)
 }
 
 // 轮播图点击事件
@@ -161,13 +213,11 @@ const handleCarouselClick = (item) => {
 // 组件挂载时加载数据
 onMounted(async () => {
   try {
-    // 这里可以调用API获取真实数据
-    // const [noticesRes, activitiesRes] = await Promise.all([
-    //   fetchLatestNotices(),
-    //   fetchHotActivities()
-    // ])
-    // latestNotices.value = noticesRes.data
-    // hotActivities.value = activitiesRes.data
+    // 加载最新公告
+    await fetchLatestNotices()
+
+    // TODO: 未来可以在这里加载热门活动数据
+    // await fetchHotActivities()
   } catch (error) {
     console.error('加载数据失败:', error)
   }
@@ -285,37 +335,120 @@ onMounted(async () => {
 .notice-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
-.notice-item {
-  background: white;
-  padding: 24px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.notice-item:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
-
-.notice-content h4 {
-  font-size: 18px;
-  margin-bottom: 12px;
-  color: #333;
-}
-
-.notice-content p {
-  color: #666;
-  line-height: 1.6;
-  margin-bottom: 12px;
-}
-
-.notice-time {
-  font-size: 12px;
+/* 加载状态样式 */
+.loading-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
   color: #999;
+  gap: 8px;
+}
+
+.loading-notice .el-icon {
+  font-size: 20px;
+}
+
+/* 无公告状态样式 */
+.empty-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #999;
+}
+
+.empty-notice .el-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  color: #ddd;
+}
+
+.empty-notice p {
+  font-size: 16px;
+  margin: 0;
+}
+
+/* 简化版公告项样式 */
+.notice-item-simple {
+  background: white;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0;
+  transition: background-color 0.2s ease;
+}
+
+.notice-item-simple:hover {
+  background-color: #f9f9f9;
+}
+
+.notice-top {
+  display: flex;
+  align-items: center;
+  padding: 15px 0;
+  gap: 10px;
+}
+
+/* 左侧红色标签样式 */
+.notice-tag {
+  background-color: #FFCCCC;
+  color: #333333;
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  white-space: nowrap;
+  font-weight: normal;
+  flex-shrink: 0;
+}
+
+/* 中间标题样式 */
+.notice-title-simple {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333333;
+  margin: 0;
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 右侧区域样式 */
+.notice-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* 时间样式 */
+.notice-time-simple {
+  font-size: 14px;
+  color: #999999;
+  white-space: nowrap;
+}
+
+/* 箭头样式 */
+.notice-arrow-simple {
+  font-size: 16px;
+  color: #999999;
+  transition: color 0.2s ease;
+}
+
+.notice-item-simple:hover .notice-arrow-simple {
+  color: #666666;
+}
+
+/* 分割线样式 */
+.notice-divider {
+  height: 1px;
+  background-color: #E0E0E0;
+  margin: 0;
 }
 
 /* 热门活动样式 */
@@ -433,6 +566,28 @@ onMounted(async () => {
     flex-direction: column;
     align-items: flex-start;
     gap: 15px;
+  }
+
+  .notice-top {
+    padding: 12px 0;
+    gap: 8px;
+  }
+
+  .notice-tag {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
+  .notice-title-simple {
+    font-size: 15px;
+  }
+
+  .notice-time-simple {
+    font-size: 13px;
+  }
+
+  .notice-arrow-simple {
+    font-size: 14px;
   }
 
   .activity-grid {

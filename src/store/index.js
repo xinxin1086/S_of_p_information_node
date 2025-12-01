@@ -34,7 +34,8 @@ export const useMainStore = defineStore('main', () => {
           title: '内容发布',
           children: [
             { title: '公告管理', path: '/admin/content/notice' },
-            { title: '科普管理', path: '/admin/content/science' }
+            { title: '科普管理', path: '/admin/content/science' },
+            { title: '活动管理', path: '/admin/content/activity' }
           ]
         }
       ]

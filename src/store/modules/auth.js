@@ -2,9 +2,21 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref(null)
+  // 初始化时从localStorage恢复用户信息
+  const storedUserInfo = localStorage.getItem('user_info')
+  let initialUser = null
+  if (storedUserInfo) {
+    try {
+      initialUser = JSON.parse(storedUserInfo)
+    } catch (error) {
+      console.warn('Failed to parse stored user info:', error)
+      localStorage.removeItem('user_info')
+    }
+  }
+
+  const user = ref(initialUser)
   const token = ref(localStorage.getItem('user_token') || '')
-  const isAuthenticated = ref(!!token.value)
+  const isAuthenticated = ref(!!token.value && !!user.value)
 
   // 登录
   const login = async (credentials) => {
@@ -39,8 +51,15 @@ export const useAuthStore = defineStore('auth', () => {
           const userInfo = {
             id: data.data?.user?.id,
             account: data.data?.user?.account || credentials.account,
+            username: data.data?.user?.username || data.data?.user?.account || credentials.account,
             name: data.data?.user?.name || data.data?.user?.username || credentials.account,
+            nickname: data.data?.user?.nickname || data.data?.user?.name,
+            email: data.data?.user?.email,
+            phone: data.data?.user?.phone,
+            avatar: data.data?.user?.avatar || data.data?.user?.head_pic || data.data?.user?.profile_image,
             role: credentials.role,
+            created_at: data.data?.user?.created_at || data.data?.user?.createdAt,
+            status: data.data?.user?.status || 'active',
             // 保留其他可能的用户字段
             ...(data.data?.user || {})
           }
@@ -188,6 +207,45 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // 获取管理员详细信息（管理员登录到用户页面时使用）
+  const fetchAdminUserInfo = async () => {
+    try {
+      const { BASE_URL } = await import('@/config.js')
+      const response = await fetch(`${BASE_URL}/api/admin/profile`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token.value}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data) {
+          const adminInfo = {
+            id: data.data.id,
+            username: data.data.username || data.data.name,
+            nickname: data.data.nickname || data.data.name,
+            email: data.data.email,
+            phone: data.data.phone,
+            avatar: data.data.avatar || data.data.head_pic,
+            role: 'admin',
+            created_at: data.data.created_at || data.data.createdAt,
+            status: data.data.status || 'active',
+            ...data.data
+          }
+          user.value = adminInfo
+          localStorage.setItem('user_info', JSON.stringify(adminInfo))
+          return { success: true, data: adminInfo }
+        }
+      }
+      return { success: false, error: '获取管理员信息失败' }
+    } catch (error) {
+      console.error('Fetch admin info error:', error)
+      return { success: false, error: '网络错误' }
+    }
+  }
+
   return {
     user,
     token,
@@ -197,6 +255,7 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     checkAuth,
     setUser,
-    updateProfile
+    updateProfile,
+    fetchAdminUserInfo
   }
 })

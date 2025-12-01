@@ -131,6 +131,22 @@ export const onErrorGuard = (error) => {
     return
   }
 
+  // 如果是组件加载失败
+  if (error.message?.includes('Failed to resolve async component')) {
+    ElMessage.error('页面组件加载失败，请刷新页面重试')
+    return
+  }
+
+  // 如果是hydration相关错误
+  if (error.message?.includes('locateNonHydratedAsyncRoot') ||
+      error.message?.includes('hydrate') ||
+      error.message?.includes('async root')) {
+    console.warn('Hydration error detected, reloading page...')
+    // 可以选择自动刷新页面或显示友好的错误消息
+    ElMessage.warning('页面状态异常，建议刷新页面')
+    return
+  }
+
   ElMessage.error('页面跳转失败，请重试')
 }
 

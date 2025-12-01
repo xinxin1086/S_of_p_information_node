@@ -150,10 +150,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
-import { BASE_URL } from '@/config.js';
+import { useNoticeStore } from '@/store/modules/notice';
+import { ElMessage } from 'element-plus';
 
 const router = useRouter();
+const noticeStore = useNoticeStore();
 const formRef = ref(null);
 
 // 查询参数（与管理员组件queryParams结构一致）
@@ -214,26 +215,53 @@ const fetchNotices = async () => {
     const title = queryParams.value?.title || '';
     const noticeType = queryParams.value?.noticeType || '';
 
+    // 构建查询参数
     const params = {
       page: currentPage.value,
-      size: pageSize.value,
-      title: title.trim(), // 此时 title 必为字符串，可安全调用 trim()
-      notice_type: noticeType,
-      expiration_start: new Date().toISOString() // 只显示过期时间大于当前时间的公告
+      size: pageSize.value
     };
 
-    const response = await axios.get(`${BASE_URL}/api/visit/notice`, { params, timeout: 5000 });
-    if (response.data.success) {
-      noticeList.value = response.data.data?.items || [];
-      total.value = response.data.data?.total || 0;
+    // 只添加有值的查询条件
+    if (title.trim()) {
+      params.title = title.trim();
+    }
+    if (noticeType) {
+      params.notice_type = noticeType;
+    }
+
+    console.log('🔄 请求公告列表:', params);
+
+    const response = await noticeStore.fetchAdminNoticesList({
+      page: currentPage.value,
+      size: pageSize.value,
+      title: title.trim() || undefined,
+      noticeType: noticeType || undefined
+    });
+
+    console.log('📥 收到公告列表响应:', response);
+
+    if (response.success) {
+      noticeList.value = response.data?.items || [];
+      total.value = response.data?.total || 0;
       showTable.value = true;
       errorMessage.value = '';
     } else {
-      errorMessage.value = '查询公告失败：' + (response.data.message || '未知错误');
+      errorMessage.value = '查询公告失败：' + (response.error || '未知错误');
       showTable.value = false;
     }
   } catch (error) {
-    errorMessage.value = '查询公告失败：' + error.message;
+    let errorMsg = '查询公告失败';
+    if (error.response?.status === 500) {
+      errorMsg = '服务器内部错误，请稍后重试';
+    } else if (error.response?.status === 401) {
+      errorMsg = '登录已过期，请重新登录';
+    } else if (error.response?.status === 403) {
+      errorMsg = '没有权限访问该资源';
+    } else if (error.message) {
+      errorMsg += '：' + error.message;
+    }
+
+    errorMessage.value = errorMsg;
     showTable.value = false;
     console.error('公告查询错误：', error);
   } finally {
@@ -265,24 +293,14 @@ const handleSelectionChange = (val) => {
   selectedIds.value = val.map(item => item.id); // 使用新的自增ID
 };
 
-// 新增公告
+// 新增公告 - 跳转到完整编辑页面
 const handleAdd = () => {
-  isEdit.value = false;
-  form.value = { id: '', release_title: '', notice_type: '', release_notice: '', expiration: '' };
-  isModalOpen.value = true;
+  router.push('/admin/notice/editor');
 };
 
-// 编辑公告
+// 编辑公告 - 跳转到完整编辑页面
 const handleEdit = (notice) => {
-  isEdit.value = true;
-  form.value = {
-    id: notice.id, // 使用新的自增ID
-    release_title: notice.release_title,
-    notice_type: notice.notice_type,
-    release_notice: notice.release_notice,
-    expiration: notice.expiration
-  };
-  isModalOpen.value = true;
+  router.push(`/admin/notice/editor/${notice.id}`);
 };
 
 // 单个删除
@@ -290,18 +308,18 @@ const handleDelete = async (notice) => {
   if (!confirm('确定要删除该公告吗？')) return;
   try {
     isLoading.value = true;
-    const response = await axios.post(`${BASE_URL}/api/admin/operate`, {
-      table_name: 'notice',
-      operate_type: 'delete',
-      kwargs: { id: notice.id } // 使用新的自增ID
-    });
-    if (response.data.success) {
-      alert('删除成功！');
-      fetchNotices();
+    console.log('🗑️ 删除公告:', notice.id);
+
+    const response = await noticeStore.deleteNotice(notice.id);
+
+    if (response.success) {
+      ElMessage.success('删除成功！');
+      await fetchNotices();
     } else {
-      alert('删除失败：' + (response.data.message || '未知错误'));
+      ElMessage.error('删除失败：' + (response.error || '未知错误'));
     }
   } catch (error) {
+    console.error('删除公告错误:', error);
     alert('删除失败：' + error.message);
   } finally {
     isLoading.value = false;
@@ -313,20 +331,26 @@ const handleBatchDelete = async () => {
   if (!confirm(`确定要删除选中的${selectedIds.value.length}条公告吗？`)) return;
   try {
     isLoading.value = true;
-    // 假设后端支持批量删除，若不支持则循环调用单个删除
-    const response = await axios.post(`${BASE_URL}/api/admin/operate`, {
-      table_name: 'notice',
-      operate_type: 'batch_delete',
-      kwargs: { ids: selectedIds.value } // 批量删除ID数组
-    });
-    if (response.data.success) {
-      alert('批量删除成功！');
+    console.log('🗑️ 批量删除公告:', selectedIds.value);
+
+    // 逐个删除公告（因为后端可能不支持批量删除）
+    const deletePromises = selectedIds.value.map(id => noticeStore.deleteNotice(id));
+    const results = await Promise.allSettled(deletePromises);
+
+    const successCount = results.filter(result =>
+      result.status === 'fulfilled' && result.value.success
+    ).length;
+
+    if (successCount === selectedIds.value.length) {
+      ElMessage.success('批量删除成功！');
       selectedIds.value = [];
-      fetchNotices();
+      await fetchNotices();
     } else {
-      alert('批量删除失败：' + (response.data.message || '未知错误'));
+      ElMessage.warning(`成功删除 ${successCount} 条，失败 ${selectedIds.value.length - successCount} 条`);
+      await fetchNotices();
     }
   } catch (error) {
+    console.error('批量删除公告错误:', error);
     alert('批量删除失败：' + error.message);
   } finally {
     isLoading.value = false;
@@ -370,13 +394,29 @@ const submitForm = async () => {
       };
     }
 
-    const response = await axios.post(`${BASE_URL}/api/admin/operate`, params);
-    if (response.data.success) {
-      alert(isEdit.value ? '编辑成功！' : '新增成功！');
-      closeModal();
-      fetchNotices();
+    let response;
+    if (isEdit.value) {
+      response = await noticeStore.updateNotice(form.value.id, {
+        release_title: form.value.release_title.trim(),
+        notice_type: form.value.notice_type,
+        release_notice: form.value.release_notice.trim(),
+        expiration: form.value.expiration
+      });
     } else {
-      alert(isEdit.value ? '编辑失败：' : '新增失败：' + (response.data.message || '未知错误'));
+      response = await noticeStore.createNotice({
+        release_title: form.value.release_title.trim(),
+        notice_type: form.value.notice_type,
+        release_notice: form.value.release_notice.trim(),
+        expiration: form.value.expiration
+      });
+    }
+
+    if (response.success) {
+      ElMessage.success(isEdit.value ? '编辑成功！' : '新增成功！');
+      closeModal();
+      await fetchNotices();
+    } else {
+      ElMessage.error(isEdit.value ? '编辑失败：' : '新增失败：' + (response.error || '未知错误'));
     }
   } catch (error) {
     console.error('表单提交错误：', error);

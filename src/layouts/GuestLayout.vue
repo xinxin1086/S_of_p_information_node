@@ -109,10 +109,12 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Search, ChatLineRound, Position, Phone } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/store/modules/auth'
+import { formatAvatarUrl } from '@/utils/common/format.js'
 
 // Router
 const route = useRoute()
@@ -120,6 +122,14 @@ const router = useRouter()
 
 // Auth store
 const authStore = useAuthStore()
+
+// 组件挂载时检查认证状态
+onMounted(async () => {
+  // 检查本地是否有token，如果有则验证登录状态
+  if (authStore.token && !authStore.isAuthenticated) {
+    await authStore.checkAuth()
+  }
+})
 
 // 响应式数据
 const searchKeyword = ref('')
@@ -175,8 +185,11 @@ const handleRegister = () => {
 const userAvatarSrc = computed(() => {
   if (!authStore.user) return '/src/assets/logo.png'
 
-  // 如果用户有头像，使用用户头像；否则使用默认头像
-  return authStore.user.avatar || '/src/assets/logo.png'
+  // 使用格式化函数处理头像URL
+  const formattedAvatar = formatAvatarUrl(authStore.user.avatar)
+
+  // 如果没有头像，使用默认头像
+  return formattedAvatar || '/src/assets/logo.png'
 })
 
 // 处理用户下拉菜单操作

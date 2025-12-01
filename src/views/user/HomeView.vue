@@ -19,7 +19,12 @@
         </template>
         <div class="user-basic-info">
           <div class="avatar-section">
-            <el-avatar :size="80" :src="userInfo.avatar" fit="cover">
+            <el-avatar
+              :size="80"
+              :src="displayAvatar"
+              fit="cover"
+              @error="handleAvatarError"
+            >
               <el-icon size="40"><User /></el-icon>
             </el-avatar>
           </div>
@@ -111,8 +116,8 @@
   </div>
 </template>
 
-<script setup>
-import { ref, reactive, onMounted } from 'vue'
+<script setup lang="ts">
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   ArrowRight,
@@ -125,19 +130,57 @@ import {
   ChatLineSquare,
   Star
 } from '@element-plus/icons-vue'
+import { useAuthStore } from '@/store/modules/auth'
 
 defineOptions({ name: "HomeView" })
 
-// 用户信息
-const userInfo = reactive({
-  username: '垂钓爱好者',
-  nickname: '江边渔夫',
-  email: 'fisher@example.com',
-  phone: '138****8888',
-  avatar: '',
-  created_at: '2024-01-15T10:30:00Z',
-  status: 'active'
+// 使用Pinia store获取用户信息
+const authStore = useAuthStore()
+
+// 计算属性：从store获取用户信息
+const userInfo = computed(() => {
+  const user = authStore.user
+  return {
+    username: user?.username || user?.account || '未知用户',
+    nickname: user?.nickname || user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    avatar: user?.avatar || '',
+    created_at: user?.created_at || user?.createdAt || new Date().toISOString(),
+    status: user?.status || 'active'
+  }
 })
+
+// 默认头像
+const defaultAvatar = '/src/assets/logo.png'
+
+// 计算显示的头像URL
+const displayAvatar = computed(() => {
+  const avatar = userInfo.value.avatar
+  if (!avatar) {
+    return defaultAvatar
+  }
+
+  // 如果是完整的HTTP URL，直接返回
+  if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+    return avatar
+  }
+
+  // 如果是相对路径，构建完整URL
+  if (avatar.startsWith('/')) {
+    return avatar
+  }
+
+  // 其他情况，认为是相对路径
+  return `/${avatar}`
+})
+
+// 头像加载失败处理
+const handleAvatarError = (e: Event) => {
+  console.warn('头像加载失败，使用默认头像:', userInfo.value.avatar)
+  const target = e.target as HTMLImageElement
+  target.src = defaultAvatar
+}
 
 // 用户统计信息
 const userStats = reactive({
@@ -161,12 +204,29 @@ const formatDate = (dateString) => {
 // 获取用户信息
 const fetchUserInfo = async () => {
   try {
-    // 这里应该调用实际的API
-    // const response = await userApi.getUserInfo()
-    // Object.assign(userInfo, response.data)
+    // 检查认证状态，确保用户信息是最新的
+    const isValid = await authStore.checkAuth()
+    if (!isValid) {
+      ElMessage.error('用户登录状态已过期，请重新登录')
+      return
+    }
 
-    // 模拟数据
-    console.log('获取用户信息...')
+    // 如果是管理员用户，获取管理员详细信息
+    if (userInfo.value.role === 'admin' && (!userInfo.value.avatar || !userInfo.value.username)) {
+      console.log('检测到管理员用户，获取详细信息...')
+      const adminResult = await authStore.fetchAdminUserInfo()
+      if (!adminResult.success) {
+        console.warn('获取管理员信息失败:', adminResult.error)
+      }
+    }
+
+    // 调试信息
+    console.log('=== 用户信息调试 ===')
+    console.log('用户角色:', userInfo.value.role)
+    console.log('Store中的用户信息:', authStore.user)
+    console.log('解析后的头像URL:', userInfo.value.avatar)
+    console.log('最终显示的头像URL:', displayAvatar.value)
+    console.log('==================')
   } catch (error) {
     ElMessage.error('获取用户信息失败')
     console.error('获取用户信息失败:', error)

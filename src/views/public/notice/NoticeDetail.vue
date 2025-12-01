@@ -89,67 +89,62 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Document, Clock } from '@element-plus/icons-vue'
 import { ElMessage, ElLoading, ElResult, ElButton, ElCard, ElTag, ElIcon } from 'element-plus'
-import { api } from '@/utils/common/request'
+import { useNoticeStore } from '@/store/modules/notice'
+import {
+  getNoticeTypeTag,
+  getNoticeTypeText,
+  formatDate,
+  getNoticeTypeFromText
+} from '@/utils/notice'
 
 const route = useRoute()
 const router = useRouter()
+const noticeStore = useNoticeStore()
 
-const loading = ref(false)
-const notice = ref(null)
 const relatedNotices = ref([])
 
 const noticeId = computed(() => parseInt(route.params.id))
 
-const fetchNoticeDetail = async () => {
-  loading.value = true
-  try {
-    // 调用后端API获取公告详情
-    const response = await api.get(`/api/visit/notice/${noticeId.value}`)
+// 计算属性，从store获取数据
+const loading = computed(() => noticeStore.loading)
+const notice = computed(() => noticeStore.currentNotice)
 
-    // 根据后端返回的数据结构进行处理
-    // API 返回结构: { data: { id, release_title, release_notice, notice_type, release_time, expiration, ... }, success: true }
-    if (response && response.data && response.data.id) {
-      notice.value = {
-        id: response.data.id,
-        title: response.data.release_title || response.data.title,
-        content: response.data.release_notice || response.data.content,
-        type: getNoticeTypeFromText(response.data.notice_type),
-        createdAt: response.data.release_time || response.data.createdAt || response.data.publishTime,
-        expireTime: response.data.expiration,
-        attachments: response.data.attachments || []
-      }
-    } else {
-      console.warn('未预期的详情数据结构:', response)
-      notice.value = null
+const fetchNoticeDetail = async () => {
+  try {
+    console.log('📄 获取公告详情:', noticeId.value)
+
+    const result = await noticeStore.fetchPublicNotice(noticeId.value)
+
+    if (!result.success) {
+      ElMessage.error(result.error || '获取公告详情失败')
     }
 
     // 获取相关公告推荐
-    try {
-      const relatedResponse = await api.get('/api/visit/notice')
-      if (relatedResponse && relatedResponse.data && relatedResponse.data.items && Array.isArray(relatedResponse.data.items)) {
-        relatedNotices.value = relatedResponse.data.items
-          .filter(item => item.id !== noticeId.value)
-          .slice(0, 3) // 只显示最多3个相关公告
-          .map(item => ({
-            id: item.id,
-            title: item.release_title || item.title,
-            summary: (item.release_notice || item.content || '').substring(0, 100) + '...',
-            createdAt: item.release_time || item.createdAt || item.publishTime
-          }))
-      } else {
-        console.warn('未预期的相关公告数据结构:', relatedResponse)
-        relatedNotices.value = []
-      }
-    } catch (relatedError) {
-      console.warn('获取相关公告失败:', relatedError)
-      relatedNotices.value = []
-    }
+    await fetchRelatedNotices()
   } catch (error) {
     console.error('获取公告详情失败:', error)
-    ElMessage.error('获取公告详情失败，请稍后重试')
-    notice.value = null
-  } finally {
-    loading.value = false
+    ElMessage.error('获取公告详情失败')
+  }
+}
+
+const fetchRelatedNotices = async () => {
+  try {
+    const result = await noticeStore.fetchPublicNotices({ page: 1, size: 4 })
+
+    if (result.success && result.data?.items) {
+      relatedNotices.value = result.data.items
+        .filter(item => item.id !== noticeId.value)
+        .slice(0, 3) // 只显示最多3个相关公告
+        .map(item => ({
+          id: item.id,
+          title: item.title,
+          summary: (item.content || '').substring(0, 100) + '...',
+          createdAt: item.createdAt
+        }))
+    }
+  } catch (error) {
+    console.warn('获取相关公告失败:', error)
+    relatedNotices.value = []
   }
 }
 
@@ -159,49 +154,6 @@ const goBack = () => {
 
 const goToNotice = (id) => {
   router.push(`/notice/${id}`)
-}
-
-// 将中文公告类型转换为英文类型
-const getNoticeTypeFromText = (typeText) => {
-  const typeMap = {
-    '系统通知': 'system',
-    '活动公告': 'activity',
-    '其他公告': 'news',
-    '功能更新': 'feature'
-  }
-  return typeMap[typeText] || 'system'
-}
-
-const getNoticeTypeTag = (type) => {
-  const typeMap = {
-    system: 'danger',
-    feature: 'success',
-    activity: 'warning',
-    news: 'info'
-  }
-  return typeMap[type] || 'info'
-}
-
-const getNoticeTypeText = (type) => {
-  const typeMap = {
-    system: '系统通知',
-    feature: '功能更新',
-    activity: '活动公告',
-    news: '新闻资讯'
-  }
-  return typeMap[type] || '公告'
-}
-
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
 }
 
 const formatFileSize = (bytes) => {

@@ -40,10 +40,15 @@ import AdminDashboard from '../views/admin/AdminMainContent.vue'
 
 // 内容管理组件
 import AdminNotice from '../views/admin/content/AdminNotice.vue'
+import AdminNoticeDetail from '../views/admin/content/NoticeDetail.vue'
 import NoticeReview from '../views/admin/content/NoticeReview.vue'
 import ScienceManage from '../views/admin/content/ScienceManage.vue'
 import ScienceReview from '../views/admin/content/ScienceReview.vue'
 import ActivityReview from '../views/admin/content/ActivityReview.vue'
+import ActivityManage from '../views/admin/content/ActivityManage.vue'
+
+// 公告编辑组件
+import AdminNoticeEditor from '../views/admin/content/AdminNoticeEditor.vue'
 
 // 用户管理组件
 import AdminUserAdmin from '../views/admin/user/AdminUserAdmin.vue'
@@ -206,6 +211,21 @@ const routes = [
         component: AdminNotice
       },
       {
+        path: 'content/notice/:id',
+        name: 'adminNoticeDetail',
+        component: AdminNoticeDetail
+      },
+      {
+        path: 'notice/editor',
+        name: 'noticeEditor',
+        component: AdminNoticeEditor
+      },
+      {
+        path: 'notice/editor/:id',
+        name: 'noticeEditorEdit',
+        component: AdminNoticeEditor
+      },
+      {
         path: 'content/notice-review',
         name: 'noticeReview',
         component: NoticeReview
@@ -224,6 +244,11 @@ const routes = [
         path: 'content/activity-review',
         name: 'activityReview',
         component: ActivityReview
+      },
+      {
+        path: 'content/activity',
+        name: 'activityManage',
+        component: ActivityManage
       },
 
       // 用户管理模块

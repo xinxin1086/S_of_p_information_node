@@ -210,6 +210,18 @@ const subMenuItems = computed(() => {
     }
   ]
 
+  // 如果是管理员用户，添加管理员后台入口
+  if (user.value?.role === 'admin') {
+    items.push({
+      title: '管理员功能',
+      path: '/admin/dashboard',
+      icon: 'Tools',
+      children: [
+        { title: '进入管理后台', path: '/admin/dashboard' }
+      ]
+    })
+  }
+
   // 如果是组织用户，添加组织用户专属功能
   if (user.value?.role === 'organization') {
     items.push({

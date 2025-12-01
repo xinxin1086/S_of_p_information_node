@@ -7,16 +7,25 @@
 
     <div class="filter-bar">
       <el-radio-group v-model="statusFilter" @change="filterActivities">
-        <el-radio-button label="all">全部活动</el-radio-button>
-        <el-radio-button label="ongoing">进行中</el-radio-button>
-        <el-radio-button label="upcoming">即将开始</el-radio-button>
-        <el-radio-button label="completed">已结束</el-radio-button>
+        <el-radio-button label="all">{{ STATUS_FILTER_LABELS.all }}</el-radio-button>
+        <el-radio-button label="upcoming">{{ STATUS_FILTER_LABELS.upcoming }}</el-radio-button>
+        <el-radio-button label="ongoing">{{ STATUS_FILTER_LABELS.ongoing }}</el-radio-button>
+        <el-radio-button label="completed">{{ STATUS_FILTER_LABELS.completed }}</el-radio-button>
       </el-radio-group>
     </div>
 
     <div class="activity-container">
       <div v-if="loading" class="loading">
         <el-loading :active="loading" />
+      </div>
+
+      <!-- 错误状态显示 -->
+      <div v-else-if="errorMessage" class="error-state">
+        <el-result icon="warning" :title="errorMessage" :sub-title="errorSubTitle">
+          <template #extra>
+            <el-button type="primary" @click="retryFetchActivities">重新加载</el-button>
+          </template>
+        </el-result>
       </div>
 
       <div v-else-if="filteredActivities.length === 0" class="empty-state">
@@ -83,84 +92,74 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Location, Calendar, User } from '@element-plus/icons-vue'
+import { useActivityStore } from '@/store/modules/activity'
+import {
+  STATUS_FILTER_LABELS,
+  getStatusText,
+  getStatusTagType,
+  getStatusClass,
+  getStatusesByFilter
+} from '@/config/activityStatus'
 
 const router = useRouter()
+const activityStore = useActivityStore()
 
 const loading = ref(false)
 const activities = ref([])
 const statusFilter = ref('all')
+const errorMessage = ref('')
+const errorSubTitle = ref('')
 
 const filteredActivities = computed(() => {
-  if (statusFilter.value === 'all') {
-    return activities.value
-  }
-  return activities.value.filter(activity => activity.status === statusFilter.value)
+  const allowedStatuses = getStatusesByFilter(statusFilter.value)
+  return activities.value.filter(activity => allowedStatuses.includes(activity.status))
 })
 
 const fetchActivities = async () => {
   loading.value = true
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 500))
-    activities.value = [
-      {
-        id: 1,
-        title: '汉江春季钓鱼大赛',
-        summary: '年度大型钓鱼比赛，丰厚奖品等你来拿！专业钓手与业余爱好者同场竞技，共享垂钓乐趣。',
-        location: '汉江渔场',
-        type: 'competition',
-        status: 'upcoming',
-        cover: 'https://via.placeholder.com/400x250/FF6B6B/FFFFFF?text=钓鱼大赛',
-        startTime: '2024-03-15T08:00:00Z',
-        endTime: '2024-03-15T17:00:00Z',
-        participants: 45,
-        maxParticipants: 100
-      },
-      {
-        id: 2,
-        title: '新手钓鱼培训班',
-        summary: '专业教练手把手教学，从零开始学钓鱼。提供全套装备，适合完全没有经验的新手参加。',
-        location: '城东培训基地',
-        type: 'training',
-        status: 'ongoing',
-        cover: 'https://via.placeholder.com/400x250/4ECDC4/FFFFFF?text=新手培训',
-        startTime: '2024-01-20T09:00:00Z',
-        endTime: '2024-01-20T16:00:00Z',
-        participants: 18,
-        maxParticipants: 30
-      },
-      {
-        id: 3,
-        title: '环保钓鱼公益活动',
-        summary: '清理河道垃圾，保护生态环境。在享受垂钓乐趣的同时，为环保事业贡献一份力量。',
-        location: '滨江公园',
-        type: 'volunteer',
-        status: 'completed',
-        cover: 'https://via.placeholder.com/400x250/95E1D3/FFFFFF?text=环保活动',
-        startTime: '2024-01-10T07:00:00Z',
-        endTime: '2024-01-10T12:00:00Z',
-        participants: 67,
-        maxParticipants: 80
-      },
-      {
-        id: 4,
-        title: '夜间垂钓体验活动',
-        summary: '体验独特的夜间垂钓乐趣，学习夜间钓鱼技巧和注意事项。提供照明设备和小吃。',
-        location: '汉江夜钓区',
-        type: 'experience',
-        status: 'ongoing',
-        cover: 'https://via.placeholder.com/400x250/AA96DA/FFFFFF?text=夜钓体验',
-        startTime: '2024-01-18T19:00:00Z',
-        endTime: '2024-01-19T06:00:00Z',
-        participants: 12,
-        maxParticipants: 20
-      }
-    ]
+    const result = await activityStore.fetchActivities({
+      page: 1,
+      size: 20
+      // 注意：这里不再使用status参数，因为我们会在前端进行筛选
+      // 这样可以确保每次都获取所有活动数据，然后根据筛选条件在前端过滤
+    })
+
+    if (result.success) {
+      // 适配数据格式到前端显示
+      activities.value = (result.data || []).map(activity => ({
+        id: activity.id,
+        title: activity.title,
+        summary: activity.description?.substring(0, 100) + '...' || '',
+        location: activity.location,
+        type: activity.type || 'social',
+        status: activity.status,
+        cover: activity.cover_image,
+        startTime: activity.start_time,
+        endTime: activity.end_time,
+        participants: activity.current_participants || 0,
+        maxParticipants: activity.max_participants || 0,
+        organizerAccount: activity.organizer_account
+      }))
+    } else {
+      console.error('获取活动列表失败:', result.error)
+      errorMessage.value = result.error || '获取活动列表失败'
+      errorSubTitle.value = result.details || ''
+    }
   } catch (error) {
     console.error('获取活动列表失败:', error)
+    errorMessage.value = '获取活动列表失败'
+    errorSubTitle.value = error.message || '网络连接异常，请稍后重试'
   } finally {
     loading.value = false
   }
+}
+
+// 重试获取活动列表
+const retryFetchActivities = () => {
+  errorMessage.value = ''
+  errorSubTitle.value = ''
+  fetchActivities()
 }
 
 const filterActivities = () => {
@@ -171,25 +170,7 @@ const goToDetail = (id) => {
   router.push(`/activities/${id}`)
 }
 
-const getStatusClass = (status) => {
-  const classMap = {
-    upcoming: 'status-upcoming',
-    ongoing: 'status-ongoing',
-    completed: 'status-completed',
-    cancelled: 'status-cancelled'
-  }
-  return classMap[status] || 'status-upcoming'
-}
-
-const getStatusText = (status) => {
-  const textMap = {
-    upcoming: '即将开始',
-    ongoing: '进行中',
-    completed: '已结束',
-    cancelled: '已取消'
-  }
-  return textMap[status] || '即将开始'
-}
+// 状态相关函数已从 @/config/activityStatus 导入
 
 const getActivityTypeTag = (type) => {
   const typeMap = {
@@ -322,7 +303,11 @@ onMounted(() => {
   font-weight: bold;
 }
 
-.status-upcoming {
+.status-draft {
+  background-color: #c0c4cc;
+}
+
+.status-published {
   background-color: #409eff;
 }
 

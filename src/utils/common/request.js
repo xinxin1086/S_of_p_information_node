@@ -14,7 +14,8 @@ const request = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('user_token')
+    // 优先使用管理员token，如果没有则使用用户token
+    const token = localStorage.getItem('admin_token') || localStorage.getItem('user_token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -29,6 +30,18 @@ request.interceptors.request.use(
 // 响应拦截器
 request.interceptors.response.use(
   (response) => {
+    // 检查 response 和 response.data 是否存在
+    if (!response) {
+      console.warn('⚠️ 响应对象为空')
+      return null
+    }
+
+    // 如果 response.data 是 null 或 undefined，直接返回
+    if (response.data === null || response.data === undefined) {
+      console.warn('⚠️ response.data 为空，响应:', response)
+      return response.data
+    }
+
     return response.data
   },
   (error) => {

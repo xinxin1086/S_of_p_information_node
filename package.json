@@ -14,8 +14,7 @@
   "dependencies": {
     "@amap/amap-jsapi-loader": "^1.0.1",
     "@tanstack/vue-virtual": "^3.13.12",
-    "@tinymce/tinymce-vue": "^6.3.0",
-    "@vee-validate/i18n": "^4.15.1",
+      "@vee-validate/i18n": "^4.15.1",
     "@vee-validate/rules": "^4.15.1",
     "@vueuse/core": "^11.3.0",
     "@vueuse/motion": "^3.0.3",

@@ -34,13 +34,42 @@ export default defineConfig({
   },
   // <!-- DEV-INJECT-END -->
   
-    vue(), vueDevTools()
+    vue(),
+    vueDevTools()
   ],
   server: {
     port: 5173, // 明确指定使用5173端口
     host: true, // 允许外部访问
     strictPort: false, // 如果端口被占用，自动尝试下一个可用端口
-    open: false // 不自动打开浏览器
+    open: false, // 不自动打开浏览器
+    hmr: {
+      port: 5174, // 使用不同端口避免冲突
+      overlay: true
+    },
+    cors: true, // 启用CORS
+    fs: {
+      strict: false // 允许访问项目外的文件
+    }
+  },
+  build: {
+    // 优化构建配置以减少运行时错误
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'element-plus': ['element-plus'],
+          'vue-vendor': ['vue', 'vue-router', 'pinia']
+        }
+      }
+    }
+  },
+  optimizeDeps: {
+    include: [
+      'vue',
+      'vue-router',
+      'pinia',
+      'element-plus',
+      '@element-plus/icons-vue'
+    ]
   },
   resolve: {
     alias: {

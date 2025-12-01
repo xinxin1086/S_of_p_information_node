@@ -180,9 +180,11 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Location, Calendar, User, Phone, Message } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useActivityStore } from '@/store/modules/activity'
 
 const route = useRoute()
 const router = useRouter()
+const activityStore = useActivityStore()
 
 const loading = ref(false)
 const activity = ref(null)
@@ -200,119 +202,67 @@ const isDisabled = computed(() => {
 const fetchActivityDetail = async () => {
   loading.value = true
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 500))
+    const result = await activityStore.fetchActivity(activityId.value)
 
-    // 模拟数据
-    const mockActivities = {
-      1: {
-        id: 1,
-        title: '汉江春季钓鱼大赛',
-        description: `
-          <h2>比赛简介</h2>
-          <p>汉江春季钓鱼大赛是本地区规模最大的业余钓鱼比赛，旨在推广钓鱼文化，增进钓友交流，提升垂钓技能。</p>
-
-          <h2>比赛规则</h2>
-          <ul>
-            <li><strong>比赛时间</strong>：2024年3月15日 08:00-17:00</li>
-            <li><strong>比赛地点</strong>：汉江渔场指定区域</li>
-            <li><strong>参赛对象</strong>：所有钓鱼爱好者</li>
-            <li><strong>比赛项目</strong>：手竿竞技、海竿竞技</li>
-            <li><strong>计分方式</strong>：以总重量计算成绩</li>
-          </ul>
-
-          <h2>奖项设置</h2>
-          <ul>
-            <li><strong>一等奖</strong>：奖金5000元 + 专业钓具套装</li>
-            <li><strong>二等奖</strong>：奖金2000元 + 钓鱼用品</li>
-            <li><strong>三等奖</strong>：奖金1000元 + 纪念品</li>
-            <li><strong>参与奖</strong>：纪念品一份</li>
-          </ul>
-
-          <h2>注意事项</h2>
-          <ul>
-            <li>参赛选手需自备钓具（可租借）</li>
-            <li>比赛期间遵守现场秩序</li>
-            <li>注意安全，防止意外</li>
-            <li>保护环境，垃圾带走</li>
-          </ul>
-        `,
-        requirements: `
-          <ul>
-            <li>年龄在18-65岁之间</li>
-            <li>身体健康，无重大疾病</li>
-            <li>具备基本钓鱼技能</li>
-            <li>自备或租借钓具装备</li>
-            <li>遵守比赛规则和现场管理</li>
-          </ul>
-        `,
-        location: '汉江渔场',
-        type: 'competition',
-        status: 'upcoming',
-        cover: 'https://via.placeholder.com/800x400/FF6B6B/FFFFFF?text=钓鱼大赛',
-        startTime: '2024-03-15T08:00:00Z',
-        endTime: '2024-03-15T17:00:00Z',
-        participants: 45,
-        maxParticipants: 100,
+    if (result.success && result.data) {
+      // 适配数据格式到前端显示
+      activity.value = {
+        id: result.data.id,
+        title: result.data.title,
+        description: result.data.description || '',
+        requirements: result.data.requirements || '',
+        location: result.data.location,
+        type: result.data.type || 'social',
+        status: result.data.status,
+        cover: result.data.cover_image,
+        startTime: result.data.start_time,
+        endTime: result.data.end_time,
+        participants: result.data.current_participants || 0,
+        maxParticipants: result.data.max_participants || 0,
         organizer: {
-          name: '汉江垂钓协会',
-          avatar: 'https://via.placeholder.com/100x100/4CAF50/FFFFFF?text=垂协',
-          description: '专业的钓鱼活动组织机构'
+          name: result.data.organizer_account || '汉江垂钓站',
+          description: '专业的活动组织方'
         },
-        contact: {
-          phone: '138-0000-0000',
-          email: 'fishing@example.com'
-        },
-        tags: ['钓鱼比赛', '春季', '大型活动', '奖金丰厚', '专业竞技']
-      },
-      2: {
-        id: 2,
-        title: '新手钓鱼培训班',
-        description: '<p>专业的钓鱼培训课程...</p>',
-        requirements: '<p>无特殊要求，欢迎新手参加</p>',
-        location: '城东培训基地',
-        type: 'training',
-        status: 'ongoing',
-        cover: 'https://via.placeholder.com/800x400/4ECDC4/FFFFFF?text=新手培训',
-        startTime: '2024-01-20T09:00:00Z',
-        endTime: '2024-01-20T16:00:00Z',
-        participants: 18,
-        maxParticipants: 30,
-        organizer: {
-          name: '专业钓鱼教练团队',
-          description: '经验丰富的专业教练'
-        },
-        tags: ['新手培训', '基础教学', '专业指导', '小班教学']
+        tags: result.data.tags ? result.data.tags.split(',') : ['活动']
       }
-    }
 
-    activity.value = mockActivities[activityId.value] || null
-
-    // 模拟相关活动
-    if (activity.value) {
-      relatedActivities.value = [
-        {
-          id: 2,
-          title: '新手钓鱼培训班',
-          summary: '专业教练手把手教学，从零开始学钓鱼。',
-          type: 'training',
-          cover: 'https://via.placeholder.com/300x200/4ECDC4/FFFFFF?text=新手培训',
-          startTime: '2024-01-20T09:00:00Z'
-        },
-        {
-          id: 3,
-          title: '环保钓鱼公益活动',
-          summary: '清理河道垃圾，保护生态环境。',
-          type: 'volunteer',
-          cover: 'https://via.placeholder.com/300x200/95E1D3/FFFFFF?text=环保活动',
-          startTime: '2024-01-10T07:00:00Z'
-        }
-      ].filter(item => item.id !== activityId.value)
+      // 获取相关活动
+      fetchRelatedActivities()
+    } else {
+      console.error('获取活动详情失败:', result.error)
+      activity.value = null
     }
   } catch (error) {
     console.error('获取活动详情失败:', error)
+    activity.value = null
   } finally {
     loading.value = false
+  }
+}
+
+const fetchRelatedActivities = async () => {
+  try {
+    const result = await activityStore.fetchActivities({
+      page: 1,
+      size: 3,
+      status: 'published'
+    })
+
+    if (result.success) {
+      relatedActivities.value = (result.data || [])
+        .filter(item => item.id !== activityId.value)
+        .slice(0, 2)
+        .map(item => ({
+          id: item.id,
+          title: item.title,
+          summary: item.description?.substring(0, 100) + '...' || '',
+          type: item.type || 'social',
+          cover: item.cover_image,
+          startTime: item.start_time
+        }))
+    }
+  } catch (error) {
+    console.error('获取相关活动失败:', error)
   }
 }
 

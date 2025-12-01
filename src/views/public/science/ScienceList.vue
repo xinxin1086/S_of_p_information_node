@@ -39,7 +39,7 @@
             </div>
 
             <div class="article-footer">
-              <span class="article-date">{{ formatDate(article.createdAt) }}</span>
+              <span class="article-date">{{ formatDate(article.publishedAt || article.createdAt) }}</span>
               <div class="article-stats">
                 <span><el-icon><View /></el-icon> {{ article.views }}</span>
                 <span><el-icon><Star /></el-icon> {{ article.likes }}</span>
@@ -56,8 +56,10 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { View, Star } from '@element-plus/icons-vue'
+import { useScienceStore } from '@/store/modules/science'
 
 const router = useRouter()
+const scienceStore = useScienceStore()
 
 const loading = ref(false)
 const articles = ref([])
@@ -65,43 +67,30 @@ const articles = ref([])
 const fetchArticles = async () => {
   loading.value = true
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 500))
-    articles.value = [
-      {
-        id: 1,
-        title: '新手钓鱼入门：装备选择与基础技巧',
-        summary: '详细介绍钓鱼初学者需要了解的基本装备选择、常用钓法和注意事项。',
-        content: '',
-        category: 'basic',
-        cover: 'https://via.placeholder.com/300x200/4CAF50/FFFFFF?text=钓鱼入门',
-        createdAt: '2024-01-15T10:00:00Z',
-        views: 1234,
-        likes: 89
-      },
-      {
-        id: 2,
-        title: '春季钓鲤鱼的最佳时机和方法',
-        summary: '分析春季鲤鱼的习性特点，推荐有效的钓法技巧和饵料搭配。',
-        content: '',
-        category: 'technique',
-        cover: 'https://via.placeholder.com/300x200/2196F3/FFFFFF?text=钓鲤鱼技巧',
-        createdAt: '2024-01-12T14:30:00Z',
-        views: 856,
-        likes: 67
-      },
-      {
-        id: 3,
-        title: '环保钓鱼：保护水域生态的重要性',
-        summary: '倡导环保钓鱼理念，介绍如何在不影响环境的前提下享受垂钓乐趣。',
-        content: '',
-        category: 'environment',
-        cover: 'https://via.placeholder.com/300x200/FF9800/FFFFFF?text=环保钓鱼',
-        createdAt: '2024-01-08T09:15:00Z',
-        views: 445,
-        likes: 34
-      }
-    ]
+    const result = await scienceStore.fetchSciences({
+      page: 1,
+      size: 20,
+      status: 'published' // 只显示已发布的文章
+    })
+
+    if (result.success) {
+      // 适配数据格式到前端显示
+      articles.value = (result.data || []).map(article => ({
+        id: article.id,
+        title: article.title,
+        summary: article.summary || article.content?.substring(0, 100) + '...',
+        content: article.content,
+        category: article.category || 'basic',
+        cover: article.cover_image,
+        createdAt: article.created_at,
+        publishedAt: article.published_at,
+        views: article.view_count,
+        likes: article.like_count,
+        authorAccount: article.author_account
+      }))
+    } else {
+      console.error('获取科普文章列表失败:', result.error)
+    }
   } catch (error) {
     console.error('获取科普文章列表失败:', error)
   } finally {
