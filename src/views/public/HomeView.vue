@@ -105,17 +105,61 @@
           <h2 class="section-title">热门活动</h2>
           <el-link type="primary" @click="$router.push('/activities')">查看更多 →</el-link>
         </div>
-        <div class="activity-grid">
-          <div v-for="activity in hotActivities" :key="activity.id" class="activity-card">
+        <!-- 加载状态 -->
+        <div v-if="activitiesLoading" class="loading-activities">
+          <el-icon class="is-loading"><Loading /></el-icon>
+          <span>加载中...</span>
+        </div>
+
+        <!-- 无活动状态 -->
+        <div v-else-if="hotActivities.length === 0" class="empty-activities">
+          <el-icon><Calendar /></el-icon>
+          <p>暂无活动</p>
+        </div>
+
+        <!-- 活动列表 -->
+        <div v-else class="activity-grid">
+          <div
+            v-for="activity in hotActivities"
+            :key="activity.id"
+            class="activity-card"
+            @click="goToActivityDetail(activity.id)"
+          >
             <div class="activity-image">
               <img :src="activity.cover_image || '/placeholder-activity.jpg'" :alt="activity.title" />
             </div>
             <div class="activity-info">
               <h4>{{ activity.title }}</h4>
-              <p class="activity-desc">{{ activity.description }}</p>
+              <p class="activity-desc">组织者：{{ activity.organizer_display || activity.organizer || '汉江垂钓站' }}</p>
               <div class="activity-meta">
                 <span><el-icon><Location /></el-icon>{{ activity.location }}</span>
                 <span><el-icon><Clock /></el-icon>{{ formatDate(activity.start_time) }}</span>
+              </div>
+              <!-- 活动评分区域 -->
+              <div class="activity-rating" v-if="activity.rating_count > 0">
+                <div class="rating-display">
+                  <el-rate
+                    :model-value="Number(activity.avg_score) || 0"
+                    disabled
+                    show-score
+                    text-color="#ff9900"
+                    score-template="{value}"
+                    size="small"
+                  />
+                  <span class="rating-count">({{ activity.rating_count }}人评分)</span>
+                </div>
+              </div>
+              <div class="activity-rating" v-else>
+                <div class="no-rating">
+                  <el-rate
+                    :model-value="0"
+                    disabled
+                    show-score
+                    text-color="#ccc"
+                    score-template="暂无评分"
+                    size="small"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -131,8 +175,10 @@ import { useRouter } from 'vue-router'
 import { Bell, Reading, Calendar, InfoFilled, Location, Clock, Document, Right, Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { fetchNoticeList, getNoticeTypeTag, getNoticeTypeText } from '@/utils/notice'
+import { useActivityStore } from '@/store/modules/activity'
 
 const router = useRouter()
+const activityStore = useActivityStore()
 
 // 轮播图数据
 const carouselItems = ref([
@@ -155,16 +201,8 @@ const latestNotices = ref([])
 const noticeLoading = ref(false)
 
 // 热门活动
-const hotActivities = ref([
-  {
-    id: 1,
-    title: '春季户外运动活动',
-    description: '一起来享受春天的美好时光',
-    location: '城市公园',
-    start_time: '2024-03-15 09:00:00',
-    cover_image: '/images/activity1.jpg'
-  }
-])
+const hotActivities = ref([])
+const activitiesLoading = ref(false)
 
 // 获取最新公告
 const fetchLatestNotices = async () => {
@@ -177,6 +215,54 @@ const fetchLatestNotices = async () => {
     ElMessage.error('获取最新公告失败')
   } finally {
     noticeLoading.value = false
+  }
+}
+
+// 注释：不再需要单独获取评分信息，因为活动列表API已经返回了评分数据
+// 活动列表API返回的数据已包含：avg_score 和 rating_count
+
+// 获取热门活动
+const fetchHotActivities = async () => {
+  activitiesLoading.value = true
+  try {
+    const result = await activityStore.fetchPublicActivities({
+      page: 1,
+      size: 6  // 首页只显示6个热门活动
+    })
+
+    if (result.success) {
+      const items = result.data || []
+      console.log('获取到的活动数据:', items) // 调试日志
+
+      // 直接使用API返回的数据，无需额外请求评分信息
+      const processedActivities = items.map(activity => {
+        console.log('处理活动数据:', activity) // 调试日志
+
+        return {
+          id: activity.id,
+          title: activity.title,
+          description: activity.description?.substring(0, 80) + '...' || '',
+          location: activity.location || '地点待定',
+          start_time: activity.start_time,
+          cover_image: activity.cover_image,
+          organizer_display: activity.organizer_display,
+          organizer: activity.organizer,
+          // 直接使用API返回的评分数据
+          avg_score: activity.avg_score || 0,
+          rating_count: activity.rating_count || 0
+        }
+      })
+
+      hotActivities.value = processedActivities
+    } else {
+      console.error('获取热门活动失败:', result.error)
+      hotActivities.value = []
+    }
+  } catch (error) {
+    console.error('获取热门活动失败:', error)
+    hotActivities.value = []
+  } finally {
+    activitiesLoading.value = false
   }
 }
 
@@ -193,6 +279,11 @@ const formatDate = (dateString) => {
 // 跳转到公告详情
 const goToNoticeDetail = (noticeId) => {
   router.push(`/notice/${noticeId}`)
+}
+
+// 跳转到活动详情页面
+const goToActivityDetail = (activityId) => {
+  router.push(`/activities/${activityId}`)
 }
 
 // 轮播图点击事件
@@ -216,8 +307,8 @@ onMounted(async () => {
     // 加载最新公告
     await fetchLatestNotices()
 
-    // TODO: 未来可以在这里加载热门活动数据
-    // await fetchHotActivities()
+    // 加载热门活动数据
+    await fetchHotActivities()
   } catch (error) {
     console.error('加载数据失败:', error)
   }
@@ -373,6 +464,40 @@ onMounted(async () => {
   margin: 0;
 }
 
+/* 热门活动加载和无数据状态样式 */
+.loading-activities {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #999;
+  gap: 8px;
+}
+
+.loading-activities .el-icon {
+  font-size: 24px;
+}
+
+.empty-activities {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.empty-activities .el-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  color: #ddd;
+}
+
+.empty-activities p {
+  font-size: 16px;
+  margin: 0;
+}
+
 /* 简化版公告项样式 */
 .notice-item-simple {
   background: white;
@@ -524,6 +649,29 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+/* 活动评分样式 */
+.activity-rating {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.rating-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rating-count {
+  font-size: 12px;
+  color: #999;
+}
+
+.no-rating {
+  display: flex;
+  align-items: center;
 }
 
 /* 响应式设计 */

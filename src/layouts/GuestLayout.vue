@@ -81,6 +81,7 @@
             <li><router-link to="/notice">公告中心</router-link></li>
             <li><router-link to="/science">科普知识</router-link></li>
             <li><router-link to="/activities">活动信息</router-link></li>
+            <li><router-link to="/discussion">讨论社区</router-link></li>
           </ul>
         </div>
 
@@ -140,6 +141,7 @@ const navItems = [
   { title: '公告', path: '/notice' },
   { title: '科普', path: '/science' },
   { title: '活动', path: '/activities' },
+  { title: '讨论', path: '/discussion' },
   { title: '关于', path: '/about' }
 ]
 
@@ -220,7 +222,7 @@ const handleAvatarError = (event) => {
 }
 
 .guest-header {
-  background: #fff;
+  background: #f7f7f7;
   border-bottom: 1px solid #e4e7ed;
   position: sticky;
   top: 0;
@@ -244,9 +246,9 @@ const handleAvatarError = (event) => {
 
 .logo {
   margin: 0;
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
-  color: #409eff;
+  color: #333333;
 }
 
 .logo a {
@@ -256,7 +258,7 @@ const handleAvatarError = (event) => {
 }
 
 .logo a:hover {
-  color: #337ecc;
+  color: #333333;
 }
 
 .header-nav {
@@ -268,7 +270,7 @@ const handleAvatarError = (event) => {
 
 .nav-item {
   text-decoration: none;
-  color: #606266;
+  color: #333333;
   font-size: 16px;
   font-weight: 500;
   padding: 8px 12px;
@@ -278,25 +280,17 @@ const handleAvatarError = (event) => {
 }
 
 .nav-item:hover {
-  color: #409eff;
-  background-color: #f0f9ff;
+  color: #333333;
+  background-color: transparent;
 }
 
 .nav-item.active {
-  color: #409eff;
-  background-color: #f0f9ff;
+  color: #333333;
+  background-color: transparent;
 }
 
 .nav-item.active::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 30px;
-  height: 3px;
-  background: #409eff;
-  border-radius: 2px;
+  display: none;
 }
 
 .header-right {

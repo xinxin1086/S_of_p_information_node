@@ -15,6 +15,8 @@ import ScienceList from '../views/public/science/ScienceList.vue'
 import ScienceDetail from '../views/public/science/ScienceDetail.vue'
 import ActivityList from '../views/public/activity/PublicActivityList.vue'
 import ActivityDetail from '../views/public/activity/PublicActivityDetail.vue'
+import DiscussionList from '../views/public/discussion/DiscussionList.vue'
+import DiscussionDetail from '../views/public/discussion/DiscussionDetail.vue'
 import AboutView from '../views/public/AboutView.vue'
 import SearchView from '../views/SearchView.vue'
 
@@ -28,6 +30,7 @@ import ProfileView from '../views/user/common/ProfileView.vue'
 import SettingsView from '../views/user/common/SettingsView.vue'
 import UserActivityHome from '../views/user/activity/ActivityHome.vue'
 import UserActivityDetail from '../views/user/activity/ActivityDetail.vue'
+import MyBookings from '../views/user/activity/MyBookings.vue'
 
 // 组织用户专属组件
 import FisherDashboard from '../views/user/fisher/FisherDashboard.vue'
@@ -46,6 +49,9 @@ import ScienceManage from '../views/admin/content/ScienceManage.vue'
 import ScienceReview from '../views/admin/content/ScienceReview.vue'
 import ActivityReview from '../views/admin/content/ActivityReview.vue'
 import ActivityManage from '../views/admin/content/ActivityManage.vue'
+import ActivityRatingManage from '../views/admin/content/ActivityRatingManage.vue'
+import ActivityDiscussionManage from '../views/admin/content/ActivityDiscussionManage.vue'
+import DiscussCommentManage from '../views/admin/content/DiscussCommentManage.vue'
 
 // 公告编辑组件
 import AdminNoticeEditor from '../views/admin/content/AdminNoticeEditor.vue'
@@ -117,6 +123,16 @@ const routes = [
         component: ActivityDetail
       },
       {
+        path: 'discussion',
+        name: 'discussionList',
+        component: DiscussionList
+      },
+      {
+        path: 'discussion/:id',
+        name: 'discussionDetail',
+        component: DiscussionDetail
+      },
+      {
         path: 'about',
         name: 'about',
         component: AboutView
@@ -161,6 +177,11 @@ const routes = [
         path: 'activities/:id',
         name: 'activityDetail',
         component: UserActivityDetail
+      },
+      {
+        path: 'activities/my-bookings',
+        name: 'myBookings',
+        component: MyBookings
       },
 
       // 组织用户专属功能 (/user/weave/*)
@@ -249,6 +270,21 @@ const routes = [
         path: 'content/activity',
         name: 'activityManage',
         component: ActivityManage
+      },
+      {
+        path: 'activity-ratings',
+        name: 'activityRatingManage',
+        component: ActivityRatingManage
+      },
+      {
+        path: 'activity-discussions',
+        name: 'activityDiscussionManage',
+        component: ActivityDiscussionManage
+      },
+      {
+        path: 'discuss-comments',
+        name: 'discussCommentManage',
+        component: DiscussCommentManage
       },
 
       // 用户管理模块

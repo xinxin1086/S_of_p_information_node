@@ -65,10 +65,6 @@
               </div>
             </div>
 
-            <div class="activity-summary">
-              <p>{{ activity.summary }}</p>
-            </div>
-
             <div class="activity-footer">
               <el-tag :type="getActivityTypeTag(activity.type)" size="small">
                 {{ getActivityTypeText(activity.type) }}
@@ -118,7 +114,7 @@ const filteredActivities = computed(() => {
 const fetchActivities = async () => {
   loading.value = true
   try {
-    const result = await activityStore.fetchActivities({
+    const result = await activityStore.fetchPublicActivities({
       page: 1,
       size: 20
       // 注意：这里不再使用status参数，因为我们会在前端进行筛选
@@ -127,19 +123,20 @@ const fetchActivities = async () => {
 
     if (result.success) {
       // 适配数据格式到前端显示
-      activities.value = (result.data || []).map(activity => ({
+      const items = result.data?.items || result.data || []
+      activities.value = items.map(activity => ({
         id: activity.id,
         title: activity.title,
         summary: activity.description?.substring(0, 100) + '...' || '',
-        location: activity.location,
+        location: activity.location || '地点待定',
         type: activity.type || 'social',
-        status: activity.status,
+        status: activity.status || 'published',
         cover: activity.cover_image,
         startTime: activity.start_time,
         endTime: activity.end_time,
         participants: activity.current_participants || 0,
         maxParticipants: activity.max_participants || 0,
-        organizerAccount: activity.organizer_account
+        organizerAccount: activity.organizer_display_name || activity.organizer_name || '组织者'
       }))
     } else {
       console.error('获取活动列表失败:', result.error)
@@ -352,17 +349,6 @@ onMounted(() => {
 .info-item .el-icon {
   font-size: 14px;
   color: #909399;
-}
-
-.activity-summary {
-  margin-bottom: 15px;
-}
-
-.activity-summary p {
-  color: #606266;
-  line-height: 1.5;
-  margin: 0;
-  font-size: 14px;
 }
 
 .activity-footer {

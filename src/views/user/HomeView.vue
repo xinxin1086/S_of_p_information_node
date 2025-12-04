@@ -19,14 +19,12 @@
         </template>
         <div class="user-basic-info">
           <div class="avatar-section">
-            <el-avatar
+            <UserAvatar
+              :avatar="userInfo.avatar"
               :size="80"
-              :src="displayAvatar"
-              fit="cover"
-              @error="handleAvatarError"
-            >
-              <el-icon size="40"><User /></el-icon>
-            </el-avatar>
+              :show-debug="true"
+              :user-info="userInfo"
+            />
           </div>
           <div class="info-section">
             <div class="info-item">
@@ -131,6 +129,7 @@ import {
   Star
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/store/modules/auth'
+import UserAvatar from '@/components/common/UserAvatar.vue'
 
 defineOptions({ name: "HomeView" })
 
@@ -141,46 +140,18 @@ const authStore = useAuthStore()
 const userInfo = computed(() => {
   const user = authStore.user
   return {
+    id: user?.id,
     username: user?.username || user?.account || '未知用户',
     nickname: user?.nickname || user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
     avatar: user?.avatar || '',
+    role: user?.role,
     created_at: user?.created_at || user?.createdAt || new Date().toISOString(),
     status: user?.status || 'active'
   }
 })
 
-// 默认头像
-const defaultAvatar = '/src/assets/logo.png'
-
-// 计算显示的头像URL
-const displayAvatar = computed(() => {
-  const avatar = userInfo.value.avatar
-  if (!avatar) {
-    return defaultAvatar
-  }
-
-  // 如果是完整的HTTP URL，直接返回
-  if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
-    return avatar
-  }
-
-  // 如果是相对路径，构建完整URL
-  if (avatar.startsWith('/')) {
-    return avatar
-  }
-
-  // 其他情况，认为是相对路径
-  return `/${avatar}`
-})
-
-// 头像加载失败处理
-const handleAvatarError = (e: Event) => {
-  console.warn('头像加载失败，使用默认头像:', userInfo.value.avatar)
-  const target = e.target as HTMLImageElement
-  target.src = defaultAvatar
-}
 
 // 用户统计信息
 const userStats = reactive({
@@ -225,7 +196,6 @@ const fetchUserInfo = async () => {
     console.log('用户角色:', userInfo.value.role)
     console.log('Store中的用户信息:', authStore.user)
     console.log('解析后的头像URL:', userInfo.value.avatar)
-    console.log('最终显示的头像URL:', displayAvatar.value)
     console.log('==================')
   } catch (error) {
     ElMessage.error('获取用户信息失败')

@@ -37,6 +37,14 @@ export const useMainStore = defineStore('main', () => {
             { title: '科普管理', path: '/admin/content/science' },
             { title: '活动管理', path: '/admin/content/activity' }
           ]
+        },
+        {
+          title: '活动互动管理',
+          children: [
+            { title: '活动评分管理', path: '/admin/activity-ratings' },
+            { title: '活动讨论管理', path: '/admin/activity-discussions' },
+            { title: '讨论留言管理', path: '/admin/discuss-comments' }
+          ]
         }
       ]
     },
@@ -66,13 +74,6 @@ export const useMainStore = defineStore('main', () => {
     {
       title: '用户首页',
       path: '/user/dashboard'
-    },
-    {
-      title: '论坛交流',
-      children: [
-        { title: '论坛首页', path: '/user/forum' },
-        { title: '搜索帖子', path: '/user/forum/search' }
-      ]
     },
     {
       title: '活动中心',
@@ -141,7 +142,6 @@ export const useMainStore = defineStore('main', () => {
 
 // 导出所有模块
 export { useAuthStore } from './modules/auth'
-export { useForumStore } from './modules/forum'
 export { useActivityStore } from './modules/activity'
 export { useNoticeStore } from './modules/notice'
 export { useScienceStore } from './modules/science'

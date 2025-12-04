@@ -26,10 +26,13 @@
       <button class="info-btn reset-btn" @click="handleReset" style="margin-left: 8px;">重置</button>
     </div>
 
-    <!-- 操作栏（新增+批量删除） -->
+    <!-- 操作栏（新增+批量删除+更新用户显示） -->
     <div class="info-list-action-bar">
       <button class="info-btn add-btn" @click="handleAdd">新增活动</button>
       <button class="info-btn batch-delete-btn" @click="handleBatchDelete" :disabled="selectedIds.length === 0">批量删除</button>
+      <button class="info-btn update-display-btn" @click="handleUpdateUserDisplays" :disabled="isLoading">
+        更新用户显示信息
+      </button>
     </div>
 
     <!-- 错误提示 -->
@@ -68,16 +71,18 @@
       <el-table-column prop="location" label="活动地点" width="150">
         <template #default="scope">{{ scope.row.location ?? '-' }}</template>
       </el-table-column>
-      <el-table-column prop="max_participants" label="最大人数" width="100">
-        <template #default="scope">{{ scope.row.max_participants ?? '-' }}</template>
+      <el-table-column prop="organizer_display" label="发布者" width="120">
+        <template #default="scope">{{ scope.row.organizer_display ?? '-' }}</template>
       </el-table-column>
       <el-table-column prop="created_at" label="创建时间" width="180">
         <template #default="scope">{{ formatDate(scope.row.created_at) ?? '-' }}</template>
       </el-table-column>
-      <!-- 操作列（编辑+删除） -->
-      <el-table-column label="操作" width="160">
+      <!-- 操作列（评分管理+讨论管理+编辑+删除） -->
+      <el-table-column label="操作" width="280">
         <template #default="scope">
-          <button class="info-btn edit-btn" @click="handleEdit(scope.row)">编辑</button>
+          <button class="info-btn rating-btn" @click="handleRatingManage(scope.row)" style="margin-right: 4px;">评分管理</button>
+          <button class="info-btn discuss-btn" @click="handleDiscussManage(scope.row)" style="margin-right: 4px;">讨论管理</button>
+          <button class="info-btn edit-btn" @click="handleEdit(scope.row)" style="margin-right: 4px;">编辑</button>
           <button class="info-btn delete-btn" @click="handleDelete(scope.row)">删除</button>
         </template>
       </el-table-column>
@@ -457,6 +462,48 @@ const submitForm = async () => {
   }
 };
 
+// 评分管理
+const handleRatingManage = (activity) => {
+  router.push({
+    path: '/admin/activity-ratings',
+    query: {
+      activityId: activity.id,
+      activityTitle: activity.title
+    }
+  });
+};
+
+// 讨论管理
+const handleDiscussManage = (activity) => {
+  router.push({
+    path: '/admin/activity-discussions',
+    query: {
+      activityId: activity.id,
+      activityTitle: activity.title
+    }
+  });
+};
+
+// 更新用户显示信息
+const handleUpdateUserDisplays = async () => {
+  if (!confirm('确定要更新所有活动的用户显示信息吗？这将处理已注销用户的显示名称。')) return;
+
+  isLoading.value = true;
+  try {
+    const response = await adminApi.activity.updateUserDisplays();
+    if (response.success) {
+      alert('用户显示信息更新成功！');
+      fetchActivities(); // 重新加载数据以查看更新后的显示信息
+    } else {
+      alert('更新失败：' + (response.message || '未知错误'));
+    }
+  } catch (error) {
+    alert('更新失败：' + formatErrorMessage(error, '更新用户显示信息失败'));
+  } finally {
+    isLoading.value = false;
+  }
+};
+
 // 关闭弹窗
 const closeModal = () => {
   isModalOpen.value = false;
@@ -472,7 +519,47 @@ onMounted(() => {
 <style scoped>
 /* 仅补充表格操作按钮间距*/
 .edit-btn {
-  margin-right: 8px;
+  margin-right: 4px;
+}
+
+/* 评分管理按钮 */
+.rating-btn {
+  background-color: #67c23a;
+  color: white;
+  border: 1px solid #67c23a;
+}
+
+.rating-btn:hover {
+  background-color: #529b2e;
+}
+
+/* 讨论管理按钮 */
+.discuss-btn {
+  background-color: #409eff;
+  color: white;
+  border: 1px solid #409eff;
+}
+
+.discuss-btn:hover {
+  background-color: #337ecc;
+}
+
+/* 更新用户显示按钮样式 */
+.update-display-btn {
+  background-color: #17c2c2;
+  color: white;
+  border: 1px solid #17c2c2;
+}
+
+.update-display-btn:hover:not(:disabled) {
+  background-color: #138d8d;
+}
+
+.update-display-btn:disabled {
+  background-color: #c0c4cc;
+  border-color: #c0c4cc;
+  color: #606266;
+  cursor: not-allowed;
 }
 
 /* 适配下拉框与输入框对齐 */

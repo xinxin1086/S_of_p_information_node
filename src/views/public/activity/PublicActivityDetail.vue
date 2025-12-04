@@ -1,218 +1,89 @@
 <template>
-  <div class="activity-detail">
-    <div v-if="loading" class="loading">
-      <el-loading :active="loading" />
-    </div>
-
-    <div v-else-if="!activity" class="not-found">
-      <el-result
-        icon="warning"
-        title="活动不存在"
-        sub-title="抱歉，您访问的活动不存在或已被删除"
-      >
-        <template #extra>
-          <el-button type="primary" @click="goBack">返回列表</el-button>
-        </template>
-      </el-result>
-    </div>
-
-    <div v-else class="activity-content">
-      <div class="activity-header">
-        <el-button @click="goBack" class="back-button">
-          <el-icon><ArrowLeft /></el-icon>
-          返回
-        </el-button>
-      </div>
-
-      <div class="activity-hero">
-        <div class="hero-image" v-if="activity.cover">
-          <img :src="activity.cover" :alt="activity.title" />
-          <div class="activity-status" :class="getStatusClass(activity.status)">
-            {{ getStatusText(activity.status) }}
-          </div>
-        </div>
-
-        <div class="hero-content">
-          <h1 class="activity-title">{{ activity.title }}</h1>
-
-          <div class="activity-meta">
-            <el-tag :type="getActivityTypeTag(activity.type)" size="large">
-              {{ getActivityTypeText(activity.type) }}
-            </el-tag>
-            <div class="meta-info">
-              <div class="info-row">
-                <el-icon><Location /></el-icon>
-                <span>{{ activity.location }}</span>
-              </div>
-              <div class="info-row">
-                <el-icon><Calendar /></el-icon>
-                <span>{{ formatDateTime(activity.startTime) }} - {{ formatDateTime(activity.endTime) }}</span>
-              </div>
-              <div class="info-row">
-                <el-icon><User /></el-icon>
-                <span>{{ activity.participants }}/{{ activity.maxParticipants }}人参与</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="participation-section" v-if="activity.status !== 'completed'">
-            <el-progress
-              v-if="activity.maxParticipants > 0"
-              :percentage="(activity.participants / activity.maxParticipants) * 100"
-              :stroke-width="8"
-              class="progress-large"
-            />
-            <div class="participation-info">
-              <span>{{ activity.maxParticipants - activity.participants }} 个名额剩余</span>
-              <el-button
-                type="primary"
-                size="large"
-                :disabled="isDisabled"
-                @click="handleParticipation"
-                class="participation-btn"
-              >
-                {{ getButtonText() }}
-              </el-button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <el-row :gutter="30" class="content-section">
-        <el-col :lg="16" :md="16" :sm="24">
-          <el-card class="detail-card">
-            <template #header>
-              <h3>活动详情</h3>
-            </template>
-            <div class="activity-description" v-html="activity.description"></div>
-          </el-card>
-
-          <el-card class="detail-card" v-if="activity.requirements">
-            <template #header>
-              <h3>参与要求</h3>
-            </template>
-            <div class="requirements-content" v-html="activity.requirements"></div>
-          </el-card>
-        </el-col>
-
-        <el-col :lg="8" :md="8" :sm="24">
-          <el-card class="detail-card">
-            <template #header>
-              <h3>活动组织方</h3>
-            </template>
-            <div class="organizer-info">
-              <div class="organizer-header">
-                <el-avatar :size="50" :src="activity.organizer?.avatar">
-                  {{ activity.organizer?.name?.charAt(0) }}
-                </el-avatar>
-                <div class="organizer-details">
-                  <h4>{{ activity.organizer?.name || '汉江垂钓站' }}</h4>
-                  <p>{{ activity.organizer?.description || '专业的钓鱼活动组织机构' }}</p>
-                </div>
-              </div>
-              <div class="contact-info" v-if="activity.contact">
-                <div class="contact-item">
-                  <el-icon><Phone /></el-icon>
-                  <span>{{ activity.contact.phone }}</span>
-                </div>
-                <div class="contact-item">
-                  <el-icon><Message /></el-icon>
-                  <span>{{ activity.contact.email }}</span>
-                </div>
-              </div>
-            </div>
-          </el-card>
-
-          <el-card class="detail-card">
-            <template #header>
-              <h3>活动标签</h3>
-            </template>
-            <div class="tags-content">
-              <el-tag
-                v-for="tag in activity.tags"
-                :key="tag"
-                class="tag-item"
-                effect="plain"
-              >
-                {{ tag }}
-              </el-tag>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
-
-      <div class="related-activities" v-if="relatedActivities.length > 0">
-        <h3>相关活动</h3>
-        <el-row :gutter="20">
-          <el-col
-            v-for="relatedActivity in relatedActivities"
-            :key="relatedActivity.id"
-            :lg="8"
-            :md="12"
-            :sm="24"
-          >
-            <el-card
-              class="related-card"
-              shadow="hover"
-              @click="goToActivity(relatedActivity.id)"
-            >
-              <div class="related-image" v-if="relatedActivity.cover">
-                <img :src="relatedActivity.cover" :alt="relatedActivity.title" />
-              </div>
-              <h4>{{ relatedActivity.title }}</h4>
-              <p>{{ relatedActivity.summary }}</p>
-              <div class="related-meta">
-                <el-tag :type="getActivityTypeTag(relatedActivity.type)" size="small">
-                  {{ getActivityTypeText(relatedActivity.type) }}
-                </el-tag>
-                <span>{{ formatDateTime(relatedActivity.startTime) }}</span>
-              </div>
-            </el-card>
-          </el-col>
-        </el-row>
-      </div>
-    </div>
-  </div>
+  <BaseActivityDetail
+    :loading="loading"
+    :activity="activity"
+    :is-participating="isParticipating"
+    :disabled="isDisabled"
+    @go-back="goBack"
+    @handle-participation="handleParticipation"
+  >
+    <template #custom-content="{ activity }">
+      <!-- 使用评论评分组件 -->
+      <ActivityCommentsReviews
+        :activity="activity"
+        :comments="comments"
+        :ratings="ratings"
+        :has-rated="hasRated"
+        :submitting="submitting"
+        :rating-submitting="ratingSubmitting"
+        :is-authenticated="isAuthenticated"
+        button-color="#409eff"
+        @submit-comment="handleSubmitComment"
+        @submit-reply="handleSubmitReply"
+        @submit-rating="handleSubmitRating"
+        @reply-comment="replyToComment"
+        @cancel-reply="cancelReply"
+        @load-replies="handleLoadReplies"
+        @delete-comment="handleDeleteComment"
+        ref="commentsReviewsRef"
+      />
+    </template>
+  </BaseActivityDetail>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Location, Calendar, User, Phone, Message } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { useActivityStore } from '@/store/modules/activity'
+import { useAuthStore } from '@/store/modules/auth'
+import BaseActivityDetail from '@/components/BaseActivityDetail.vue'
+import ActivityCommentsReviews from '@/components/ActivityCommentsReviews.vue'
 
 const route = useRoute()
 const router = useRouter()
 const activityStore = useActivityStore()
+const authStore = useAuthStore()
+const commentsReviewsRef = ref(null)
 
 const loading = ref(false)
 const activity = ref(null)
-const relatedActivities = ref([])
 const isParticipating = ref(false)
+const comments = ref([])
+const submitting = ref(false)
+
+// 评分相关状态
+const ratings = ref([])
+const hasRated = ref(false)
+const ratingSubmitting = ref(false)
 
 const activityId = computed(() => parseInt(route.params.id))
+const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isDisabled = computed(() => {
   if (!activity.value) return true
-  return activity.value.status !== 'upcoming' ||
-         activity.value.participants >= activity.value.maxParticipants ||
+  return activity.value.status !== 'published' ||
+         (typeof activity.value.participants === 'number' &&
+          typeof activity.value.max_participants === 'number' &&
+          activity.value.participants >= activity.value.max_participants) ||
          isParticipating.value
 })
+
 
 const fetchActivityDetail = async () => {
   loading.value = true
   try {
-    const result = await activityStore.fetchActivity(activityId.value)
+    const result = await activityStore.fetchPublicActivity(activityId.value)
 
     if (result.success && result.data) {
-      // 适配数据格式到前端显示
+      // 直接使用修复后的API返回的完整数据
       activity.value = {
         id: result.data.id,
         title: result.data.title,
         description: result.data.description || '',
+        content: result.data.content || '',
         requirements: result.data.requirements || '',
         location: result.data.location,
-        type: result.data.type || 'social',
+        type: result.data.type || 'other',
         status: result.data.status,
         cover: result.data.cover_image,
         startTime: result.data.start_time,
@@ -220,14 +91,23 @@ const fetchActivityDetail = async () => {
         participants: result.data.current_participants || 0,
         maxParticipants: result.data.max_participants || 0,
         organizer: {
-          name: result.data.organizer_account || '汉江垂钓站',
+          name: result.data.organizer_display || '汉江垂钓站',
           description: '专业的活动组织方'
         },
-        tags: result.data.tags ? result.data.tags.split(',') : ['活动']
+        tags: result.data.tags ?
+          (Array.isArray(result.data.tags) ? result.data.tags :
+           (typeof result.data.tags === 'string' ? result.data.tags.split(',') : ['活动'])) : ['活动'],
+        contact_info: result.data.contact_info || '',
+        images: result.data.images || [],
+        // 新增评分信息
+        avgScore: result.data.avg_score || 0,
+        ratingCount: result.data.rating_count || 0,
+        // 保存完整的评分统计数据
+        ratingStatistics: result.data.rating_statistics || null
       }
 
-      // 获取相关活动
-      fetchRelatedActivities()
+      // 获取评论
+      fetchComments()
     } else {
       console.error('获取活动详情失败:', result.error)
       activity.value = null
@@ -240,463 +120,302 @@ const fetchActivityDetail = async () => {
   }
 }
 
-const fetchRelatedActivities = async () => {
-  try {
-    const result = await activityStore.fetchActivities({
-      page: 1,
-      size: 3,
-      status: 'published'
-    })
-
-    if (result.success) {
-      relatedActivities.value = (result.data || [])
-        .filter(item => item.id !== activityId.value)
-        .slice(0, 2)
-        .map(item => ({
-          id: item.id,
-          title: item.title,
-          summary: item.description?.substring(0, 100) + '...' || '',
-          type: item.type || 'social',
-          cover: item.cover_image,
-          startTime: item.start_time
-        }))
-    }
-  } catch (error) {
-    console.error('获取相关活动失败:', error)
-  }
-}
-
 const goBack = () => {
   router.push('/activities')
 }
 
-const goToActivity = (id) => {
-  router.push(`/activities/${id}`)
-}
+const handleParticipation = async ({ action }) => {
+  // 安全检查：确保活动数据存在
+  if (!activity.value) {
+    ElMessage.error('活动数据加载中，请稍后再试')
+    return
+  }
 
-const handleParticipation = async () => {
-  if (!activity.value) return
-
-  if (isParticipating.value) {
-    try {
-      await ElMessageBox.confirm('确定要取消报名吗？', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      })
-
-      isParticipating.value = false
+  if (action === 'cancel') {
+    // TODO: 调用取消预约接口
+    isParticipating.value = false
+    // 安全地更新参与者数量
+    if (typeof activity.value.participants === 'number') {
       activity.value.participants--
-      ElMessage.success('已取消报名')
-    } catch {
-      // 用户取消
     }
-  } else {
-    try {
-      await ElMessageBox.confirm('确定要报名参加此活动吗？', '确认报名', {
-        confirmButtonText: '确定报名',
-        cancelButtonText: '取消',
-        type: 'info'
-      })
+    ElMessage.success('已取消报名')
+  } else if (action === 'join') {
+    // 调用活动预约接口
+    const result = await activityStore.bookActivity(activity.value.id)
 
+    if (result.success) {
       isParticipating.value = true
-      activity.value.participants++
+      // 安全地更新参与者数量
+      if (typeof activity.value.participants === 'number') {
+        activity.value.participants++
+      }
       ElMessage.success('报名成功！')
-    } catch {
-      // 用户取消
+    } else {
+      ElMessage.error(result.error || '报名失败')
     }
   }
 }
 
-const getButtonText = () => {
-  if (isParticipating.value) return '取消报名'
-  if (!activity.value) return '查看详情'
-  if (activity.value.status === 'completed') return '活动已结束'
-  if (activity.value.status === 'ongoing') return '活动进行中'
-  if (activity.value.participants >= activity.value.maxParticipants) return '名额已满'
-  return '立即报名'
-}
 
-const getStatusClass = (status) => {
-  const classMap = {
-    upcoming: 'status-upcoming',
-    ongoing: 'status-ongoing',
-    completed: 'status-completed',
-    cancelled: 'status-cancelled'
+// 获取讨论列表
+const fetchComments = async () => {
+  try {
+    const result = await activityStore.fetchDiscussions(activityId.value)
+
+    if (result.success) {
+      // 处理可能的嵌套数据结构
+      const commentsData = result.data?.items || result.data || []
+      comments.value = commentsData.map(comment => ({
+        id: comment.id,
+        content: comment.content,
+        create_time: comment.create_time,
+        author_display: comment.author_display || '匿名用户',
+        author_user_id: comment.author_user_id,
+        author_avatar: comment.author_avatar, // 新增头像字段
+        discuss_id: comment.discuss_id,
+        parent_comment_id: comment.parent_comment_id,
+        replies: comment.replies || [] // 使用API返回的回复数据
+      }))
+    } else {
+      console.warn('获取评论列表返回失败:', result.error)
+      comments.value = []
+    }
+  } catch (error) {
+    console.error('获取评论失败:', error)
+    // 显示友好的错误提示，但不影响用户使用其他功能
+    ElMessage.warning('评论加载失败，您可以刷新页面重试')
+    comments.value = []
   }
-  return classMap[status] || 'status-upcoming'
 }
 
-const getStatusText = (status) => {
-  const textMap = {
-    upcoming: '即将开始',
-    ongoing: '进行中',
-    completed: '已结束',
-    cancelled: '已取消'
+// 新的事件处理方法（用于配合ActivityCommentsReviews组件）
+const handleSubmitComment = async ({ content }) => {
+  submitting.value = true
+  try {
+    // 安全检查：确保活动数据存在
+    if (!activity.value?.id) {
+      ElMessage.error('活动信息加载中，请稍后再试')
+      return
+    }
+
+    const result = await activityStore.createDiscussion(activity.value.id, { content })
+
+    if (result.success) {
+      ElMessage.success('讨论发表成功')
+      commentsReviewsRef.value?.resetCommentForm()
+      // 重新获取讨论列表
+      fetchComments()
+    } else {
+      console.error('发表讨论失败:', result.error)
+      // 根据错误类型给出不同的提示
+      if (result.error?.includes('500') || result.error?.includes('Internal Server Error')) {
+        ElMessage.error('服务器暂时不可用，请稍后再试')
+      } else if (result.error?.includes('401') || result.error?.includes('Unauthorized')) {
+        ElMessage.error('请先登录后再发表讨论')
+      } else {
+        ElMessage.error(result.error || '讨论发表失败')
+      }
+    }
+  } catch (error) {
+    console.error('发表讨论失败:', error)
+    // 处理网络错误和服务器错误
+    if (error.response?.status === 500) {
+      ElMessage.error('服务器内部错误，请稍后再试或联系管理员')
+    } else if (error.response?.status === 401) {
+      ElMessage.error('请先登录后再发表讨论')
+    } else {
+      ElMessage.error('网络连接异常，请检查网络后重试')
+    }
+  } finally {
+    submitting.value = false
   }
-  return textMap[status] || '即将开始'
 }
 
-const getActivityTypeTag = (type) => {
-  const typeMap = {
-    competition: 'danger',
-    training: 'success',
-    volunteer: 'warning',
-    experience: 'info',
-    social: ''
+const handleSubmitReply = async ({ content, discussion_id, parent_comment_id }) => {
+  submitting.value = true
+  try {
+    // 安全检查：确保讨论ID存在
+    if (!discussion_id) {
+      ElMessage.error('讨论信息错误，请稍后再试')
+      return
+    }
+
+    const result = await activityStore.createDiscussionComment(discussion_id, {
+      content,
+      parent_comment_id: parent_comment_id // 被回复的评论ID
+    })
+
+    if (result.success) {
+      ElMessage.success('回复成功')
+      commentsReviewsRef.value?.resetReplyForm()
+      // 重新获取评论列表
+      fetchComments()
+    } else {
+      console.error('回复失败:', result.error)
+      // 根据错误类型给出不同的提示
+      if (result.error?.includes('500') || result.error?.includes('Internal Server Error')) {
+        ElMessage.error('服务器暂时不可用，请稍后再试')
+      } else if (result.error?.includes('401') || result.error?.includes('Unauthorized')) {
+        ElMessage.error('请先登录后再发表回复')
+      } else {
+        ElMessage.error(result.error || '回复失败')
+      }
+    }
+  } catch (error) {
+    console.error('回复失败:', error)
+    // 处理网络错误和服务器错误
+    if (error.response?.status === 500) {
+      ElMessage.error('服务器内部错误，请稍后再试或联系管理员')
+    } else if (error.response?.status === 401) {
+      ElMessage.error('请先登录后再发表回复')
+    } else {
+      ElMessage.error('网络连接异常，请检查网络后重试')
+    }
+  } finally {
+    submitting.value = false
   }
-  return typeMap[type] || ''
 }
 
-const getActivityTypeText = (type) => {
-  const textMap = {
-    competition: '比赛',
-    training: '培训',
-    volunteer: '公益',
-    experience: '体验',
-    social: '社交'
+const replyToComment = (comment) => {
+  // 这个方法现在由ActivityCommentsReviews组件内部处理
+  console.log('Replying to comment:', comment)
+}
+
+const cancelReply = () => {
+  // 这个方法现在由ActivityCommentsReviews组件内部处理
+  console.log('Cancel reply')
+}
+
+// 加载讨论回复
+const handleLoadReplies = async (discussionId) => {
+  try {
+    // 访客使用访客接口，登录用户使用认证接口
+    const result = isAuthenticated.value
+      ? await activityStore.fetchDiscussionComments(discussionId)
+      : await activityStore.fetchPublicDiscussionComments(discussionId)
+
+    if (result.success) {
+      // 将回复数据合并到对应的讨论中
+      const discussion = comments.value.find(c => c.id === discussionId)
+      if (discussion) {
+        // 确保回复数据包含头像字段
+        discussion.replies = result.data.map(reply => ({
+          ...reply,
+          author_avatar: reply.author_avatar // 确保包含头像字段
+        }))
+        discussion.hasMoreReplies = result.data.length >= 10 // 假设每页10条，如果满了就可能有更多
+      }
+    } else {
+      console.error('加载回复失败:', result.error)
+      ElMessage.error(result.error || '加载回复失败')
+    }
+  } catch (error) {
+    console.error('加载回复失败:', error)
+    ElMessage.error('加载回复失败，请稍后再试')
   }
-  return textMap[type] || '活动'
 }
 
-const formatDateTime = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+// 删除评论处理方法
+const handleDeleteComment = async (commentId) => {
+  console.log('🟡 开始删除评论, commentId:', commentId)
+
+  try {
+    console.log('🟡 调用 activityStore.deleteDiscussionComment...')
+    const result = await activityStore.deleteDiscussionComment(commentId)
+    console.log('🟡 Store 返回结果:', result)
+
+    if (result.success) {
+      console.log('✅ 删除成功，重新获取评论列表')
+      ElMessage.success('删除成功')
+      // 重新获取讨论列表
+      fetchComments()
+    } else {
+      console.error('❌ 删除失败，Store 返回错误:', result.error)
+      ElMessage.error(result.error || '删除失败')
+    }
+  } catch (error) {
+    console.error('❌ 删除评论异常:', error)
+    ElMessage.error('删除失败，请稍后再试')
+  }
+}
+
+// 新的评分处理方法
+const handleSubmitRating = async ({ rating, comment }) => {
+  ratingSubmitting.value = true
+  try {
+    const result = await activityStore.rateActivity(activityId.value, { rating, comment })
+
+    if (result.success) {
+      ElMessage.success('评分提交成功')
+      hasRated.value = true
+      commentsReviewsRef.value?.resetRatingForm()
+      // 重新获取评分数据
+      fetchRatings()
+    } else {
+      ElMessage.error(result.error || '评分提交失败')
+    }
+  } catch (error) {
+    console.error('提交评分失败:', error)
+    ElMessage.error('评分提交失败，请重试')
+  } finally {
+    ratingSubmitting.value = false
+  }
+}
+
+// 获取评分列表 - 始终尝试获取详细评分数据以显示评分列表
+const fetchRatings = async () => {
+  try {
+    const result = await activityStore.fetchActivityRatingsDetail(activityId.value)
+
+    if (result.success) {
+      // 处理API返回的数据结构
+      const apiData = result.data
+
+      // 设置评分详情列表 - 修复：数据在apiData.ratings中
+      if (apiData.ratings && Array.isArray(apiData.ratings)) {
+        ratings.value = apiData.ratings.map(rating => ({
+          id: rating.id,
+          rating: rating.score, // 注意API返回的是score字段
+          comment: rating.comment,
+          created_at: rating.created_at,
+          user_display_name: rating.rater_display || rating.user_info?.username || '匿名用户',
+          user_avatar: rating.user_info?.avatar,
+          rater_avatar: rating.rater_avatar // 新增评分者头像字段
+        }))
+      } else {
+        ratings.value = []
+      }
+
+      // 更新活动统计信息（如果API返回了统计数据）
+      if (apiData.statistics && activity.value) {
+        activity.value.avgScore = apiData.statistics.average_score || 0
+        activity.value.ratingCount = apiData.statistics.total_count || 0
+      }
+
+      // 检查当前用户是否已经评分（这里需要根据实际用户信息判断）
+      // const currentUserId = getCurrentUserId() // 需要实现获取当前用户ID的方法
+      // hasRated.value = ratings.value.some(rating => rating.user_id === currentUserId)
+      hasRated.value = false
+
+      console.log('评分数据获取成功:', {
+        ratings: ratings.value,
+        statistics: apiData.statistics
+      })
+    } else {
+      console.warn('获取评分数据失败:', result.error)
+      ratings.value = []
+      hasRated.value = false
+    }
+  } catch (error) {
+    console.error('获取评分详情失败:', error)
+    ratings.value = []
+    hasRated.value = false
+  }
 }
 
 onMounted(() => {
   fetchActivityDetail()
+  // 获取评分详情数据
+  fetchRatings()
 })
 </script>
-
-<style scoped>
-.activity-detail {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 200px;
-}
-
-.not-found {
-  margin-top: 100px;
-}
-
-.activity-header {
-  margin-bottom: 20px;
-}
-
-.back-button {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.activity-hero {
-  margin-bottom: 30px;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-}
-
-.hero-image {
-  position: relative;
-  width: 100%;
-  height: 400px;
-}
-
-.hero-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.activity-status {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  padding: 8px 16px;
-  border-radius: 20px;
-  color: white;
-  font-size: 14px;
-  font-weight: bold;
-}
-
-.status-upcoming {
-  background-color: #409eff;
-}
-
-.status-ongoing {
-  background-color: #67c23a;
-}
-
-.status-completed {
-  background-color: #909399;
-}
-
-.status-cancelled {
-  background-color: #f56c6c;
-}
-
-.hero-content {
-  padding: 30px;
-}
-
-.activity-title {
-  margin: 0 0 20px 0;
-  font-size: 32px;
-  color: #303133;
-  line-height: 1.3;
-}
-
-.activity-meta {
-  margin-bottom: 25px;
-}
-
-.meta-info {
-  margin-top: 15px;
-}
-
-.info-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-  color: #606266;
-  font-size: 16px;
-}
-
-.info-row .el-icon {
-  color: #909399;
-}
-
-.participation-section {
-  border-top: 1px solid #e4e7ed;
-  padding-top: 25px;
-}
-
-.progress-large {
-  margin-bottom: 20px;
-}
-
-.participation-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.participation-info span {
-  color: #606266;
-  font-size: 16px;
-}
-
-.participation-btn {
-  min-width: 120px;
-}
-
-.content-section {
-  margin-bottom: 40px;
-}
-
-.detail-card {
-  margin-bottom: 20px;
-}
-
-.detail-card :deep(.el-card__header) {
-  background: #f8f9fa;
-  border-bottom: 1px solid #e4e7ed;
-}
-
-.detail-card :deep(.el-card__header h3) {
-  margin: 0;
-  color: #303133;
-  font-size: 18px;
-}
-
-.activity-description,
-.requirements-content {
-  line-height: 1.8;
-  color: #303133;
-  font-size: 16px;
-}
-
-.activity-description :deep(h2),
-.requirements-content :deep(h2) {
-  margin: 25px 0 15px 0;
-  color: #303133;
-  font-size: 20px;
-  border-bottom: 2px solid #409eff;
-  padding-bottom: 8px;
-}
-
-.activity-description :deep(p),
-.requirements-content :deep(p) {
-  margin: 15px 0;
-}
-
-.activity-description :deep(ul),
-.requirements-content :deep(ul) {
-  margin: 15px 0;
-  padding-left: 25px;
-}
-
-.activity-description :deep(li),
-.requirements-content :deep(li) {
-  margin: 8px 0;
-}
-
-.organizer-info {
-  text-align: center;
-}
-
-.organizer-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.organizer-details {
-  margin-top: 10px;
-}
-
-.organizer-details h4 {
-  margin: 0 0 5px 0;
-  color: #303133;
-  font-size: 16px;
-}
-
-.organizer-details p {
-  margin: 0;
-  color: #606266;
-  font-size: 14px;
-}
-
-.contact-info {
-  text-align: left;
-}
-
-.contact-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-  color: #606266;
-  font-size: 14px;
-}
-
-.tags-content {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.tag-item {
-  margin: 0;
-}
-
-.related-activities {
-  margin-top: 40px;
-}
-
-.related-activities h3 {
-  margin: 0 0 20px 0;
-  font-size: 20px;
-  color: #303133;
-  text-align: center;
-}
-
-.related-card {
-  cursor: pointer;
-  transition: transform 0.2s;
-  margin-bottom: 20px;
-}
-
-.related-card:hover {
-  transform: translateY(-4px);
-}
-
-.related-image {
-  width: 100%;
-  height: 150px;
-  overflow: hidden;
-  margin-bottom: 15px;
-  border-radius: 4px;
-}
-
-.related-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.related-card h4 {
-  margin: 0 0 10px 0;
-  font-size: 16px;
-  color: #303133;
-  line-height: 1.4;
-}
-
-.related-card p {
-  margin: 0 0 10px 0;
-  color: #606266;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.related-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.related-meta span {
-  color: #909399;
-  font-size: 12px;
-}
-
-@media (max-width: 768px) {
-  .activity-detail {
-    padding: 15px;
-  }
-
-  .hero-image {
-    height: 250px;
-  }
-
-  .hero-content {
-    padding: 20px;
-  }
-
-  .activity-title {
-    font-size: 24px;
-  }
-
-  .participation-info {
-    flex-direction: column;
-    gap: 15px;
-    align-items: stretch;
-  }
-
-  .content-section {
-    margin-bottom: 20px;
-  }
-
-  .detail-card {
-    margin-bottom: 15px;
-  }
-}
-</style>

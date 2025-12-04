@@ -4,7 +4,7 @@
   "icon": "https://agent-statics-tc.nuwax.com/store/8b9652ed16d04c7fbc4d845a8550e26f.png",
   "coverImg": null,
   "coverImgSourceType": null,
-  "needLogin": true,
+  "needLogin": false,
   "proxyConfigs": null,
   "pageArgConfigs": null,
   "dataSourcePlugins": null,
