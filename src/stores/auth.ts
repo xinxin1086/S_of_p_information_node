@@ -313,14 +313,20 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       let userInfo: any
       let data: Permissions
+      const extractBusinessData = (response: any) => {
+        const businessData = response?.data ?? response
+        return businessData?.data ?? businessData
+      }
 
       // 先尝试从用户表获取信息
       try {
-        userInfo = await apiClient.get('/api/user/user/info')
+        const response = await apiClient.get('/api/user/user/info')
+        userInfo = extractBusinessData(response)
 
         // 如果获取成功且用户是管理员，需要额外获取管理员权限
         if (userInfo.role === 'admin' || userInfo.role === 'super_admin') {
-          data = await apiClient.get('/api/admin/permissions')
+          const permissionsResponse = await apiClient.get('/api/admin/permissions')
+          data = extractBusinessData(permissionsResponse)
         } else {
           // 普通用户，创建基本的权限数据
           data = {
@@ -336,9 +342,10 @@ export const useAuthStore = defineStore('auth', () => {
         console.warn('用户表查询失败，尝试管理员表:', userError.message)
 
         try {
-          const adminInfo = await apiClient.get('/api/admin/info')
-          userInfo = adminInfo
-          data = await apiClient.get('/api/admin/permissions')
+          const adminResponse = await apiClient.get('/api/admin/info')
+          userInfo = extractBusinessData(adminResponse)
+          const permissionsResponse = await apiClient.get('/api/admin/permissions')
+          data = extractBusinessData(permissionsResponse)
         } catch (adminError: any) {
           console.error('两个表都查询失败:', adminError.message)
           throw new Error('用户信息获取失败')

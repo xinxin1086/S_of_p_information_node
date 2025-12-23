@@ -77,39 +77,51 @@ request.interceptors.response.use(
 // 封装常用请求方法
 export const api = {
   // GET请求
-  get(url, params = {}) {
-    return request.get(url, { params })
-  },
-
-  // POST请求
-  post(url, data = {}) {
-    return request.post(url, data)
-  },
-
-  // PUT请求
-  put(url, data = {}) {
-    return request.put(url, data)
-  },
-
-  // DELETE请求
-  delete(url) {
-    return request.delete(url)
-  },
-
-  // 文件上传
-  upload(url, formData) {
-    return request.post(url, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
+  get(url, params = {}, config = {}) {
+    return request.get(url, {
+      ...config,
+      params: {
+        ...params,
+        ...config.params
       }
     })
   },
 
+  // POST请求
+  post(url, data = {}, config = {}) {
+    return request.post(url, data, config)
+  },
+
+  // PUT请求
+  put(url, data = {}, config = {}) {
+    return request.put(url, data, config)
+  },
+
+  // DELETE请求
+  delete(url, config = {}) {
+    return request.delete(url, config)
+  },
+
+  // 文件上传
+  upload(url, formData, config = {}) {
+    return request.post(url, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        ...config.headers
+      },
+      ...config
+    })
+  },
+
   // 文件下载
-  download(url, params = {}) {
+  download(url, params = {}, config = {}) {
     return request.get(url, {
-      params,
-      responseType: 'blob'
+      ...config,
+      params: {
+        ...params,
+        ...config.params
+      },
+      responseType: config.responseType || 'blob'
     })
   }
 }

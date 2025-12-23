@@ -20,12 +20,15 @@ export const uploadImage = async (file) => {
         }
     )
 
-    // 响应拦截器已返回 response.data，所以这里直接访问 response 的属性
-    if (!response?.success) {
-        throw new Error(response?.message || '图片上传失败')
+    const businessData = response?.data || {}
+
+    // 响应拦截器返回完整的 response 对象，需要访问 response.data
+    if (!businessData?.success) {
+        throw new Error(businessData?.message || '图片上传失败')
     }
 
-    return response.data.image_url
+    const payload = businessData.data || {}
+    return payload.image_url || payload.url || ''
 }
 export const avatarUrl = (avatar) => {
     return avatar ? `http://localhost:5000/${avatar}` : '';
