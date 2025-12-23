@@ -1,0 +1,216 @@
+/* ./src/assets/global.css */
+/* 导入变量和混入 */
+@import './variables.css';
+@import './mixins.css';
+@import './responsive.css';
+
+/* 重置样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Microsoft YaHei', sans-serif;
+}
+
+body {
+    background-color: var(--bg-page);
+    font-size: var(--font-size-base);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+/* 通用工具类 */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.hidden { display: none; }
+.invisible { visibility: hidden; }
+
+.flex { display: flex; }
+.flex-column { flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+.flex-1 { flex: 1; }
+
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+
+.m-0 { margin: 0; }
+.mt-1 { margin-top: var(--spacing-xs); }
+.mt-2 { margin-top: var(--spacing-sm); }
+.mt-3 { margin-top: var(--spacing-base); }
+.mt-4 { margin-top: var(--spacing-lg); }
+
+.mb-1 { margin-bottom: var(--spacing-xs); }
+.mb-2 { margin-bottom: var(--spacing-sm); }
+.mb-3 { margin-bottom: var(--spacing-base); }
+.mb-4 { margin-bottom: var(--spacing-lg); }
+
+.p-0 { padding: 0; }
+.pt-1 { padding-top: var(--spacing-xs); }
+.pt-2 { padding-top: var(--spacing-sm); }
+.pt-3 { padding-top: var(--spacing-base); }
+.pt-4 { padding-top: var(--spacing-lg); }
+
+.pb-1 { padding-bottom: var(--spacing-xs); }
+.pb-2 { padding-bottom: var(--spacing-sm); }
+.pb-3 { padding-bottom: var(--spacing-base); }
+.pb-4 { padding-bottom: var(--spacing-lg); }
+
+/* 通用按钮颜色 */
+.btn-primary { background-color: var(--primary-color); }
+.btn-success { background-color: var(--success-color); }
+.btn-warning { background-color: var(--warning-color); }
+.btn-danger { background-color: var(--danger-color); }
+.btn-info { background-color: var(--info-color); }
+
+/* 通用状态样式 */
+.is-primary { color: var(--primary-color); }
+.is-success { color: var(--success-color); }
+.is-warning { color: var(--warning-color); }
+.is-danger { color: var(--danger-color); }
+.is-info { color: var(--info-color); }
+
+.bg-primary { background-color: var(--primary-color); }
+.bg-success { background-color: var(--success-color); }
+.bg-warning { background-color: var(--warning-color); }
+.bg-danger { background-color: var(--danger-color); }
+.bg-info { background-color: var(--info-color); }
+
+/* 通用表单样式 */
+.form-item {
+    margin-bottom: var(--spacing-xl);
+}
+
+.form-label {
+    display: block;
+    margin-bottom: var(--spacing-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.form-error {
+    color: var(--danger-color);
+    font-size: var(--font-size-xs);
+    margin-top: var(--spacing-xs);
+    line-height: 1.4;
+}
+
+/* 通用表格样式 */
+.table-container {
+    background-color: var(--bg-white);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-light);
+    margin-bottom: var(--spacing-xl);
+}
+
+.table-row:hover {
+    background-color: var(--bg-light);
+}
+
+/* 通用分页样式 */
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-xl);
+    justify-content: flex-end;
+}
+
+.pagination-btn {
+    padding: 6px 12px;
+    border: 1px solid var(--border-light);
+    background-color: var(--bg-white);
+    cursor: pointer;
+    border-radius: var(--border-radius-sm);
+    transition: var(--transition-base);
+    font-size: var(--font-size-sm);
+}
+
+.pagination-btn:hover:not(:disabled) {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background-color: #f5fafe;
+}
+
+.pagination-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    border-color: #eee;
+    color: var(--text-placeholder);
+}
+
+.pagination-current {
+    border: 1px solid var(--primary-color);
+    background-color: var(--primary-color);
+    color: var(--bg-white);
+    padding: 6px 12px;
+    border-radius: var(--border-radius-sm);
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(64, 158, 255, 0.15);
+}
+
+/* 通用消息提示 */
+.message {
+    padding: var(--spacing-base) var(--spacing-lg);
+    border-radius: var(--border-radius-base);
+    margin-bottom: var(--spacing-lg);
+    border-left: 3px solid;
+}
+
+.message-success {
+    background-color: #f0f9ff;
+    border-color: var(--success-color);
+    color: var(--success-color);
+}
+
+.message-warning {
+    background-color: #fdf6ec;
+    border-color: var(--warning-color);
+    color: var(--warning-color);
+}
+
+.message-error {
+    background-color: #fef0f0;
+    border-color: var(--danger-color);
+    color: var(--danger-color);
+}
+
+.message-info {
+    background-color: #f4f4f5;
+    border-color: var(--info-color);
+    color: var(--info-color);
+}
+
+/* Element Plus 组件适配 */
+.el-form-item {
+    margin-bottom: 22px;
+}
+
+.el-input, .el-select {
+    border-radius: var(--border-radius-base) !important;
+    border-color: var(--border-light) !important;
+    transition: var(--transition-base) !important;
+}
+
+.el-input:focus-within, .el-select:focus-within {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.1) !important;
+}
+
+.el-table {
+    border-radius: var(--border-radius-lg) !important;
+    overflow: hidden !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+.el-table__body tr:hover > td {
+    background-color: var(--bg-light) !important;
+}
+
+.el-table__header th {
+    background-color: var(--bg-light) !important;
+    font-weight: 500 !important;
+    color: var(--text-primary) !important;
+}
