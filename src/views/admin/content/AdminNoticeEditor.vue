@@ -237,7 +237,8 @@
             </span>
           </div>
         </div>
-        <div class="preview-body" v-html="noticeData.release_notice"></div>
+        <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized with DOMPurify -->
+<div class="preview-body" v-html="sanitizedNoticeContent"></div>
       </div>
 
       <template #footer>
@@ -264,6 +265,8 @@ import {
 import { useNoticeStore } from '@/stores/notice'
 import { getNoticeTypeFromText } from '@/utils/notice'
 import { BASE_URL } from '@/config.js'
+import { sanitizeRichText } from '@/utils/sanitizeHtml'
+import { tokenManager } from '@/utils/tokenManager'
 // TinyMCE 已移除，使用基础文本编辑器
 
 const route = useRoute()
@@ -280,6 +283,11 @@ const previewVisible = ref(false)
 // 编辑器状态控制
 const isUserEditing = ref(false)
 const isUpdatingFromWatch = ref(false)
+
+// 净化后的公告内容（用于预览）
+const sanitizedNoticeContent = computed(() => {
+  return sanitizeRichText(noticeData.value.release_notice)
+})
 
 // 表单数据
 const noticeData = ref({

@@ -15,17 +15,39 @@ export { useActivityStore } from './activity'
 export { useNoticeStore } from './notice'
 export { useScienceStore } from './science'
 
-// 便捷的权限Hook
-import { useAuthStore as _useAuthStore } from './auth'
+/**
+ * 统一的权限检查Hook
+ * 整合了基于角色的权限检查和基于资源的权限检查
+ */
 import { computed } from 'vue'
+import { useAuthStore as _useAuthStore } from './auth'
+import {
+  checkPermission as checkResourcePermission,
+  checkRole,
+  checkLevel,
+  checkFeature,
+  permissionManager
+} from '@/utils/permissions'
 
 export const usePermissions = () => {
   const store = _useAuthStore()
 
   return {
-    // 权限检查 - 使用 computed 确保响应式
+    // 基于角色的权限检查（向后兼容）
     hasPermission: store.hasPermission,
     hasFeaturePermission: store.hasFeaturePermission,
+
+    // 基于资源的细粒度权限检查（新系统）
+    checkResourcePermission,
+    checkRole,
+    checkLevel,
+    checkFeature,
+    permissionManager,
+
+    // 快捷方法：检查管理员权限
+    hasAdminRights: computed(() => store.isSuperAdmin || store.isAdmin),
+
+    // 角色信息
     currentRole: computed(() => store.currentRole),
     isSuperAdmin: computed(() => store.isSuperAdmin),
     isAdmin: computed(() => store.isAdmin),

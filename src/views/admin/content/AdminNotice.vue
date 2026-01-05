@@ -151,7 +151,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useNoticeStore } from '@/stores/notice';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 
 const router = useRouter();
 const noticeStore = useNoticeStore();
@@ -305,7 +305,20 @@ const handleEdit = (notice) => {
 
 // 单个删除
 const handleDelete = async (notice) => {
-  if (!confirm('确定要删除该公告吗？')) return;
+  try {
+    await ElMessageBox.confirm(
+      '确定要删除该公告吗？',
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    );
+  } catch {
+    return;
+  }
+
   try {
     isLoading.value = true;
     console.log('🗑️ 删除公告:', notice.id);
@@ -320,7 +333,7 @@ const handleDelete = async (notice) => {
     }
   } catch (error) {
     console.error('删除公告错误:', error);
-    alert('删除失败：' + error.message);
+    ElMessage.error('删除失败：' + error.message);
   } finally {
     isLoading.value = false;
   }
@@ -328,7 +341,20 @@ const handleDelete = async (notice) => {
 
 // 批量删除
 const handleBatchDelete = async () => {
-  if (!confirm(`确定要删除选中的${selectedIds.value.length}条公告吗？`)) return;
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除选中的${selectedIds.value.length}条公告吗？`,
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    );
+  } catch {
+    return;
+  }
+
   try {
     isLoading.value = true;
     console.log('🗑️ 批量删除公告:', selectedIds.value);
@@ -351,7 +377,7 @@ const handleBatchDelete = async () => {
     }
   } catch (error) {
     console.error('批量删除公告错误:', error);
-    alert('批量删除失败：' + error.message);
+    ElMessage.error('批量删除失败：' + error.message);
   } finally {
     isLoading.value = false;
   }

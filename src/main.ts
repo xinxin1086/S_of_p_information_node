@@ -1,10 +1,13 @@
 // ./src/main.ts
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
-import App from './App.vue'
-import router from './router'
 import axios from 'axios'
 import ElementPlus from 'element-plus'
+import { createPinia } from 'pinia'
+import { createApp } from 'vue'
+
+import App from './App.vue'
+import router from './router'
+
+
 import 'element-plus/dist/index.css'
 import '@/styles/common/global.css'
 import { tokenManager } from '@/utils/tokenManager'
@@ -16,13 +19,14 @@ localStorage.removeItem('user_token')
 localStorage.removeItem('admin_token')
 
 // 全局错误处理器
-app.config.errorHandler = (err: any, vm: any, info: string): void => {
+app.config.errorHandler = (err: unknown, vm: unknown, info: string): void => {
   console.error('全局错误:', err)
   console.error('错误信息:', info)
   console.error('Vue 实例:', vm)
 
   // 如果是路由相关错误，特殊处理
-  if (info?.includes('render') || err?.message?.includes('hydrate')) {
+  const error = err instanceof Error ? err : new Error(String(err))
+  if (info?.includes('render') || error.message?.includes('hydrate')) {
     console.warn('检测到渲染或hydration错误，这可能是因为组件状态不一致')
   }
 
@@ -30,7 +34,7 @@ app.config.errorHandler = (err: any, vm: any, info: string): void => {
   // reportError(err, vm, info)
 }
 
-app.config.warnHandler = (msg: string, vm: any, trace: string): void => {
+app.config.warnHandler = (msg: string, vm: unknown, trace: string): void => {
   console.warn('Vue 警告:', msg, trace)
 }
 

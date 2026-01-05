@@ -6,8 +6,12 @@
 // Vue相关类型扩展
 declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
-    $ errorHandler: any
-    $apiHelper: any
+    $ errorHandler: {
+      handle: (error: unknown, context?: string) => never
+      shouldReauth: (error: unknown) => boolean
+      shouldRetry: (error: unknown) => boolean
+    }
+    $apiHelper: Record<string, unknown>
   }
 }
 
@@ -27,7 +31,11 @@ declare interface ImportMeta {
 // 全局错误处理
 declare global {
   interface Window {
-    errorHandler: any
+    errorHandler: {
+      handle: (error: unknown, context?: string) => never
+      shouldReauth: (error: unknown) => boolean
+      shouldRetry: (error: unknown) => boolean
+    }
     appConfig: {
       apiBaseUrl: string
       version: string

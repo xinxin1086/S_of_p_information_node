@@ -80,14 +80,16 @@
             <template #header>
               <h3>活动详情</h3>
             </template>
-            <div class="activity-description" v-html="activity?.description || ''"></div>
+            <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized with DOMPurify -->
+            <div class="activity-description" v-html="sanitizedDescription"></div>
           </el-card>
 
           <el-card class="detail-card" v-if="activity?.requirements">
             <template #header>
               <h3>参与要求</h3>
             </template>
-            <div class="requirements-content" v-html="activity.requirements"></div>
+            <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized with DOMPurify -->
+            <div class="requirements-content" v-html="sanitizedRequirements"></div>
           </el-card>
         </el-col>
 
@@ -143,38 +145,74 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Location, Calendar, User, Phone, Message } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useAuthStore } from '@/stores'
+import { sanitizeRichText } from '@/utils/sanitizeHtml'
+
+interface Activity {
+  id?: number | string
+  title?: string
+  cover?: string
+  description?: string
+  requirements?: string
+  location?: string
+  startTime?: string | Date
+  endTime?: string | Date
+  type?: string
+  status?: string
+  participants?: number
+  maxParticipants?: number
+  organizerName?: string
+  organizerContact?: string
+  organizerAvatar?: string
+  [key: string]: unknown
+}
 
 // Props
-const props = defineProps({
-  loading: {
-    type: Boolean,
-    default: false
-  },
-  activity: {
-    type: Object,
-    default: null
-  },
-  isParticipating: {
-    type: Boolean,
-    default: false
-  },
-  disabled: {
-    type: Boolean,
-    default: true
-  }
+interface Props {
+  /** 加载状态 */
+  loading?: boolean
+  /** 活动数据 */
+  activity?: Activity | null
+  /** 是否已参与 */
+  isParticipating?: boolean
+  /** 是否禁用参与按钮 */
+  disabled?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  loading: false,
+  activity: null,
+  isParticipating: false,
+  disabled: true
 })
 
 // Emits
-const emit = defineEmits(['go-back', 'handle-participation'])
+interface Emits {
+  /** 返回上一页 */
+  'go-back': []
+  /** 处理参与/取消 */
+  'handle-participation': [data: { action: 'join' | 'cancel'; activity: Activity }]
+}
+
+const emit = defineEmits<Emits>()
 
 const router = useRouter()
 const authStore = useAuthStore()
+
+// 净化后的活动描述
+const sanitizedDescription = computed(() => {
+  return sanitizeRichText(props.activity?.description)
+})
+
+// 净化后的活动要求
+const sanitizedRequirements = computed(() => {
+  return sanitizeRichText(props.activity?.requirements)
+})
 
 // 检查是否为管理员身份
 const isAdmin = computed(() => {

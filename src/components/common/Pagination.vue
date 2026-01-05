@@ -42,7 +42,7 @@
     <div class="pagination-size" v-if="showSizeChanger">
       <span>每页显示</span>
       <el-select
-        v-model="pageSize"
+        :model-value="pageSize"
         @change="handleSizeChange"
         size="small"
         class="size-select"
@@ -59,41 +59,46 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 
-const props = defineProps({
-  current: {
-    type: Number,
-    default: 1
-  },
-  total: {
-    type: Number,
-    default: 0
-  },
-  pageSize: {
-    type: Number,
-    default: 20
-  },
-  pageSizes: {
-    type: Array,
-    default: () => [10, 20, 50, 100]
-  },
-  showSizeChanger: {
-    type: Boolean,
-    default: true
-  },
-  showQuickJumper: {
-    type: Boolean,
-    default: false
-  },
-  showTotal: {
-    type: Boolean,
-    default: true
-  }
+defineOptions({ name: "Pagination" })
+
+interface Props {
+  /** 当前页码 */
+  current?: number
+  /** 总记录数 */
+  total?: number
+  /** 每页显示条数 */
+  pageSize?: number
+  /** 每页显示条数选项 */
+  pageSizes?: number[]
+  /** 是否显示每页条数选择器 */
+  showSizeChanger?: boolean
+  /** 是否显示快速跳转 */
+  showQuickJumper?: boolean
+  /** 是否显示总数 */
+  showTotal?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  current: 1,
+  total: 0,
+  pageSize: 20,
+  pageSizes: () => [10, 20, 50, 100],
+  showSizeChanger: true,
+  showQuickJumper: false,
+  showTotal: true
 })
 
-const emit = defineEmits(['change', 'sizeChange'])
+interface Emits {
+  /** 页码变化时触发 */
+  change: [page: number]
+  /** 每页条数变化时触发 */
+  sizeChange: [size: number]
+}
+
+const emit = defineEmits<Emits>()
 
 const currentPage = computed(() => props.current)
 const totalPages = computed(() => Math.ceil(props.total / props.pageSize))
@@ -146,18 +151,16 @@ const visiblePages = computed(() => {
   })
 })
 
-const handlePageChange = (page) => {
-  if (page === '...' || page < 1 || page > totalPages.value) {
+const handlePageChange = (page: number | string) => {
+  if (page === '...' || typeof page !== 'number' || page < 1 || page > totalPages.value) {
     return
   }
   emit('change', page)
 }
 
-const handleSizeChange = (size) => {
+const handleSizeChange = (size: number) => {
   emit('sizeChange', size)
 }
-
-defineOptions({ name: "Pagination" })
 </script>
 
 <style scoped>

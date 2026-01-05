@@ -144,11 +144,11 @@
             <div class="flex items-center gap-2">
               <el-avatar
                 :size="24"
-                :src="post.author_info.avatar"
+                :src="post.author_info?.avatar"
               >
-                {{ post.author_info.username?.charAt(0) }}
+                {{ post.author_info?.username?.charAt(0) || '?' }}
               </el-avatar>
-              <span>{{ post.author_info.username || post.author_info.account }}</span>
+              <span>{{ post.author_info?.username || post.author_info?.account || '未知用户' }}</span>
             </div>
             <span>{{ formatTime(post.created_at) }}</span>
           </div>
@@ -280,8 +280,8 @@ const fetchPosts = async () => {
       page_size: pagination.page_size
     })
 
-    posts.value = response.data
-    pagination.total = response.meta.total
+    posts.value = response?.data || []
+    pagination.total = response?.meta?.total || 0
   } catch (error) {
     console.error('获取帖子列表失败:', error)
     ElMessage.error('获取帖子列表失败')

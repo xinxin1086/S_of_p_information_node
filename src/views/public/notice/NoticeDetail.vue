@@ -41,7 +41,8 @@
           </div>
         </div>
 
-        <div class="notice-body" v-if="notice.content" v-html="notice.content"></div>
+        <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized with DOMPurify -->
+        <div class="notice-body" v-if="notice.content" v-html="sanitizedContent"></div>
         <div class="notice-body" v-else>
           <p>暂无详细内容</p>
         </div>
@@ -96,6 +97,8 @@ import {
   formatDate,
   getNoticeTypeFromText
 } from '@/utils/notice'
+import { sanitizeRichText } from '@/utils/sanitizeHtml'
+import { logger } from '@/utils/logger'
 
 const route = useRoute()
 const router = useRouter()
@@ -109,10 +112,13 @@ const noticeId = computed(() => parseInt(route.params.id))
 const loading = computed(() => noticeStore.loading)
 const notice = computed(() => noticeStore.currentNotice)
 
+// 净化后的公告内容
+const sanitizedContent = computed(() => {
+  return sanitizeRichText(notice.value?.content)
+})
+
 const fetchNoticeDetail = async () => {
   try {
-    console.log('📄 获取公告详情:', noticeId.value)
-
     const result = await noticeStore.fetchPublicNotice(noticeId.value)
 
     if (!result.success) {
@@ -122,7 +128,7 @@ const fetchNoticeDetail = async () => {
     // 获取相关公告推荐
     await fetchRelatedNotices()
   } catch (error) {
-    console.error('获取公告详情失败:', error)
+    logger.error('获取公告详情失败:', error)
     ElMessage.error('获取公告详情失败')
   }
 }
@@ -143,7 +149,7 @@ const fetchRelatedNotices = async () => {
         }))
     }
   } catch (error) {
-    console.warn('获取相关公告失败:', error)
+    logger.warn('获取相关公告失败:', error)
     relatedNotices.value = []
   }
 }

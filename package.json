@@ -9,20 +9,23 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint . --fix",
+    "lint:check": "eslint ."
   },
   "dependencies": {
     "@amap/amap-jsapi-loader": "^1.0.1",
+    "@element-plus/icons-vue": "^2.3.1",
     "@tanstack/vue-virtual": "^3.13.12",
-      "@vee-validate/i18n": "^4.15.1",
+    "@vee-validate/i18n": "^4.15.1",
     "@vee-validate/rules": "^4.15.1",
     "@vueuse/core": "^11.3.0",
     "@vueuse/motion": "^3.0.3",
     "axios": "^1.13.2",
     "dayjs": "^1.11.19",
+    "dompurify": "^3.3.1",
     "echarts": "^6.0.0",
     "element-plus": "^2.11.8",
-    "@element-plus/icons-vue": "^2.3.1",
     "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
     "lodash-es": "^4.17.21",
@@ -37,8 +40,17 @@
     "vuedraggable": "^2.24.3"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@vitejs/plugin-vue": "^6.0.2",
+    "esbuild": "^0.27.2",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-vue": "^10.6.2",
+    "typescript-eslint": "^8.50.1",
     "vite": "^7.2.4",
-    "vite-plugin-vue-devtools": "^8.0.5"
+    "vite-plugin-vue-devtools": "^8.0.5",
+    "vue-demi": "^0.14.10"
   }
 }

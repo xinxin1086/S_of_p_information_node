@@ -65,8 +65,8 @@
           @click="goToDetail(post.id)"
         >
           <div class="post-avatar">
-            <el-avatar :src="post.author.avatar" :size="48">
-              {{ post.author.username?.charAt(0)?.toUpperCase() }}
+            <el-avatar :src="post.author?.avatar" :size="48">
+              {{ post.author?.username?.charAt(0)?.toUpperCase() || '?' }}
             </el-avatar>
           </div>
 
@@ -86,7 +86,7 @@
             </div>
 
             <div class="post-meta">
-              <span class="author">{{ post.author.username }}</span>
+              <span class="author">{{ post.author?.username || '未知用户' }}</span>
               <span class="time">{{ formatTime(post.created_at) }}</span>
               <div class="stats">
                 <span class="stat-item">

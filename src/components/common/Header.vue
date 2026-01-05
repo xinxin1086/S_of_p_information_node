@@ -151,8 +151,9 @@
     <!-- 标签页导航 -->
     <div v-if="showTabs" class="tabs-container">
       <el-tabs
-        v-model="activeTab"
+        :model-value="activeTab"
         type="card"
+        @update:model-value="handleTabUpdate"
         @tab-click="handleTabClick"
         @tab-remove="handleTabRemove"
       >
@@ -287,7 +288,8 @@ const emit = defineEmits([
   'notification',
   'user-menu-command',
   'tab-click',
-  'tab-remove'
+  'tab-remove',
+  'update:activeTab'
 ])
 
 // Store
@@ -392,6 +394,10 @@ const handleUserMenuCommand = async (command) => {
 
 const handleTabClick = (tab) => {
   emit('tab-click', tab)
+}
+
+const handleTabUpdate = (tabName) => {
+  emit('update:activeTab', tabName)
 }
 
 const handleTabRemove = (tabName) => {

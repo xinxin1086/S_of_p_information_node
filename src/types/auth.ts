@@ -36,7 +36,7 @@ export interface Permissions {
 }
 
 // API响应包装类型
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean
   data?: T
   message?: string
@@ -171,7 +171,7 @@ export interface ApiLoginResponse {
 export interface ApiError {
   code: string
   message: string
-  details?: any
+  details?: Record<string, unknown>
   isPermissionError?: boolean
   isNetworkError?: boolean
   isServerError?: boolean
@@ -216,7 +216,7 @@ export type PermissionResource =
 export interface FineGrainedPermission {
   resource: PermissionResource
   actions: PermissionAction[]
-  conditions?: Record<string, any>
+  conditions?: Record<string, unknown>
 }
 
 // 权限检查选项
@@ -229,7 +229,7 @@ export interface PermissionCheckOptions {
 export interface OperateRequest {
   table_name: string
   operate_type: 'add' | 'update' | 'delete' | 'query'
-  kwargs: Record<string, any>
+  kwargs: Record<string, unknown>
 }
 
 export interface PaginationParams {
@@ -283,7 +283,7 @@ export interface TokenValidationResult {
   valid: boolean
   expired: boolean
   error?: string
-  payload?: any
+  payload?: Record<string, unknown>
 }
 
 // 会话管理
@@ -341,7 +341,7 @@ export interface AuditLog {
   userId: number
   action: string
   resource: string
-  details?: any
+  details?: Record<string, unknown>
   ipAddress: string
   userAgent?: string
   timestamp: Date
@@ -386,7 +386,7 @@ export interface SecurityEvent {
   type: 'login_attempt' | 'password_change' | 'mfa_enabled' | 'account_locked' | 'suspicious_activity'
   severity: 'low' | 'medium' | 'high' | 'critical'
   userId?: number
-  details: Record<string, any>
+  details: Record<string, unknown>
   timestamp: Date
   resolved: boolean
   resolvedAt?: Date

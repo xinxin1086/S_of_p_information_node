@@ -1,9 +1,8 @@
 import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vite'
+
 import vue from '@vitejs/plugin-vue'
+import { defineConfig } from 'vite'
 import vueDevTools from 'vite-plugin-vue-devtools'
-import type { Plugin } from 'vite'
-import { resolve } from 'path'
 
 export default defineConfig({
   plugins: [
@@ -58,15 +57,15 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         ws: true, // 支持WebSocket
-        configure: (proxy, options) => {
-          proxy.on('error', (err, req, res) => {
-            console.log('proxy error', err);
+        configure: (proxy) => {
+          proxy.on('error', (_err) => {
+            console.log('proxy error');
           });
-          proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log('Sending Request to the Target:', req.method, req.url);
+          proxy.on('proxyReq', (_proxyReq, _req) => {
+            console.log('Sending Request to the Target');
           });
-          proxy.on('proxyRes', (proxyRes, req, res) => {
-            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
+          proxy.on('proxyRes', (proxyRes, _req) => {
+            console.log('Received Response from the Target:', proxyRes.statusCode);
           });
         }
       }
@@ -141,6 +140,8 @@ export default defineConfig({
   },
   // 启用 TypeScript 类型检查
   esbuild: {
-    target: 'es2020'
+    target: 'es2020',
+    // 生产环境自动移除 console
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : []
   }
 })

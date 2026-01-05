@@ -34,7 +34,8 @@
           </div>
         </div>
 
-        <div class="article-body" v-html="article.content"></div>
+        <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized with DOMPurify -->
+<div class="article-body" v-html="sanitizedContent"></div>
 
         <div class="article-stats">
           <div class="stats-left">
@@ -84,6 +85,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, View, Star } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useScienceStore } from '@/stores/science'
+import { sanitizeRichText } from '@/utils/sanitizeHtml'
+import { tokenManager } from '@/utils/tokenManager'
 
 const route = useRoute()
 const router = useRouter()
@@ -94,6 +97,11 @@ const article = ref(null)
 const relatedArticles = ref([])
 
 const articleId = computed(() => parseInt(route.params.id))
+
+// 净化后的文章内容
+const sanitizedContent = computed(() => {
+  return sanitizeRichText(article.value?.content)
+})
 
 const fetchArticleDetail = async () => {
   loading.value = true

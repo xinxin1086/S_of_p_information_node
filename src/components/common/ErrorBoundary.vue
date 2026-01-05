@@ -87,7 +87,7 @@ const errorDetails = computed(() => {
 })
 
 // 捕获子组件错误
-onErrorCaptured((err: Error, instance: any, info: string) => {
+onErrorCaptured((err: Error, instance: unknown, info: string) => {
   console.error('ErrorBoundary捕获到错误:', err)
   console.error('组件实例:', instance)
   console.error('错误信息:', info)
@@ -142,8 +142,9 @@ const reportError = (err: Error, info: string) => {
         userAgent: navigator.userAgent,
         timestamp: new Date().toISOString()
       })
-    }).catch(() => {
-      // 忽略错误上报失败
+    }).catch((error) => {
+      // 忽略错误上报失败，仅记录日志
+      console.warn('错误上报失败:', error)
     })
   } catch {
     // 忽略错误上报失败

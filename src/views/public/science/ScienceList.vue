@@ -64,6 +64,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { View, Star } from '@element-plus/icons-vue'
 import { useScienceStore } from '@/stores/science'
+import { tokenManager } from '@/utils/tokenManager'
 
 const router = useRouter()
 const scienceStore = useScienceStore()
@@ -121,13 +122,15 @@ const fetchLikeStatus = async () => {
       return
     }
 
-    const articleIds = articles.value.map(article => article.id)
+    const articleIds = articles.value.filter(a => a?.id).map(article => article.id)
     const result = await scienceStore.getLikeStatus(articleIds)
 
     if (result.success && result.data?.article_like_status) {
       // 更新文章的点赞状态
       articles.value.forEach(article => {
-        article.is_liked = result.data.article_like_status[article.id] || false
+        if (article?.id) {
+          article.is_liked = result.data.article_like_status[article.id] || false
+        }
       })
     }
   } catch (error) {

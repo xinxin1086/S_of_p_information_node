@@ -145,19 +145,19 @@ const fetchBookings = async () => {
 
     if (result.success) {
       const items = result.data?.items || result.data || []
-      bookings.value = items.map(booking => ({
-        id: booking.id,
-        status: booking.status,
-        booking_time: booking.booking_time || booking.created_at,
-        cancel_time: booking.cancel_time,
-        cancel_reason: booking.cancel_reason,
+      bookings.value = items.filter(Boolean).map(booking => ({
+        id: booking?.id,
+        status: booking?.status,
+        booking_time: booking?.booking_time || booking?.created_at,
+        cancel_time: booking?.cancel_time,
+        cancel_reason: booking?.cancel_reason,
         activity: {
-          id: booking.activity?.id || booking.activity_id,
-          title: booking.activity?.title || '活动名称',
-          description: booking.activity?.description,
-          location: booking.activity?.location,
-          start_time: booking.activity?.start_time,
-          end_time: booking.activity?.end_time
+          id: booking?.activity?.id || booking?.activity_id,
+          title: booking?.activity?.title || '活动名称',
+          description: booking?.activity?.description,
+          location: booking?.activity?.location,
+          start_time: booking?.activity?.start_time,
+          end_time: booking?.activity?.end_time
         }
       }))
       total.value = result.data?.total || items.length

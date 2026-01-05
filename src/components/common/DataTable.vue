@@ -154,8 +154,8 @@
     <!-- 分页器 -->
     <div v-if="showPagination && pagination" class="table-pagination">
       <el-pagination
-        v-model:current-page="pagination.page"
-        v-model:page-size="pagination.pageSize"
+        :current-page="pagination.page"
+        :page-size="pagination.pageSize"
         :page-sizes="pagination.pageSizes || [10, 20, 50, 100]"
         :total="pagination.total"
         :layout="paginationLayout"
@@ -193,7 +193,7 @@ interface TableColumn {
   sortable?: boolean | 'custom'
   align?: 'left' | 'center' | 'right'
   showOverflowTooltip?: boolean
-  formatter?: (value: any, row: any) => string
+  formatter?: (value: unknown, row: Record<string, unknown>) => string
 }
 
 // 操作配置接口
@@ -201,15 +201,15 @@ interface TableAction {
   key: string
   label: string
   type: 'button' | 'dropdown'
-  icon?: any
+  icon?: Record<string, unknown>
   buttonType?: 'primary' | 'success' | 'warning' | 'danger' | 'info'
   size?: 'large' | 'default' | 'small'
   loading?: boolean
   disabled?: boolean
   requiredRole?: UserRole
   requiredPermission?: string
-  visible?: (row: any) => boolean
-  onClick?: (row: any, index: number) => void
+  visible?: (row: Record<string, unknown>) => boolean
+  onClick?: (row: Record<string, unknown>, index: number) => void
   items?: TableAction[] // dropdown类型的子菜单
 }
 
@@ -223,7 +223,7 @@ interface PaginationConfig {
 
 interface Props {
   /** 表格数据 */
-  data: any[]
+  data: Record<string, unknown>[]
   /** 列配置 */
   columns: TableColumn[]
   /** 操作配置 */
@@ -261,7 +261,7 @@ interface Props {
   /** 是否允许批量删除 */
   allowBatchDelete?: boolean
   /** 选择行函数 */
-  selectable?: (row: any, index: number) => boolean
+  selectable?: (row: Record<string, unknown>, index: number) => boolean
   /** 是否显示分页 */
   showPagination?: boolean
   /** 分页配置 */
@@ -297,39 +297,27 @@ const props = withDefaults(defineProps<Props>(), {
   actionColumnFixed: 'right'
 })
 
-// 计算实际是否显示创建按钮
-const shouldShowCreate = computed(() => {
-  return props.showCreate !== false && props.allowCreate &&
-    (hasPermission('ADMIN') || hasPermission('CONTENT_CREATE'))
-})
-
-// 计算实际是否显示批量删除按钮
-const shouldShowBatchDelete = computed(() => {
-  return props.allowBatchDelete && selectedRows.value.length > 0 &&
-    (hasPermission('ADMIN') || hasPermission('CONTENT_DELETE'))
-})
-
 const emit = defineEmits<{
   create: []
   refresh: []
   search: [keyword: string]
-  'selection-change': [selection: any[]]
-  'sort-change': [sort: { column: any; prop: string; order: string }]
+  'selection-change': [selection: Record<string, unknown>[]]
+  'sort-change': [sort: { column: Record<string, unknown>; prop: string; order: string }]
   'size-change': [size: number]
   'current-change': [page: number]
-  action: [action: TableAction, row: any, index: number]
+  action: [action: TableAction, row: Record<string, unknown>, index: number]
 }>()
 
 const authStore = useAuthStore()
 const { hasPermission, hasFeaturePermission } = usePermissions()
 const searchKeyword = ref('')
-const selectedRows = ref<any[]>([])
+const selectedRows = ref<Record<string, unknown>[]>([])
 const batchDeleteLoading = ref(false)
 
 /**
  * 格式化单元格内容
  */
-const formatCell = (value: any, column: TableColumn, row: any) => {
+const formatCell = (value: unknown, column: TableColumn, row: Record<string, unknown>) => {
   if (column.formatter) {
     return column.formatter(value, row)
   }
@@ -339,7 +327,7 @@ const formatCell = (value: any, column: TableColumn, row: any) => {
 /**
  * 获取可用的操作按钮 - 使用新的统一权限系统
  */
-const getAvailableActions = (row: any) => {
+const getAvailableActions = (row: Record<string, unknown>) => {
   return (props.actions || []).filter(action => {
     // 检查权限
     if (action.requiredRole && !hasPermission(action.requiredRole as UserRole)) {
@@ -361,7 +349,7 @@ const getAvailableActions = (row: any) => {
 /**
  * 处理选择变化
  */
-const handleSelectionChange = (selection: any[]) => {
+const handleSelectionChange = (selection: Record<string, unknown>[]) => {
   selectedRows.value = selection
   emit('selection-change', selection)
 }
@@ -369,7 +357,7 @@ const handleSelectionChange = (selection: any[]) => {
 /**
  * 处理排序变化
  */
-const handleSortChange = (sort: { column: any; prop: string; order: string }) => {
+const handleSortChange = (sort: { column: Record<string, unknown>; prop: string; order: string }) => {
   emit('sort-change', sort)
 }
 
@@ -427,7 +415,7 @@ const handleBatchDelete = async () => {
 /**
  * 处理操作按钮点击
  */
-const handleAction = (action: TableAction, row: any, index: number) => {
+const handleAction = (action: TableAction, row: Record<string, unknown>, index: number) => {
   if (action.onClick) {
     action.onClick(row, index)
   }
@@ -437,7 +425,7 @@ const handleAction = (action: TableAction, row: any, index: number) => {
 /**
  * 处理下拉菜单操作
  */
-const handleDropdownAction = (command: string, action: TableAction, row: any, index: number) => {
+const handleDropdownAction = (command: string, action: TableAction, row: Record<string, unknown>, index: number) => {
   const item = action.items?.find(i => i.key === command)
   if (item?.onClick) {
     item.onClick(row, index)

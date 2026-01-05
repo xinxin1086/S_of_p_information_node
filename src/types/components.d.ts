@@ -2,8 +2,7 @@
  * Vue组件相关类型定义
  */
 
-import type { Component, ComputedRef, Ref } from 'vue'
-import type { App } from '@vue/runtime-core'
+import type { Component } from 'vue'
 
 // 组件实例类型
 export type ComponentInstance<T extends Component = Component> = InstanceType<T>

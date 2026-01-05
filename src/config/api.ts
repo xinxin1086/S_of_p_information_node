@@ -324,7 +324,7 @@ export const CONTENT_TYPES = {
 export const API_RESPONSE_FORMATS = {
   SUCCESS: {
     success: true,
-    data: 'any',
+    data: 'unknown',
     message: 'string'
   },
   ERROR: {

@@ -292,13 +292,13 @@ const subMenuItems = computed(() => {
   }
 
   // 组织用户专属功能 - 使用权限系统判断
-  if (hasPermission('FISHERMAN') || hasPermission('ORGANIZATION')) {
+  if (hasPermission('ORGANIZATION')) {
     items.push({
-      title: '组织用户功能',
+      title: '组织用户',
       path: '/user/weave',
       icon: 'Compass',
       children: [
-        { title: '组织用户控制台', path: '/user/weave/dashboard' },
+        { title: '控制台', path: '/user/weave/dashboard' },
         { title: '创建活动', path: '/user/weave/create-activity' },
         { title: '编辑活动', path: '/user/weave/edit-activity' },
         { title: '我的活动', path: '/user/weave/my-activities' }

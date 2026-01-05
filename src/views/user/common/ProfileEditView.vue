@@ -492,6 +492,8 @@ onMounted(() => {
       }
     }).catch(error => {
       console.warn('获取最新用户信息失败，使用本地缓存数据:', error)
+      // 提示用户数据可能不是最新的
+      ElMessage.warning('无法获取最新的用户信息，当前显示的是缓存数据')
     })
   }
 })

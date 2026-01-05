@@ -1,4 +1,6 @@
 import { ref, reactive, computed } from 'vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
+
 import apiClient from '@/utils/request.js';
 import { uploadImage } from '@/utils/upload.js';
 
@@ -99,7 +101,7 @@ export const useListCommonLogic = (tableName, listApi = '') => {
             let response;
             // 核心：过滤空字符串、null、undefined的查询条件
             const filteredKwargs = Object.fromEntries(
-                Object.entries(queryParams.value).filter(([_, value]) =>
+                Object.entries(queryParams.value).filter(([, value]) =>
                     value !== '' && value != null && value !== undefined
                 )
             );
@@ -125,8 +127,8 @@ export const useListCommonLogic = (tableName, listApi = '') => {
                         }
                     });
                 } else if (tableName === 'admin_info') {
-                    // 管理员列表使用专用接口
-                    response = await apiClient.get('/api/admin/list', {
+                    // 管理员列表使用用户管理员接口（与管理员用户管理一致）
+                    response = await apiClient.get('/api/user/admin/users', {
                         params: {
                             page: currentPage.value,
                             size: pageSize.value,
@@ -184,22 +186,28 @@ export const useListCommonLogic = (tableName, listApi = '') => {
     };
 
     const handleDelete = async (id) => {
-        if (!confirm(`确定删除该${tableName === 'admin_info' ? '管理员' : '用户'}吗？`)) return;
         try {
-            let deleteUrl;
-            // 根据表名使用不同的删除接口
-            if (tableName === 'user_info') {
-                deleteUrl = `/api/user/admin/users/${id}`;
-            } else if (tableName === 'admin_info') {
-                deleteUrl = `/api/admin/delete/${id}`;
-            } else {
-                throw new Error(`不支持的表名: ${tableName}`);
-            }
+            await ElMessageBox.confirm(
+                `确定删除该${tableName === 'admin_info' ? '管理员' : '用户'}吗？`,
+                '提示',
+                {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }
+            );
+        } catch {
+            return;
+        }
+
+        try {
+            // user_info 和 admin_info 都使用相同的删除接口
+            const deleteUrl = `/api/user/admin/users/${id}`;
 
             const response = await apiClient.delete(deleteUrl);
             // 响应拦截器返回完整的 response 对象，需要访问 response.data
             if (response?.data?.success) {
-                alert('删除成功');
+                ElMessage.success('删除成功');
                 fetchData();
             } else {
                 errorMessage.value = response?.data?.message || '删除失败';
@@ -223,10 +231,23 @@ export const useListCommonLogic = (tableName, listApi = '') => {
 
     const handleBatchDelete = async () => {
         if (selectedIds.value.length === 0) {
-            alert(`请选择要删除的${tableName === 'admin_info' ? '管理员' : '用户'}`);
+            ElMessage.warning(`请选择要删除的${tableName === 'admin_info' ? '管理员' : '用户'}`);
             return;
         }
-        if (!confirm(`确定删除选中的${selectedIds.value.length}条记录吗？`)) return;
+
+        try {
+            await ElMessageBox.confirm(
+                `确定删除选中的${selectedIds.value.length}条记录吗？`,
+                '提示',
+                {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }
+            );
+        } catch {
+            return;
+        }
 
         let successCount = 0;
         let foreignKeyErrors = 0;
@@ -234,15 +255,8 @@ export const useListCommonLogic = (tableName, listApi = '') => {
 
         for (const id of selectedIds.value) {
             try {
-                let deleteUrl;
-                // 根据表名使用不同的删除接口
-                if (tableName === 'user_info') {
-                    deleteUrl = `/api/user/admin/users/${id}`;
-                } else if (tableName === 'admin_info') {
-                    deleteUrl = `/api/admin/delete/${id}`;
-                } else {
-                    throw new Error(`不支持的表名: ${tableName}`);
-                }
+                // user_info 和 admin_info 都使用相同的删除接口
+                const deleteUrl = `/api/user/admin/users/${id}`;
 
                 const response = await apiClient.delete(deleteUrl);
                 // 响应拦截器返回完整的 response 对象，需要访问 response.data
@@ -257,19 +271,22 @@ export const useListCommonLogic = (tableName, listApi = '') => {
             }
         }
 
-        let resultMsg = `批量删除完成：\n成功：${successCount}条`;
+        let resultMsg = `批量删除完成：成功 ${successCount} 条`;
         if (foreignKeyErrors > 0) {
-            resultMsg += `\n因关联数据删除失败：${foreignKeyErrors}条`;
+            resultMsg += `，因关联数据删除失败 ${foreignKeyErrors} 条`;
         }
         if (otherErrors > 0) {
-            resultMsg += `\n其他错误：${otherErrors}条`;
+            resultMsg += `，其他错误 ${otherErrors} 条`;
         }
 
         if (foreignKeyErrors > 0) {
-            resultMsg += `\n\n提示：有关联数据的${tableName === 'admin_info' ? '管理员' : '用户'}无法直接删除，请先处理其关联数据。`;
+            ElMessage.warning(resultMsg + `。有关联数据的${tableName === 'admin_info' ? '管理员' : '用户'}无法直接删除，请先处理其关联数据。`);
+        } else if (successCount > 0) {
+            ElMessage.success(resultMsg);
+        } else {
+            ElMessage.error(resultMsg);
         }
 
-        alert(resultMsg);
         selectedIds.value = [];
         fetchData();
     };
@@ -306,36 +323,29 @@ export const useSubmitCommonLogic = (tableName, form, formRef, isLoading, errorM
         isLoading.value = true;
         errorMessage.value = '';
         try {
-            let avatarUrl = form.value.avatar;
+            // 如果有新上传的文件，先上传图片
             if (form.value.avatarFile) {
-                avatarUrl = await uploadImage(form.value.avatarFile);
+                form.value.avatar = await uploadImage(form.value.avatarFile);
             }
 
             if (!id) {
                 // 新增操作
-                let createUrl;
+                // user_info 和 admin_info 都使用相同的创建接口
+                const createUrl = '/api/user/admin/create-admin';
                 const createData = { ...form.value };
-
-                // 根据表名使用不同的创建接口
-                if (tableName === 'user_info') {
-                    createUrl = '/api/user/admin/create-user';
-                } else if (tableName === 'admin_info') {
-                    createUrl = '/api/admin/create';
-                } else {
-                    throw new Error(`不支持的表名: ${tableName}`);
-                }
 
                 const result = await apiClient.post(createUrl, createData);
                 // 响应拦截器返回完整的 response 对象，需要访问 result.data
                 if (result?.data?.success) {
-                    alert(`新增${tableName === 'admin_info' ? '管理员' : '用户'}成功！`);
+                    ElMessage.success(`新增${tableName === 'admin_info' ? '管理员' : '用户'}成功！`);
                     routerPush();
                 } else {
                     throw new Error(result?.data?.message || '新增失败');
                 }
             } else {
                 // 编辑操作
-                let updateUrl;
+                // user_info 和 admin_info 都使用相同的更新接口
+                const updateUrl = `/api/user/admin/users/${id}`;
                 const updateData = { ...form.value };
 
                 // 移除不需要更新的字段
@@ -344,19 +354,10 @@ export const useSubmitCommonLogic = (tableName, form, formRef, isLoading, errorM
                 delete updateData.account;
                 delete updateData.avatarFile;
 
-                // 根据表名使用不同的更新接口
-                if (tableName === 'user_info') {
-                    updateUrl = `/api/user/admin/users/${id}`;
-                } else if (tableName === 'admin_info') {
-                    updateUrl = `/api/admin/update/${id}`;
-                } else {
-                    throw new Error(`不支持的表名: ${tableName}`);
-                }
-
                 const result = await apiClient.put(updateUrl, updateData);
                 // 响应拦截器返回完整的 response 对象，需要访问 result.data
                 if (result?.data?.success) {
-                    alert(`修改${tableName === 'admin_info' ? '管理员' : '用户'}成功！`);
+                    ElMessage.success(`修改${tableName === 'admin_info' ? '管理员' : '用户'}成功！`);
                     routerPush();
                 } else {
                     throw new Error(result?.data?.message || '修改失败');
@@ -389,15 +390,8 @@ export const fetchEditData = async (tableName, id, form, isLoading, errorMessage
 
     isLoading.value = true;
     try {
-        let detailUrl;
-        // 根据表名使用不同的详情接口
-        if (tableName === 'user_info') {
-            detailUrl = `/api/user/admin/users/${id}`;
-        } else if (tableName === 'admin_info') {
-            detailUrl = `/api/admin/detail/${id}`;
-        } else {
-            throw new Error(`不支持的表名: ${tableName}`);
-        }
+        // user_info 和 admin_info 都使用相同的详情接口
+        const detailUrl = `/api/user/admin/users/${id}`;
 
         const result = await apiClient.get(detailUrl);
 

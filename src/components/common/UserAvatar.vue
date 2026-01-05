@@ -36,7 +36,7 @@ interface Props {
   /** 是否显示调试信息 */
   showDebug?: boolean
   /** 用户信息（用于调试） */
-  userInfo?: any
+  userInfo?: Record<string, unknown>
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -46,7 +46,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 // 处理头像URL的逻辑，支持用户信息对象
-const processAvatarUrl = (avatar: string | undefined, userInfo: any): string => {
+const processAvatarUrl = (avatar: string | undefined, userInfo: Record<string, unknown> | undefined): string => {
   let avatarField = avatar
 
   // 如果直接传入了用户信息对象，从中提取头像字段

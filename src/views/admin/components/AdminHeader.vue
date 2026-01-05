@@ -25,6 +25,7 @@ defineOptions({ name: "AdminHeader" })
 import { useAuthStore, usePermissions } from '@/stores'
 import { useRouter } from 'vue-router'
 import { formatUserDisplayName } from '@/utils/userFormat.js'
+import { tokenManager } from '@/utils/tokenManager'
 import axios from 'axios';
 const authStore = useAuthStore()
 const router = useRouter()

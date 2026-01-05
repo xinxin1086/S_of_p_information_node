@@ -122,19 +122,19 @@ const fetchActivities = async () => {
     if (result.success) {
       // 适配数据格式到前端显示
       const items = result.data?.items || result.data || []
-      activities.value = items.map(activity => ({
-        id: activity.id,
-        title: activity.title,
-        summary: activity.description?.substring(0, 100) + '...' || '',
-        location: activity.location || '地点待定',
-        type: activity.type || 'social',
-        status: activity.status || 'published',
-        cover: activity.cover_image,
-        startTime: activity.start_time,
-        endTime: activity.end_time,
-        participants: activity.current_participants || 0,
-        maxParticipants: activity.max_participants || 0,
-        organizerAccount: activity.organizer_display_name || activity.organizer_name || '组织者'
+      activities.value = items.filter(Boolean).map(activity => ({
+        id: activity?.id,
+        title: activity?.title,
+        summary: activity?.description?.substring(0, 100) + '...' || '',
+        location: activity?.location || '地点待定',
+        type: activity?.type || 'social',
+        status: activity?.status || 'published',
+        cover: activity?.cover_image,
+        startTime: activity?.start_time,
+        endTime: activity?.end_time,
+        participants: activity?.current_participants || 0,
+        maxParticipants: activity?.max_participants || 0,
+        organizerAccount: activity?.organizer_display_name || activity?.organizer_name || '组织者'
       }))
     } else {
       console.error('获取活动列表失败:', result.error)

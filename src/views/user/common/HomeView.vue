@@ -47,11 +47,11 @@
 
     <!-- 组织用户专属功能 -->
     <div v-if="user?.role === 'organization'" class="organization-features">
-      <h3>组织用户功能</h3>
+      <h3>组织用户</h3>
       <div class="action-grid">
         <div class="action-card" @click="$router.push('/user/weave/dashboard')">
           <el-icon class="action-icon"><DataBoard /></el-icon>
-          <h4>组织用户控制台</h4>
+          <h4>控制台</h4>
           <p>数据概览和统计信息</p>
         </div>
         <div class="action-card" @click="$router.push('/user/weave/create-activity')">

@@ -197,6 +197,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { adminApi } from '@/api/index.js';
 import {
   getAllStatusOptions,
@@ -371,19 +372,32 @@ const handleEdit = (activity) => {
 
 // 单个删除
 const handleDelete = async (activity) => {
-  if (!confirm('确定要删除该活动吗？')) return;
+  try {
+    await ElMessageBox.confirm(
+      '确定要删除该活动吗？',
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    );
+  } catch {
+    return;
+  }
+
   isLoading.value = true;
 
   try {
     const response = await adminApi.activity.delete(activity.id);
     if (response.success) {
-      alert('删除成功！');
+      ElMessage.success('删除成功！');
       fetchActivities();
     } else {
-      alert('删除失败：' + (response.message || '未知错误'));
+      ElMessage.error('删除失败：' + (response.message || '未知错误'));
     }
   } catch (error) {
-    alert('删除失败：' + formatErrorMessage(error, '删除活动失败'));
+    ElMessage.error('删除失败：' + formatErrorMessage(error, '删除活动失败'));
   } finally {
     isLoading.value = false;
   }
@@ -391,20 +405,33 @@ const handleDelete = async (activity) => {
 
 // 批量删除
 const handleBatchDelete = async () => {
-  if (!confirm(`确定要删除选中的${selectedIds.value.length}条活动吗？`)) return;
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除选中的${selectedIds.value.length}条活动吗？`,
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    );
+  } catch {
+    return;
+  }
+
   try {
     isLoading.value = true;
     // 使用专用的批量删除接口
     const response = await adminApi.activity.batchDelete(selectedIds.value);
     if (response.success) {
-      alert('批量删除成功！');
+      ElMessage.success('批量删除成功！');
       selectedIds.value = [];
       fetchActivities();
     } else {
-      alert('批量删除失败：' + (response.message || '未知错误'));
+      ElMessage.error('批量删除失败：' + (response.message || '未知错误'));
     }
   } catch (error) {
-    alert('批量删除失败：' + error.message);
+    ElMessage.error('批量删除失败：' + error.message);
   } finally {
     isLoading.value = false;
   }
@@ -435,11 +462,11 @@ const submitForm = async () => {
       response = await adminApi.activity.create(activityData);
     }
     if (response.success) {
-      alert(isEdit.value ? '编辑成功！' : '新增成功！');
+      ElMessage.success(isEdit.value ? '编辑成功！' : '新增成功！');
       closeModal();
       fetchActivities();
     } else {
-      alert(isEdit.value ? '编辑失败：' : '新增失败：' + (response.message || '未知错误'));
+      ElMessage.error(isEdit.value ? '编辑失败：' : '新增失败：' + (response.message || '未知错误'));
     }
   } catch (error) {
     console.error('表单提交错误：', error);
@@ -472,19 +499,31 @@ const handleDiscussManage = (activity) => {
 
 // 更新用户显示信息
 const handleUpdateUserDisplays = async () => {
-  if (!confirm('确定要更新所有活动的用户显示信息吗？这将处理已注销用户的显示名称。')) return;
+  try {
+    await ElMessageBox.confirm(
+      '确定要更新所有活动的用户显示信息吗？这将处理已注销用户的显示名称。',
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    );
+  } catch {
+    return;
+  }
 
   isLoading.value = true;
   try {
     const response = await adminApi.activity.updateUserDisplays();
     if (response.success) {
-      alert('用户显示信息更新成功！');
+      ElMessage.success('用户显示信息更新成功！');
       fetchActivities(); // 重新加载数据以查看更新后的显示信息
     } else {
-      alert('更新失败：' + (response.message || '未知错误'));
+      ElMessage.error('更新失败：' + (response.message || '未知错误'));
     }
   } catch (error) {
-    alert('更新失败：' + formatErrorMessage(error, '更新用户显示信息失败'));
+    ElMessage.error('更新失败：' + formatErrorMessage(error, '更新用户显示信息失败'));
   } finally {
     isLoading.value = false;
   }

@@ -3,7 +3,7 @@
  * 统一管理公告列表和详情页的接口调用
  */
 
-import { api } from './common/request'
+import { request } from '@/utils/request'
 
 /**
  * 公告列表项接口类型定义
@@ -64,13 +64,13 @@ export const fetchNoticeList = async (
   try {
     console.log('🔄 请求公告列表:', { page, size, title, noticeType, releaseTimeStart, releaseTimeEnd })
 
-    const params: any = { page, size }
+    const params: Record<string, string | number> = { page, size }
     if (title) params.title = title
     if (noticeType) params.notice_type = noticeType
     if (releaseTimeStart) params.release_time_start = releaseTimeStart
     if (releaseTimeEnd) params.release_time_end = releaseTimeEnd
 
-    const response = await api.get('/api/public/notice/list', params)
+    const response = await request.get('/api/public/notice/list', params)
 
     console.log('📥 收到公告列表响应:', response)
     console.log('📊 响应数据类型:', typeof response)
@@ -182,7 +182,7 @@ export const fetchNoticeList = async (
  */
 export const fetchNoticeDetail = async (noticeId: number | string): Promise<NoticeDetail> => {
   try {
-    const response = await api.get(`/api/public/notice/detail/${noticeId}`)
+    const response = await request.get(`/api/public/notice/detail/${noticeId}`)
     console.log('📥 公告详情API响应:', response)
 
     // 处理响应数据结构：{data: {...}, message: '获取成功', success: true}
@@ -263,12 +263,12 @@ export const fetchAdminNoticeList = async (
     console.log('🔄 请求管理员公告列表（使用访客接口）:', { page, size, title, noticeType, expirationStart })
 
     // 使用访客接口获取公告列表，避免管理员接口500错误
-    const params: any = { page, size }
+    const params: Record<string, string | number> = { page, size }
     if (title) params.title = title
     if (noticeType) params.notice_type = noticeType
     if (expirationStart) params.release_time_start = expirationStart
 
-    const response = await api.get('/api/public/notice/list', params)
+    const response = await request.get('/api/public/notice/list', params)
 
     console.log('📥 收到管理员公告列表响应（访客接口）:', response)
 
@@ -335,7 +335,7 @@ export const fetchAdminNoticeList = async (
 export const createAdminNotice = async (noticeData: Partial<NoticeDetail>) => {
   try {
     console.log('🔄 创建公告请求数据:', noticeData)
-    const response = await api.post('/api/admin/notices', noticeData)
+    const response = await request.post('/api/admin/notices', noticeData)
 
     console.log('📥 创建公告响应:', response)
     console.log('📊 响应类型:', typeof response)
@@ -381,7 +381,7 @@ export const createAdminNotice = async (noticeData: Partial<NoticeDetail>) => {
 export const updateAdminNotice = async (noticeId: number | string, noticeData: Partial<NoticeDetail>) => {
   try {
     console.log('🔄 更新公告请求数据:', noticeId, noticeData)
-    const response = await api.put(`/api/admin/notices/${noticeId}`, noticeData)
+    const response = await request.put(`/api/admin/notices/${noticeId}`, noticeData)
 
     console.log('📥 更新公告响应:', response)
 
@@ -422,7 +422,7 @@ export const updateAdminNotice = async (noticeId: number | string, noticeData: P
 export const deleteAdminNotice = async (noticeId: number | string) => {
   try {
     console.log('🔄 删除公告请求数据:', noticeId)
-    const response = await api.delete(`/api/admin/notices/${noticeId}`)
+    const response = await request.delete(`/api/admin/notices/${noticeId}`)
 
     console.log('📥 删除公告响应:', response)
 

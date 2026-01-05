@@ -1,9 +1,11 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
 import { ElMessage, ElNotification } from 'element-plus'
-import { tokenManager, createAuthHeaders, handleApiError } from '@/utils/tokenManager'
+import { ref, readonly } from 'vue'
+
 import { useAuthStore } from '@/stores/auth'
 import type { ApiError } from '@/types/auth'
-import { ref, readonly } from 'vue'
+import { tokenManager, handleApiError } from '@/utils/tokenManager'
+
 
 /**
  * 统一的API基础URL配置
@@ -31,6 +33,7 @@ const apiClient: AxiosInstance = axios.create({
 
 /**
  * 请求拦截器 - 自动添加认证头和刷新Token
+ * 使用锁机制防止并发刷新
  */
 apiClient.interceptors.request.use(
   async (config) => {
@@ -38,9 +41,17 @@ apiClient.interceptors.request.use(
     const isLoginRequest = config.url?.includes('/login') || config.url?.includes('/register')
 
     if (!isLoginRequest && tokenManager.isLoggedIn()) {
-      // 检查并自动刷新Token（仅对已登录的非登录请求）
+      // 检查Token是否即将过期
       if (tokenManager.isTokenExpiring()) {
+        // 如果正在刷新，等待刷新完成（锁机制自动处理）
+        // 如果没有在刷新，触发刷新（锁机制自动处理）
         try {
+          console.log('🔐 Token即将过期，触发刷新...', {
+            url: config.url,
+            isRefreshing: tokenManager.isRefreshingToken(),
+            pendingRequests: tokenManager.getPendingRequestsCount()
+          })
+
           const authStore = useAuthStore()
           const refreshSuccess = await authStore.autoRefreshToken()
 
@@ -48,7 +59,10 @@ apiClient.interceptors.request.use(
             // Token刷新失败，取消请求
             return Promise.reject(new Error('Token刷新失败，请重新登录'))
           }
+
+          console.log('✅ Token刷新成功，继续请求')
         } catch (error) {
+          console.error('❌ Token刷新失败，取消请求:', error)
           return Promise.reject(error)
         }
       }
@@ -177,7 +191,7 @@ export const request = {
   /**
    * GET 请求
    */
-  async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
+  async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await apiClient.get<T>(url, config)
     return response.data
   },
@@ -185,7 +199,7 @@ export const request = {
   /**
    * POST 请求
    */
-  async post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  async post<T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> {
     const response = await apiClient.post<T>(url, data, config)
     return response.data
   },
@@ -193,7 +207,7 @@ export const request = {
   /**
    * PUT 请求
    */
-  async put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  async put<T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> {
     const response = await apiClient.put<T>(url, data, config)
     return response.data
   },
@@ -201,7 +215,7 @@ export const request = {
   /**
    * DELETE 请求
    */
-  async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
+  async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await apiClient.delete<T>(url, config)
     return response.data
   },
@@ -209,7 +223,7 @@ export const request = {
   /**
    * PATCH 请求
    */
-  async patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  async patch<T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> {
     const response = await apiClient.patch<T>(url, data, config)
     return response.data
   },
@@ -217,7 +231,7 @@ export const request = {
   /**
    * 上传文件
    */
-  async upload<T = any>(url: string, file: File, config?: AxiosRequestConfig): Promise<T> {
+  async upload<T = unknown>(url: string, file: File, config?: AxiosRequestConfig): Promise<T> {
     const formData = new FormData()
     formData.append('file', file)
 
@@ -236,10 +250,10 @@ export const request = {
 /**
  * 带加载状态的API调用Hook
  */
-export interface UseRequestOptions {
+export interface UseRequestOptions<T = unknown> {
   showError?: boolean
   showLoading?: boolean
-  onSuccess?: (data: any) => void
+  onSuccess?: (data: T) => void
   onError?: (error: ApiError) => void
 }
 
@@ -249,11 +263,10 @@ export const useRequest = () => {
 
   const execute = async <T>(
     apiCall: () => Promise<T>,
-    options: UseRequestOptions = {}
+    options: UseRequestOptions<T> = {}
   ): Promise<T | null> => {
     const {
       showError = true,
-      showLoading = true,
       onSuccess,
       onError
     } = options
@@ -265,18 +278,19 @@ export const useRequest = () => {
       const result = await apiCall()
       onSuccess?.(result)
       return result
-    } catch (err: any) {
-      error.value = err
+    } catch (err: unknown) {
+      const apiError = err as ApiError
+      error.value = apiError
 
       // 如果不是在拦截器中显示的错误，在这里显示
-      if (showError && !err.isPermissionError) {
+      if (showError && !apiError.isPermissionError) {
         ElMessage({
-          message: err.message || '操作失败',
+          message: apiError.message || '操作失败',
           type: 'error'
         })
       }
 
-      onError?.(err)
+      onError?.(apiError)
       return null
     } finally {
       loading.value = false

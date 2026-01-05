@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+
+import { authExtendedApi } from '@/api/extended'
 import type {
-  AuthState,
   LoginRequest,
   LoginResponse,
   ApiLoginResponse,
@@ -11,9 +12,6 @@ import type {
   RegisterRequest,
   RegisterResponse,
   TokenVerifyRequest,
-  TokenVerifyResponse,
-  TokenRefreshRequest,
-  TokenRefreshResponse,
   PasswordResetRequest,
   PasswordResetConfirmRequest,
   EmailVerifyRequest,
@@ -21,9 +19,8 @@ import type {
   PhoneVerifyRequest,
   PhoneVerifyConfirmRequest
 } from '@/types/auth'
-import { tokenManager, handleApiError } from '@/utils/tokenManager'
 import apiClient from '@/utils/request'
-import { authExtendedApi } from '@/api/extended'
+import { tokenManager, handleApiError } from '@/utils/tokenManager'
 
 export const useAuthStore = defineStore('auth', () => {
   // State
@@ -76,51 +73,25 @@ export const useAuthStore = defineStore('auth', () => {
       // 后端根据账号自动识别用户类型，返回 user_type 字段 ('user' | 'admin')
       const loginEndpoint = '/api/user/auth/login'
 
-      console.log('🔐 登录请求:', {
-        endpoint: loginEndpoint,
-        credentials: {
-          account: credentials.account,
-          password: '[HIDDEN]',
-          role: credentials.role
-        }
-      })
-
       const response = await apiClient.post(loginEndpoint, {
         account: credentials.account,
         password: credentials.password
-        // 不需要传递 role 参数，后端会根据账号自动识别
       })
-
-      console.log('🔐 登录响应成功:', response)
 
       // axios已经处理了HTTP状态码，response直接就是数据
       const responseData = response as ApiLoginResponse
-      console.log('🔐 登录响应数据:', responseData)
-
-      // 检查响应数据结构
-      console.log('🔐 完整响应数据:', responseData)
-      console.log('🔐 响应类型:', typeof responseData)
-      console.log('🔐 响应键值:', Object.keys(responseData))
 
       // 直接使用后端返回的数据格式
       // axios响应: { data: { data: {...}, message: '登录成功', success: true } }
       const loginData = responseData.data
-      console.log('🔐 后端返回的业务数据:', loginData)
-      console.log('🔐 业务数据键值:', Object.keys(loginData))
 
       // 打印完整的实际数据，方便调试
       const actualData = loginData.data || {}
-      console.log('🔐 实际用户数据详情:', {
-        actualData_keys: Object.keys(actualData),
-        actualData_full: actualData,
-        user_keys: actualData.user ? Object.keys(actualData.user) : 'no user field',
-        user_full: actualData.user || 'no user field'
-      })
 
       // 验证业务响应状态
       if (!loginData.success) {
         const errorMessage = loginData.message || '登录失败'
-        console.error('🔐 业务层面登录失败:', loginData)
+        console.error('登录失败:', errorMessage)
         throw new Error(errorMessage)
       }
 
@@ -133,21 +104,21 @@ export const useAuthStore = defineStore('auth', () => {
       // }
 
       // 安全地获取用户数据
-      const userData = actualData.user || actualData || {}
-      const userName = actualData.name || actualData.username || userData.account || ''
+      const userData = actualData?.user || actualData || {}
+      const userName = actualData?.name || actualData?.username || userData?.account || ''
 
       // 优先使用 role 字段（数据库中的真实角色），其次使用 user_type
       // role 字段格式: 'ADMIN' | 'USER' | 'SUPER_ADMIN'
       // user_type 字段格式: 'admin' | 'user' | 'super_admin'
       let userRole: UserRole = 'USER'
 
-      if (userData.role) {
+      if (userData?.role) {
         // 后端返回了 role 字段（大写格式，如 'ADMIN'）
         const roleUpper = userData.role.toUpperCase()
         if (roleUpper === 'ADMIN' || roleUpper === 'SUPER_ADMIN' || roleUpper === 'USER') {
           userRole = roleUpper as UserRole
         }
-      } else if (actualData.user_type) {
+      } else if (actualData?.user_type) {
         // 使用 user_type 字段（小写格式）
         const userType = actualData.user_type.toLowerCase()
         if (userType === 'admin') {
@@ -197,62 +168,14 @@ export const useAuthStore = defineStore('auth', () => {
         }
       }
 
-      console.log('🔐 用户角色识别:', {
-        backend_role: userData.role,
-        backend_user_type: actualData.user_type,
-        final_role: userRole,
-        is_admin: isAdmin,
-        role_source: userData.role ? 'role字段' : 'user_type字段'
-      })
-
       // 验证返回数据格式
       if (!data.access_token) {
-        console.error('🔐 登录响应缺少 access_token，实际数据:', data)
+        console.error('登录响应缺少 access_token')
         throw new Error('登录响应缺少访问令牌')
       }
 
-      console.log('🔐 解析后的登录数据:', {
-        hasAccessToken: !!data.access_token,
-        hasRefreshToken: !!data.refresh_token,
-        hasUser: !!data.user,
-        hasPermissions: !!data.permissions,
-        userInfo: data.user ? {
-          id: data.user.id,
-          account: data.user.account,
-          role: data.user.role
-        } : null,
-        permissions: data.permissions ? {
-          currentRole: data.permissions.current_role,
-          allRoles: data.permissions.all_roles
-        } : null
-      })
-
-      console.log('✅ 登录成功，用户信息:', {
-        id: data.user?.id,
-        account: data.user?.account,
-        role: data.user?.role,
-        currentRole: data.permissions?.current_role
-      })
-
       // 保存Token
-      console.log('🔐 准备保存Token:', {
-        accessTokenLength: data.access_token?.length || 0,
-        hasAccessToken: !!data.access_token
-      })
-
       tokenManager.setTokens(data.access_token, data.refresh_token || '')
-
-      console.log('🔐 Token保存完成，验证保存结果:', {
-        savedToken: tokenManager.getAccessToken()?.substring(0, 20) + '...',
-        isLoggedIn: tokenManager.isLoggedIn()
-      })
-
-      // 调试权限数据设置
-      console.log('🔐 设置权限数据:', {
-        currentRole: data.permissions.current_role,
-        permissionsData: data.permissions,
-        userRole: data.user.role
-      })
 
       // 更新状态
       token.value = data.access_token
@@ -261,13 +184,13 @@ export const useAuthStore = defineStore('auth', () => {
       permissions.value = data.permissions
       isAuthenticated.value = true
 
-  
+
       // 触发登录成功事件
       window.dispatchEvent(new CustomEvent('auth:login', {
         detail: { user: data.user, permissions: data.permissions }
       }))
 
-    } catch (error: any) {
+    } catch (error) {
       const apiError = handleApiError(error)
       throw apiError
     } finally {
@@ -282,8 +205,9 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       // 调用服务端登出接口（可选）
       if (token.value) {
-        await apiClient.post('/admin/logout').catch(() => {
-          // 忽略登出接口错误
+        await apiClient.post('/api/user/auth/logout').catch((error) => {
+          // 忽略登出接口错误，仅记录日志
+          console.warn('服务端登出接口调用失败:', error)
         })
       }
     } catch (error) {
@@ -311,42 +235,41 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     try {
-      let userInfo: any
+      let userInfo: UserInfo | null = null
       let data: Permissions
-      const extractBusinessData = (response: any) => {
-        const businessData = response?.data ?? response
-        return businessData?.data ?? businessData
-      }
 
       // 先尝试从用户表获取信息
       try {
-        const response = await apiClient.get('/api/user/user/info')
-        userInfo = extractBusinessData(response)
+        const userResponse = await apiClient.get('/api/user/user/info')
+        userInfo = userResponse?.data || userResponse
+
+        // 标准化角色值为大写
+        const normalizedRole = userInfo?.role?.toUpperCase() || 'USER'
 
         // 如果获取成功且用户是管理员，需要额外获取管理员权限
-        if (userInfo.role === 'admin' || userInfo.role === 'super_admin') {
-          const permissionsResponse = await apiClient.get('/api/admin/permissions')
-          data = extractBusinessData(permissionsResponse)
+        if (normalizedRole === 'ADMIN' || normalizedRole === 'SUPER_ADMIN') {
+          const permResponse = await apiClient.get('/api/admin/permissions')
+          data = permResponse?.data || permResponse
         } else {
           // 普通用户，创建基本的权限数据
           data = {
-            current_role: userInfo.role?.toUpperCase() || 'USER',
-            all_roles: [userInfo.role?.toUpperCase() || 'USER'],
+            current_role: normalizedRole,
+            all_roles: [normalizedRole],
             role_info: {
               permissions: []
             }
           }
         }
-      } catch (userError: any) {
+      } catch (userError) {
         // 如果用户表查询失败，尝试从管理员表查询
         console.warn('用户表查询失败，尝试管理员表:', userError.message)
 
         try {
-          const adminResponse = await apiClient.get('/api/admin/info')
-          userInfo = extractBusinessData(adminResponse)
-          const permissionsResponse = await apiClient.get('/api/admin/permissions')
-          data = extractBusinessData(permissionsResponse)
-        } catch (adminError: any) {
+          const adminInfo = await apiClient.get('/api/admin/info')
+          userInfo = adminInfo?.data || adminInfo
+          const permResponse = await apiClient.get('/api/admin/permissions')
+          data = permResponse?.data || permResponse
+        } catch (adminError) {
           console.error('两个表都查询失败:', adminError.message)
           throw new Error('用户信息获取失败')
         }
@@ -360,7 +283,7 @@ export const useAuthStore = defineStore('auth', () => {
         detail: { permissions: data }
       }))
 
-    } catch (error: any) {
+    } catch (error) {
       const apiError = handleApiError(error)
 
       // 如果是权限错误，自动登出
@@ -386,28 +309,30 @@ export const useAuthStore = defineStore('auth', () => {
         const response = await apiClient.get('/api/user/user/info')
         // 修复：正确提取用户数据
         // axios响应结构: { data: { data: {用户信息}, success: true, message: '' }, status: 200, ... }
-        const businessData = response.data
-        const userData = businessData.data || businessData
+        const businessData = response?.data
+        const userData = businessData?.data || businessData
         user.value = userData
         console.log('✅ 从用户表获取信息成功:', user.value)
-      } catch (userError: any) {
+      } catch (userError: unknown) {
         // 如果用户表查询失败，尝试从管理员表查询
-        console.warn('用户表查询失败，尝试管理员表:', userError.message)
+        const errorMessage = userError instanceof Error ? userError.message : '未知错误'
+        console.warn('用户表查询失败，尝试管理员表:', errorMessage)
 
         try {
           const response = await apiClient.get('/api/admin/info')
           // 修复：正确提取用户数据
-          const businessData = response.data
-          const userData = businessData.data || businessData
+          const businessData = response?.data
+          const userData = businessData?.data || businessData
           user.value = userData
           console.log('✅ 从管理员表获取信息成功:', user.value)
-        } catch (adminError: any) {
-          console.error('两个表都查询失败:', adminError.message)
+        } catch (adminError: unknown) {
+          const adminErrorMessage = adminError instanceof Error ? adminError.message : '未知错误'
+          console.error('两个表都查询失败:', adminErrorMessage)
           throw new Error('用户信息获取失败')
         }
       }
 
-    } catch (error: any) {
+    } catch (error) {
       const apiError = handleApiError(error)
       throw apiError
     }
@@ -447,39 +372,37 @@ export const useAuthStore = defineStore('auth', () => {
 
   /**
    * 自动刷新Token（如果需要）
+   * 使用 tokenManager 的锁机制防止并发刷新
    */
   const autoRefreshToken = async (): Promise<boolean> => {
     // 如果没有Token，不需要刷新
     if (!tokenManager.isLoggedIn()) {
-      return true
+      return false
     }
 
     if (tokenManager.isTokenExpiring()) {
       try {
-        const refreshTokenValue = tokenManager.getRefreshToken()
-        if (!refreshTokenValue) {
-          throw new Error('No refresh token available')
-        }
+        console.log('🔄 开始自动刷新Token...', {
+          isRefreshing: tokenManager.isRefreshingToken(),
+          pendingRequests: tokenManager.getPendingRequestsCount()
+        })
 
-        const refreshRequest: TokenRefreshRequest = {
-          refresh_token: refreshTokenValue
-        }
+        // 使用 tokenManager 的刷新方法，已内置锁机制
+        const newToken = await tokenManager.refreshAccessToken()
 
-        const response = await authExtendedApi.refreshToken(refreshRequest)
+        // 更新本地状态
+        token.value = newToken
 
-        if (response.success && response.access_token) {
-          tokenManager.setTokens(response.access_token, response.refresh_token || refreshTokenValue)
-          token.value = response.access_token
-          return true
-        } else {
-          throw new Error(response.error || 'Token refresh failed')
-        }
+        console.log('✅ 自动刷新Token成功')
+
+        return true
       } catch (error) {
-        console.error('自动刷新Token失败:', error)
+        console.error('❌ 自动刷新Token失败:', error)
         await logout()
         return false
       }
     }
+
     return true
   }
 
@@ -490,10 +413,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
 
     try {
-      console.log('🔐 注册请求:', userData)
       const response = await authExtendedApi.register(userData)
-
-      console.log('✅ 注册成功:', response)
 
       // 如果注册成功且不需要验证，自动登录
       if (response.success && response.user && !response.requires_verification) {
@@ -508,7 +428,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       return response
-    } catch (error: any) {
+    } catch (error) {
       const apiError = handleApiError(error)
       throw apiError
     } finally {
@@ -559,7 +479,7 @@ export const useAuthStore = defineStore('auth', () => {
   const sendPasswordReset = async (request: PasswordResetRequest): Promise<{ success: boolean; message: string }> => {
     try {
       return await authExtendedApi.sendPasswordReset(request)
-    } catch (error: any) {
+    } catch (error) {
       const apiError = handleApiError(error)
       throw apiError
     }
@@ -571,7 +491,7 @@ export const useAuthStore = defineStore('auth', () => {
   const confirmPasswordReset = async (request: PasswordResetConfirmRequest): Promise<{ success: boolean; message: string }> => {
     try {
       return await authExtendedApi.confirmPasswordReset(request)
-    } catch (error: any) {
+    } catch (error) {
       const apiError = handleApiError(error)
       throw apiError
     }
@@ -583,7 +503,7 @@ export const useAuthStore = defineStore('auth', () => {
   const sendEmailVerification = async (request: EmailVerifyRequest): Promise<{ success: boolean; message: string }> => {
     try {
       return await authExtendedApi.sendEmailVerification(request)
-    } catch (error: any) {
+    } catch (error) {
       const apiError = handleApiError(error)
       throw apiError
     }
@@ -602,7 +522,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       return response
-    } catch (error: any) {
+    } catch (error) {
       const apiError = handleApiError(error)
       throw apiError
     }
@@ -614,7 +534,7 @@ export const useAuthStore = defineStore('auth', () => {
   const sendPhoneVerification = async (request: PhoneVerifyRequest): Promise<{ success: boolean; message: string }> => {
     try {
       return await authExtendedApi.sendPhoneVerification(request)
-    } catch (error: any) {
+    } catch (error) {
       const apiError = handleApiError(error)
       throw apiError
     }
@@ -633,7 +553,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       return response
-    } catch (error: any) {
+    } catch (error) {
       const apiError = handleApiError(error)
       throw apiError
     }

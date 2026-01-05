@@ -218,8 +218,6 @@ const fetchLatestNotices = async () => {
   }
 }
 
-// 注释：不再需要单独获取评分信息，因为活动列表API已经返回了评分数据
-// 活动列表API返回的数据已包含：avg_score 和 rating_count
 
 // 获取热门活动
 const fetchHotActivities = async () => {
@@ -232,12 +230,7 @@ const fetchHotActivities = async () => {
 
     if (result.success) {
       const items = result.data || []
-      console.log('获取到的活动数据:', items) // 调试日志
-
-      // 直接使用API返回的数据，无需额外请求评分信息
       const processedActivities = items.map(activity => {
-        console.log('处理活动数据:', activity) // 调试日志
-
         return {
           id: activity.id,
           title: activity.title,
@@ -247,7 +240,6 @@ const fetchHotActivities = async () => {
           cover_image: activity.cover_image,
           organizer_display: activity.organizer_display,
           organizer: activity.organizer,
-          // 直接使用API返回的评分数据
           avg_score: activity.avg_score || 0,
           rating_count: activity.rating_count || 0
         }

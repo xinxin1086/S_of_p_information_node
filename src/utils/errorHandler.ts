@@ -6,6 +6,23 @@
 import type { ApiError } from '@/types/auth'
 
 /**
+ * HTTP错误接口
+ */
+interface HttpError {
+  response?: {
+    status: number
+    data?: {
+      message?: string
+      error?: string
+      code?: string
+      errors?: unknown[]
+    }
+  }
+  message?: string
+  code?: string
+}
+
+/**
  * 错误类型枚举
  */
 export enum ErrorType {
@@ -36,7 +53,7 @@ export class AppError extends Error {
   public readonly type: ErrorType
   public readonly severity: ErrorSeverity
   public readonly code?: string
-  public readonly details?: any
+  public readonly details?: Record<string, unknown>
   public readonly timestamp: Date
   public readonly userMessage?: string
 
@@ -45,7 +62,7 @@ export class AppError extends Error {
     type: ErrorType = ErrorType.UNKNOWN_ERROR,
     severity: ErrorSeverity = ErrorSeverity.MEDIUM,
     code?: string,
-    details?: any,
+    details?: Record<string, unknown>,
     userMessage?: string
   ) {
     super(message)
@@ -96,7 +113,7 @@ export class AppError extends Error {
   /**
    * 转换为JSON格式用于日志记录
    */
-  toJSON(): any {
+  toJSON(): Record<string, unknown> {
     return {
       name: this.name,
       message: this.message,
@@ -122,7 +139,7 @@ export class ErrorHandler {
   /**
    * 处理和分类错误
    */
-  static handle(error: any, context?: string): AppError {
+  static handle(error: unknown, context?: string): AppError {
     const appError = this.classifyError(error, context)
     this.logError(appError)
     this.notifySubscribers(appError)
@@ -132,36 +149,29 @@ export class ErrorHandler {
   /**
    * 分类错误
    */
-  private static classifyError(error: any, context?: string): AppError {
+  private static classifyError(error: unknown, context?: string): AppError {
     if (error instanceof AppError) {
       return error
     }
 
-    // 网络错误
-    if (this.isNetworkError(error)) {
-      return new AppError(
-        error.message || '网络连接失败',
-        ErrorType.NETWORK_ERROR,
-        ErrorSeverity.HIGH,
-        error.code,
-        { ...error, context }
-      )
-    }
+    const errorMessage = error instanceof Error ? error.message : '未知错误'
 
     // HTTP状态码错误
-    if (error.response) {
-      const status = error.response.status
-      return this.handleHttpError(error, status, context)
+    if (this.isHttpError(error)) {
+      const status = error.response?.status
+      if (status) {
+        return this.handleHttpError(error, status, context)
+      }
     }
 
     // 超时错误
-    if (error.name === 'AbortError' || error.message?.includes('timeout')) {
+    if (error instanceof Error && (error.name === 'AbortError' || errorMessage.includes('timeout'))) {
       return new AppError(
         '请求超时',
         ErrorType.TIMEOUT_ERROR,
         ErrorSeverity.MEDIUM,
-        error.code,
-        { ...error, context }
+        undefined,
+        { originalMessage: errorMessage, context }
       )
     }
 
@@ -171,27 +181,27 @@ export class ErrorHandler {
         '数据解析失败',
         ErrorType.PARSE_ERROR,
         ErrorSeverity.MEDIUM,
-        error.code,
-        { ...error, context }
+        undefined,
+        { originalMessage: errorMessage, context }
       )
     }
 
     // 未知错误
     return new AppError(
-      error.message || '未知错误',
+      errorMessage,
       ErrorType.UNKNOWN_ERROR,
       ErrorSeverity.MEDIUM,
-      error.code,
-      { ...error, context }
+      undefined,
+      { originalError: String(error), context }
     )
   }
 
   /**
    * 处理HTTP错误
    */
-  private static handleHttpError(error: any, status: number, context?: string): AppError {
-    const data = error.response?.data || {}
-    const message = data.message || data.error || error.message || `HTTP ${status}`
+  private static handleHttpError(error: HttpError, status: number, context?: string): AppError {
+    const data = error.response?.data
+    const message = data?.message || data?.error || error.message || `HTTP ${status}`
 
     switch (status) {
       case 401:
@@ -199,8 +209,8 @@ export class ErrorHandler {
           message,
           ErrorType.AUTHENTICATION_ERROR,
           ErrorSeverity.HIGH,
-          data.code,
-          { ...error, status, context }
+          data?.code,
+          { status, context }
         )
 
       case 403:
@@ -208,8 +218,8 @@ export class ErrorHandler {
           message,
           ErrorType.AUTHORIZATION_ERROR,
           ErrorSeverity.HIGH,
-          data.code,
-          { ...error, status, context }
+          data?.code,
+          { status, context }
         )
 
       case 422:
@@ -217,8 +227,8 @@ export class ErrorHandler {
           message,
           ErrorType.VALIDATION_ERROR,
           ErrorSeverity.MEDIUM,
-          data.code,
-          { ...error, status, context, validationErrors: data.errors }
+          data?.code,
+          { status, context, validationErrors: data?.errors }
         )
 
       case 500:
@@ -229,8 +239,8 @@ export class ErrorHandler {
           message,
           ErrorType.SERVER_ERROR,
           ErrorSeverity.HIGH,
-          data.code,
-          { ...error, status, context }
+          data?.code,
+          { status, context }
         )
 
       default:
@@ -238,21 +248,36 @@ export class ErrorHandler {
           message,
           ErrorType.UNKNOWN_ERROR,
           ErrorSeverity.MEDIUM,
-          data.code,
-          { ...error, status, context }
+          data?.code,
+          { status, context }
         )
     }
   }
 
   /**
+   * 判断是否为HTTP错误的类型守卫
+   */
+  private static isHttpError(error: unknown): error is HttpError {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'response' in error
+    )
+  }
+
+  /**
    * 判断是否为网络错误
    */
-  private static isNetworkError(error: any): boolean {
-    return !error.response && (
+  private static isNetworkError(error: unknown): boolean {
+    if (!(error instanceof Error)) {
+      return false
+    }
+
+    return (
       !navigator.onLine ||
-      error.message?.includes('Failed to fetch') ||
-      error.message?.includes('Network request failed') ||
-      error.code === 'NETWORK_ERROR'
+      error.message.includes('Failed to fetch') ||
+      error.message.includes('Network request failed') ||
+      ('code' in error && error.code === 'NETWORK_ERROR')
     )
   }
 
@@ -364,7 +389,7 @@ export class ErrorHandler {
   /**
    * 创建用户友好的错误消息
    */
-  static createUserMessage(error: any): string {
+  static createUserMessage(error: unknown): string {
     const appError = error instanceof AppError ? error : this.classifyError(error)
     return appError.userMessage || '操作失败，请重试'
   }
@@ -372,7 +397,7 @@ export class ErrorHandler {
   /**
    * 判断是否需要重新登录
    */
-  static shouldReauth(error: any): boolean {
+  static shouldReauth(error: unknown): boolean {
     const appError = error instanceof AppError ? error : this.classifyError(error)
     return appError.type === ErrorType.AUTHENTICATION_ERROR
   }
@@ -380,7 +405,7 @@ export class ErrorHandler {
   /**
    * 判断是否需要重试
    */
-  static shouldRetry(error: any): boolean {
+  static shouldRetry(error: unknown): boolean {
     const appError = error instanceof AppError ? error : this.classifyError(error)
     return [
       ErrorType.NETWORK_ERROR,
@@ -400,7 +425,7 @@ export class ErrorHandler {
   /**
    * 生成错误报告
    */
-  static generateErrorReport(): any {
+  static generateErrorReport(): Record<string, unknown> {
     const recentErrors = this.errorLog.slice(0, 10)
     const errorCounts = this.errorLog.reduce((counts, error) => {
       counts[error.type] = (counts[error.type] || 0) + 1

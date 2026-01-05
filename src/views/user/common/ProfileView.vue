@@ -11,23 +11,23 @@
         <!-- 左侧个人信息 -->
         <el-col :span="8">
           <el-card class="profile-card">
-            <div class="profile-header">
-              <el-avatar :size="100" :src="userInfo.avatar" fit="cover">
+            <div class="profile-header" v-if="userInfo">
+              <el-avatar :size="100" :src="userInfo?.avatar" fit="cover">
                 <el-icon size="50"><User /></el-icon>
               </el-avatar>
-              <h3 class="profile-name">{{ userInfo.nickname || userInfo.username }}</h3>
-              <p class="profile-bio">{{ userInfo.bio || '这个人很懒，什么都没有留下...' }}</p>
+              <h3 class="profile-name">{{ userInfo?.nickname || userInfo?.username || '用户' }}</h3>
+              <p class="profile-bio">{{ userInfo?.bio || '这个人很懒，什么都没有留下...' }}</p>
             </div>
 
             <el-divider />
 
-            <div class="profile-info">
+            <div class="profile-info" v-if="userInfo">
               <div class="info-item">
                 <span class="info-label">
                   <el-icon><User /></el-icon>
                   用户名
                 </span>
-                <span class="info-value">{{ userInfo.username }}</span>
+                <span class="info-value">{{ userInfo?.username || '未设置' }}</span>
               </div>
 
               <div class="info-item">
@@ -36,8 +36,8 @@
                   邮箱
                 </span>
                 <span class="info-value">
-                  {{ userInfo.email || '未设置' }}
-                  <el-tag v-if="userInfo.email_verified" type="success" size="small">已验证</el-tag>
+                  {{ userInfo?.email || '未设置' }}
+                  <el-tag v-if="userInfo?.email_verified" type="success" size="small">已验证</el-tag>
                 </span>
               </div>
 
@@ -47,12 +47,12 @@
                   手机号
                 </span>
                 <span class="info-value">
-                  {{ userInfo.phone ? maskPhone(userInfo.phone) : '未设置' }}
-                  <el-tag v-if="userInfo.phone_verified" type="success" size="small">已验证</el-tag>
+                  {{ userInfo?.phone ? maskPhone(userInfo.phone) : '未设置' }}
+                  <el-tag v-if="userInfo?.phone_verified" type="success" size="small">已验证</el-tag>
                 </span>
               </div>
 
-              <div class="info-item" v-if="userInfo.gender">
+              <div class="info-item" v-if="userInfo?.gender">
                 <span class="info-label">
                   <el-icon><UserFilled /></el-icon>
                   性别
@@ -60,7 +60,7 @@
                 <span class="info-value">{{ getGenderText(userInfo.gender) }}</span>
               </div>
 
-              <div class="info-item" v-if="userInfo.birthday">
+              <div class="info-item" v-if="userInfo?.birthday">
                 <span class="info-label">
                   <el-icon><Calendar /></el-icon>
                   生日
@@ -68,7 +68,7 @@
                 <span class="info-value">{{ userInfo.birthday }}</span>
               </div>
 
-              <div class="info-item" v-if="userInfo.region && userInfo.region.length">
+              <div class="info-item" v-if="userInfo?.region && userInfo.region.length">
                 <span class="info-label">
                   <el-icon><Location /></el-icon>
                   所在地
@@ -76,7 +76,7 @@
                 <span class="info-value">{{ userInfo.region.join(' ') }}</span>
               </div>
 
-              <div class="info-item" v-if="userInfo.occupation">
+              <div class="info-item" v-if="userInfo?.occupation">
                 <span class="info-label">
                   <el-icon><Briefcase /></el-icon>
                   职业

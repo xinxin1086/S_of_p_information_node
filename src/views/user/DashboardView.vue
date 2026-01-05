@@ -231,10 +231,7 @@ const quickAccessItems = ref([
   }] : [])
 ])
 
-// 最近活动
-const recentActivities = ref([
-  // 这里应该从API获取，现在用模拟数据
-])
+const recentActivities = ref([])
 
 // 格式化日期
 const formatDate = (dateString) => {
@@ -254,62 +251,26 @@ const getActivityIcon = (type) => {
   return iconMap[type] || 'Document'
 }
 
-// 获取用户统计数据
 const fetchUserStats = async () => {
   try {
-    // 这里应该调用实际的API获取用户统计数据
-    // const response = await userApi.getUserStats()
-    // userStats.value = response.data
-
-    // 模拟数据
-    userStats.value = {
-      activities: 5,
-      comments: 12,
-      favorites: 8,
-      points: 156
-    }
+    const response = await userApi.getUserStats()
+    userStats.value = response.data
   } catch (error) {
     console.error('获取用户统计失败:', error)
   }
 }
 
-// 获取最近活动
 const fetchRecentActivities = async () => {
   try {
-    // 这里应该调用实际的API获取最近活动
-    // const response = await userApi.getRecentActivities()
-    // recentActivities.value = response.data
-
-    // 模拟数据
-    recentActivities.value = [
-      {
-        id: 1,
-        type: 'activity',
-        title: '报名了"夏日垂钓大赛"',
-        time: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: 2,
-        type: 'comment',
-        title: '评论了"春季钓鱼技巧分享"',
-        time: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: 3,
-        type: 'favorite',
-        title: '收藏了"钓鱼装备推荐"',
-        time: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-      }
-    ]
+    const response = await userApi.getRecentActivities()
+    recentActivities.value = response.data
   } catch (error) {
     console.error('获取最近活动失败:', error)
     recentActivities.value = []
   }
 }
 
-// 组件挂载时获取数据
 onMounted(() => {
-  // 如果用户已登录，获取用户统计数据和最近活动
   if (authStore.isAuthenticated) {
     fetchUserStats()
     fetchRecentActivities()

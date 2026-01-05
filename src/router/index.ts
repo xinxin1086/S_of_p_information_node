@@ -1,7 +1,5 @@
 //./src/router/index.js
 import { createRouter, createWebHashHistory } from 'vue-router'
-import { defineAsyncComponent } from 'vue'
-import { useMainStore } from '@/stores'
 
 // 异步组件配置 - 实现代码分割和懒加载
 import {
@@ -10,15 +8,14 @@ import {
   PublicComponents
 } from '@/utils/asyncComponents'
 
-// 布局组件 (保持同步加载，因为它们被频繁使用)
-import GuestLayout from '../layouts/GuestLayout.vue'
-import UserLayout from '../layouts/UserLayout.vue'
-import AdminLayout from '../layouts/AdminLayout.vue'
-
 // 核心页面组件 (首屏关键组件保持同步加载)
-import PublicHomeView from '../views/public/HomeView.vue'
 import LoginView from '../views/public/LoginView.vue'
-import RegisterView from '../views/public/RegisterView.vue'
+import PublicHomeView from '../views/public/HomeView.vue'
+
+// 布局组件 - 改为懒加载优化首屏性能
+const AdminLayout = () => import('../layouts/AdminLayout.vue')
+const GuestLayout = () => import('../layouts/GuestLayout.vue')
+const UserLayout = () => import('../layouts/UserLayout.vue')
 
 // 其他组件使用异步加载优化性能
 const NoticeList = PublicComponents.NoticeList
@@ -26,22 +23,15 @@ const ScienceList = PublicComponents.ScienceList
 const ActivityList = PublicComponents.ActivityList
 const AboutView = PublicComponents.AboutView
 
-// 创建异步组件辅助函数
-// 注意: 直接返回 loader 函数,让 Vue Router 自动处理异步组件
-// 这样可以避免 "defineAsyncComponent(() => import())" 的嵌套警告
-const createAsyncComponent = (loader, options = {}) => {
-  return loader
-}
-
 // 用户页面组件使用异步加载
 const ProfileView = UserComponents.ProfileView
-const SettingsView = UserComponents.SettingsView
+const ProfileEditView = UserComponents.ProfileEditView
+const AccountSettingsView = UserComponents.AccountSettingsView
+const NotificationView = () => import('@/views/user/common/NotificationView.vue')
 const UserActivityHome = UserComponents.UserActivityHome
 const UserActivityDetail = UserComponents.UserActivityDetail
 const MyBookings = UserComponents.MyBookings
-const BookingHistory = createAsyncComponent(() =>
-  import('@/views/user/activity/BookingHistory.vue')
-)
+const BookingHistory = () => import('@/views/user/activity/BookingHistory.vue')
 
 // 公告详情、科学详情等 (使用异步组件)
 const NoticeDetail = AdminComponents.NoticeDetail
@@ -53,7 +43,7 @@ const SearchView = PublicComponents.SearchView
 
 // 大型用户组件 (使用异步组件)
 const UserDashboard = UserComponents.UserDashboard
-const FisherDashboard = UserComponents.FisherDashboard
+const OrganizationDashboard = UserComponents.OrganizationDashboard
 const CreateActivity = UserComponents.CreateActivity
 const EditActivity = UserComponents.EditActivity
 const MyActivities = UserComponents.MyActivities
@@ -82,19 +72,22 @@ const UserUserEdit = AdminComponents.UserUserEdit
 const UserStats = AdminComponents.UserStats
 
 
-// 404页面
-import NotFound from '../views/public/NotFound.vue'
+// 404页面 - 改为懒加载
+const NotFound = () => import('../views/public/NotFound.vue')
+const RegisterView = () => import('../views/public/RegisterView.vue')
 
 const routes = [
   // 独立功能页面（无布局）
   {
     path: '/login',
     name: 'login',
+    meta: { title: '登录' },
     component: LoginView
   },
   {
     path: '/register',
     name: 'register',
+    meta: { title: '注册' },
     component: RegisterView
   },
 
@@ -106,56 +99,67 @@ const routes = [
       {
         path: '',
         name: 'home',
+        meta: { title: '首页' },
         component: PublicHomeView
       },
       {
         path: 'notice',
         name: 'noticeList',
+        meta: { title: '公告列表' },
         component: NoticeList
       },
       {
         path: 'notice/:id',
         name: 'noticeDetail',
+        meta: { title: '公告详情' },
         component: NoticeDetail
       },
       {
         path: 'science',
         name: 'scienceList',
+        meta: { title: '科普列表' },
         component: ScienceList
       },
       {
         path: 'science/:id',
         name: 'scienceDetail',
+        meta: { title: '科普详情' },
         component: ScienceDetail
       },
       {
         path: 'activities',
         name: 'publicActivities',
+        meta: { title: '活动列表' },
         component: ActivityList
       },
       {
         path: 'activities/:id',
         name: 'publicActivityDetail',
+        meta: { title: '活动详情' },
         component: ActivityDetail
       },
       {
         path: 'discussion',
         name: 'discussionList',
+        meta: { title: '讨论列表' },
         component: DiscussionList
       },
       {
         path: 'discussion/:id',
         name: 'discussionDetail',
+        meta: { title: '讨论详情' },
         component: DiscussionDetail
       },
       {
         path: 'about',
         name: 'about',
+        meta: { title: '关于我们' },
         component: AboutView
       },
       {
         path: 'search',
         name: 'search',
+        meta: { title: '搜索' },
         component: SearchView
       }
     ]
@@ -171,63 +175,82 @@ const routes = [
       {
         path: 'dashboard',
         name: 'userDashboard',
+        meta: { title: '用户首页' },
         component: UserDashboard
       },
       {
         path: 'profile',
         name: 'profile',
+        meta: { title: '个人资料' },
         component: ProfileView
+      },
+      {
+        path: 'profile/edit',
+        name: 'profileEdit',
+        meta: { title: '编辑资料' },
+        component: ProfileEditView
       },
       {
         path: 'settings',
         name: 'settings',
-        component: SettingsView
+        meta: { title: '账户设置' },
+        component: AccountSettingsView
+      },
+      {
+        path: 'notifications',
+        name: 'notifications',
+        meta: { title: '通知中心' },
+        component: NotificationView
       },
       // 活动功能
       {
         path: 'activities',
         name: 'activityHome',
+        meta: { title: '活动中心' },
         component: UserActivityHome
       },
       {
         path: 'activities/:id',
         name: 'activityDetail',
+        meta: { title: '活动详情' },
         component: UserActivityDetail
       },
       {
         path: 'activities/my-bookings',
         name: 'myBookings',
+        meta: { title: '我的预约' },
         component: MyBookings
       },
       {
         path: 'activities/booking-history',
         name: 'bookingHistory',
+        meta: { title: '预约历史' },
         component: BookingHistory
       },
 
       // 组织用户专属功能 (/user/weave/*)
       {
         path: 'weave/dashboard',
-        name: 'fisherDashboard',
-        meta: { requiresFisher: true },
-        component: FisherDashboard
+        name: 'organizationDashboard',
+        meta: { requiresOrganization: true, title: '控制台' },
+        component: OrganizationDashboard
       },
       {
         path: 'weave/create-activity',
         name: 'createActivity',
-        meta: { requiresFisher: true },
+        meta: { requiresOrganization: true, title: '创建活动' },
         component: CreateActivity
       },
       {
         path: 'weave/edit-activity/:id',
         name: 'editActivity',
-        meta: { requiresFisher: true },
+        meta: { requiresOrganization: true, title: '编辑活动' },
         component: EditActivity
       },
       {
         path: 'weave/my-activities',
         name: 'myActivities',
-        meta: { requiresFisher: true },
+        meta: { requiresOrganization: true, title: '我的活动' },
         component: MyActivities
       }
     ]

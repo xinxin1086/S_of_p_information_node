@@ -31,21 +31,21 @@ export type DeepPartial<T> = {
 export type ArrayElement<T> = T extends (infer U)[] ? U : never
 
 // 函数参数类型
-export type FuncParams<T> = T extends (...args: infer P) => any ? P : never
+export type FuncParams<T> = T extends (...args: infer P) => unknown ? P : never
 
 // 函数返回类型
-export type FuncReturn<T> = T extends (...args: any[]) => infer R ? R : never
+export type FuncReturn<T> = T extends (...args: unknown[]) => infer R ? R : never
 
 // 事件监听器类型
-export type EventListener<T = any> = (event: T) => void
+export type EventListener<T = unknown> = (event: T) => void
 
 // 异步事件监听器类型
-export type AsyncEventListener<T = any> = (event: T) => Promise<void>
+export type AsyncEventListener<T = unknown> = (event: T) => Promise<void>
 
 // 配置对象类型
 export interface Configurable {
-  configure(options: Record<string, any>): void
-  getConfig(): Record<string, any>
+  configure(options: Record<string, unknown>): void
+  getConfig(): Record<string, unknown>
 }
 
 // 可销毁对象类型
@@ -61,10 +61,10 @@ export interface Observable<T> {
 }
 
 // 验证器类型
-export type Validator<T = any> = (value: T) => boolean | string
+export type Validator<T = unknown> = (value: T) => boolean | string
 
 // 异步验证器类型
-export type AsyncValidator<T = any> = (value: T) => Promise<boolean | string>
+export type AsyncValidator<T = unknown> = (value: T) => Promise<boolean | string>
 
 // 转换器类型
 export type Transformer<T, R> = (value: T) => R
@@ -73,28 +73,28 @@ export type Transformer<T, R> = (value: T) => R
 export type AsyncTransformer<T, R> = (value: T) => Promise<R>
 
 // 比较器类型
-export type Comparator<T = any> = (a: T, b: T) => number
+export type Comparator<T = unknown> = (a: T, b: T) => number
 
 // 谓词函数类型
-export type Predicate<T = any> = (value: T) => boolean
+export type Predicate<T = unknown> = (value: T) => boolean
 
 // 映射函数类型
 export type Mapper<T, R> = (item: T, index?: number, array?: T[]) => R
 
 // 过滤函数类型
-export type FilterFn<T = any> = (item: T, index?: number, array?: T[]) => boolean
+export type FilterFn<T = unknown> = (item: T, index?: number, array?: T[]) => boolean
 
 // 归约函数类型
 export type Reducer<T, A> = (accumulator: A, current: T, index?: number, array?: T[]) => A
 
 // 键值对类型
-export type KeyValuePair<K = string, V = any> = {
+export type KeyValuePair<K = string, V = unknown> = {
   key: K
   value: V
 }
 
 // 字典类型
-export type Dictionary<T = any> = Record<string, T>
+export type Dictionary<T = unknown> = Record<string, T>
 
 // 数字范围类型
 export interface NumberRange {
@@ -177,7 +177,7 @@ export interface Progress {
 export interface Status<T = string> {
   code: T
   message?: string
-  details?: any
+  details?: Record<string, unknown>
   timestamp?: Date
 }
 

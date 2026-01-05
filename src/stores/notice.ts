@@ -1,24 +1,19 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import {
-  fetchNoticeList,
-  fetchNoticeDetail,
-  fetchAdminNoticeList,
-  createAdminNotice,
-  updateAdminNotice,
-  deleteAdminNotice,
-  formatDate
-} from '@/utils/notice'
+
+import { noticeApi } from '@/api'
+import { useApiCall } from '@/composables/useApiCall'
+import { formatDate } from '@/utils/notice'
 
 export const useNoticeStore = defineStore('notice', () => {
   // 访客端数据
   const publicNotices = ref([])
   const currentNotice = ref(null)
-  const loading = ref(false)
 
   // 管理员端数据
   const adminNotices = ref([])
-  const adminLoading = ref(false)
+
+  // 分页信息
   const pagination = ref({
     page: 1,
     size: 10,
@@ -37,145 +32,176 @@ export const useNoticeStore = defineStore('notice', () => {
   const hasAdminNotices = computed(() => adminNotices.value.length > 0)
 
   // 访客端：获取公告列表
-  const fetchPublicNotices = async (params = {}) => {
-    loading.value = true
-    try {
-      const {
-        page = 1,
-        size = 10,
-        title,
-        noticeType,
-        releaseTimeStart,
-        releaseTimeEnd
-      } = params
+  const { execute: _fetchPublicNotices, loading } = useApiCall(
+    noticeApi.getPublicNotices,
+    {
+      onSuccess: (data, args) => {
+        const [params] = args
+        const { page = 1, size = 10 } = params
 
-      const result = await fetchNoticeList(
-        page,
-        size,
-        title,
-        noticeType,
-        releaseTimeStart,
-        releaseTimeEnd
-      )
+        // 处理响应数据
+        let items = []
+        let total = 0
 
-      publicNotices.value = result.items
-      pagination.value = { page, size, total: result.total }
+        if (data?.items && Array.isArray(data.items)) {
+          items = data.items
+          total = data.total || 0
+        } else if (Array.isArray(data)) {
+          items = data
+          total = data.length
+        } else if (data?.data && Array.isArray(data.data)) {
+          items = data.data
+          total = data.total || data.data.length
+        }
 
-      return { success: true, data: result }
-    } catch (error) {
-      console.error('获取访客公告列表失败:', error)
-      return { success: false, error: error.message }
-    } finally {
-      loading.value = false
+        publicNotices.value = items
+        pagination.value = { page, size, total }
+      }
     }
+  )
+
+  const fetchPublicNotices = async (params: Record<string, unknown> = {}) => {
+    const {
+      page = 1,
+      size = 10,
+      title,
+      notice_type,
+      release_time_start,
+      release_time_end
+    } = params
+
+    const apiParams: Record<string, unknown> = { page, size }
+    if (title) apiParams.title = title
+    if (notice_type) apiParams.notice_type = notice_type
+    if (release_time_start) apiParams.release_time_start = release_time_start
+    if (release_time_end) apiParams.release_time_end = release_time_end
+
+    return await _fetchPublicNotices(apiParams)
   }
 
   // 访客端：获取单个公告详情
-  const fetchPublicNotice = async (id) => {
-    loading.value = true
-    try {
-      const notice = await fetchNoticeDetail(id)
-      currentNotice.value = notice
-      return { success: true, data: notice }
-    } catch (error) {
-      console.error('获取公告详情失败:', error)
-      return { success: false, error: error.message }
-    } finally {
-      loading.value = false
+  const { execute: _fetchPublicNotice } = useApiCall(
+    noticeApi.getPublicNoticeDetail,
+    {
+      onSuccess: (data) => {
+        currentNotice.value = data
+      }
     }
+  )
+
+  const fetchPublicNotice = async (id: number | string) => {
+    return await _fetchPublicNotice(id)
   }
 
   // 管理员端：获取公告列表
-  const fetchAdminNoticesList = async (params = {}) => {
-    adminLoading.value = true
-    try {
-      const {
-        page = 1,
-        size = 10,
-        title,
-        noticeType,
-        expirationStart
-      } = params
+  const { execute: _fetchAdminNoticesList, loading: adminLoading } = useApiCall(
+    noticeApi.getAdminNotices,
+    {
+      onSuccess: (data, args) => {
+        const [params] = args
+        const { page = 1, size = 10 } = params
 
-      const result = await fetchAdminNoticeList(
-        page,
-        size,
-        title,
-        noticeType,
-        expirationStart
-      )
+        // 处理响应数据
+        let items = []
+        let total = 0
 
-      adminNotices.value = result.items
-      adminPagination.value = { page, size, total: result.total }
+        if (data?.items && Array.isArray(data.items)) {
+          items = data.items
+          total = data.total || 0
+        } else if (Array.isArray(data)) {
+          items = data
+          total = data.length
+        } else if (data?.data && Array.isArray(data.data)) {
+          items = data.data
+          total = data.total || data.data.length
+        }
 
-      return { success: true, data: result }
-    } catch (error) {
-      console.error('获取管理员公告列表失败:', error)
-      return { success: false, error: error.message }
-    } finally {
-      adminLoading.value = false
+        adminNotices.value = items
+        adminPagination.value = { page, size, total }
+      }
     }
+  )
+
+  const fetchAdminNoticesList = async (params: Record<string, unknown> = {}) => {
+    const {
+      page = 1,
+      size = 10,
+      title,
+      notice_type,
+      expirationStart
+    } = params
+
+    const apiParams: Record<string, unknown> = { page, size }
+    if (title) apiParams.title = title
+    if (notice_type) apiParams.notice_type = notice_type
+    if (expirationStart) apiParams.release_time_start = expirationStart
+
+    return await _fetchAdminNoticesList(apiParams)
   }
 
   // 管理员端：创建公告
-  const createNotice = async (noticeData) => {
-    try {
-      const result = await createAdminNotice(noticeData)
-
-      // 刷新管理员公告列表
-      await fetchAdminNoticesList({
-        page: adminPagination.value.page,
-        size: adminPagination.value.size
-      })
-
-      return { success: true, data: result }
-    } catch (error) {
-      console.error('创建公告失败:', error)
-      return { success: false, error: error.message }
+  const { execute: _createNotice } = useApiCall(
+    noticeApi.createNotice,
+    {
+      onSuccess: async () => {
+        // 刷新管理员公告列表
+        await fetchAdminNoticesList({
+          page: adminPagination.value.page,
+          size: adminPagination.value.size
+        })
+      }
     }
+  )
+
+  const createNotice = async (noticeData: Record<string, unknown>) => {
+    return await _createNotice(noticeData)
   }
 
   // 管理员端：更新公告
-  const updateNotice = async (id, noticeData) => {
-    try {
-      const result = await updateAdminNotice(id, noticeData)
+  const { execute: _updateNotice } = useApiCall(
+    noticeApi.updateNotice,
+    {
+      onSuccess: (data, args) => {
+        const [id, noticeData] = args
 
-      // 更新列表中的对应项
-      const index = adminNotices.value.findIndex(notice => notice.id === id)
-      if (index !== -1) {
-        adminNotices.value[index] = { ...adminNotices.value[index], ...noticeData }
+        // 更新列表中的对应项
+        const index = adminNotices.value.findIndex(notice => notice.id === id)
+        if (index !== -1) {
+          adminNotices.value[index] = { ...adminNotices.value[index], ...noticeData }
+        }
+
+        // 如果当前正在查看该公告详情，也更新详情
+        if (currentNotice.value?.id === id) {
+          currentNotice.value = { ...currentNotice.value, ...data }
+        }
       }
-
-      // 如果当前正在查看该公告详情，也更新详情
-      if (currentNotice.value?.id === id) {
-        currentNotice.value = { ...currentNotice.value, ...noticeData }
-      }
-
-      return { success: true, data: result }
-    } catch (error) {
-      console.error('更新公告失败:', error)
-      return { success: false, error: error.message }
     }
+  )
+
+  const updateNotice = async (id: number | string, noticeData: Record<string, unknown>) => {
+    return await _updateNotice(id, noticeData)
   }
 
   // 管理员端：删除公告
-  const deleteNotice = async (id) => {
-    try {
-      await deleteAdminNotice(id)
+  const { execute: _deleteNotice } = useApiCall(
+    noticeApi.deleteNotice,
+    {
+      onSuccess: (data, args) => {
+        const [id] = args
 
-      // 从列表中移除
-      adminNotices.value = adminNotices.value.filter(notice => notice.id !== id)
+        // 从列表中移除
+        adminNotices.value = adminNotices.value.filter(notice => notice.id !== id)
 
-      // 如果当前正在查看该公告详情，清空详情
-      if (currentNotice.value?.id === id) {
-        currentNotice.value = null
+        // 如果当前正在查看该公告详情，清空详情
+        if (currentNotice.value?.id === id) {
+          currentNotice.value = null
+        }
       }
-
-      return { success: true }
-    } catch (error) {
-      console.error('删除公告失败:', error)
-      return { success: false, error: error.message }
     }
+  )
+
+  const deleteNotice = async (id: number | string) => {
+    return await _deleteNotice(id)
   }
 
   // 工具函数：清空当前公告

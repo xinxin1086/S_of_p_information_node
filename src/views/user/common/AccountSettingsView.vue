@@ -68,132 +68,9 @@
           </el-card>
         </el-tab-pane>
 
-        <!-- 隐私设置标签页 -->
-        <el-tab-pane label="隐私设置" name="privacy">
-          <el-card class="privacy-card">
-            <div class="privacy-section">
-              <h3>个人资料可见性</h3>
-              <el-form label-width="200px">
-                <el-form-item label="邮箱地址可见性">
-                  <el-switch
-                    v-model="privacySettings.emailVisible"
-                    active-text="公开"
-                    inactive-text="私密"
-                  />
-                </el-form-item>
-
-                <el-form-item label="手机号可见性">
-                  <el-switch
-                    v-model="privacySettings.phoneVisible"
-                    active-text="公开"
-                    inactive-text="私密"
-                  />
-                </el-form-item>
-
-                <el-form-item label="生日可见性">
-                  <el-select v-model="privacySettings.birthdayVisible" placeholder="选择可见性">
-                    <el-option label="完全公开" value="public" />
-                    <el-option label="仅显示月日" value="month_day" />
-                    <el-option label="完全私密" value="private" />
-                  </el-select>
-                </el-form-item>
-
-                <el-form-item label="所在地可见性">
-                  <el-switch
-                    v-model="privacySettings.locationVisible"
-                    active-text="公开"
-                    inactive-text="私密"
-                  />
-                </el-form-item>
-              </el-form>
-            </div>
-
-            <el-divider />
-
-            <div class="privacy-section">
-              <h3>互动设置</h3>
-              <el-form label-width="200px">
-                <el-form-item label="接受私信">
-                  <el-switch
-                    v-model="privacySettings.allowMessages"
-                    active-text="允许"
-                    inactive-text="禁止"
-                  />
-                </el-form-item>
-
-                <el-form-item label="显示在线状态">
-                  <el-switch
-                    v-model="privacySettings.showOnlineStatus"
-                    active-text="显示"
-                    inactive-text="隐藏"
-                  />
-                </el-form-item>
-
-                <el-form-item label="评论通知">
-                  <el-switch
-                    v-model="privacySettings.commentNotification"
-                    active-text="开启"
-                    inactive-text="关闭"
-                  />
-                </el-form-item>
-
-                <el-form-item label="点赞通知">
-                  <el-switch
-                    v-model="privacySettings.likeNotification"
-                    active-text="开启"
-                    inactive-text="关闭"
-                  />
-                </el-form-item>
-              </el-form>
-            </div>
-
-            <div class="privacy-actions">
-              <el-button
-                type="primary"
-                @click="savePrivacySettings"
-                :loading="privacyLoading"
-              >
-                <el-icon><Check /></el-icon>
-                保存隐私设置
-              </el-button>
-            </div>
-          </el-card>
-        </el-tab-pane>
-
         <!-- 账户安全标签页 -->
         <el-tab-pane label="账户安全" name="security">
           <el-card class="security-card">
-            <div class="security-section">
-              <h3>登录设备管理</h3>
-              <div class="device-list">
-                <div
-                  v-for="device in loginDevices"
-                  :key="device.id"
-                  class="device-item"
-                >
-                  <div class="device-info">
-                    <div class="device-name">{{ device.name }}</div>
-                    <div class="device-details">
-                      {{ device.location }} · {{ device.lastLogin }}
-                    </div>
-                  </div>
-                  <div class="device-actions">
-                    <el-tag v-if="device.current" type="success">当前设备</el-tag>
-                    <el-button
-                      v-else
-                      size="small"
-                      type="danger"
-                      @click="removeDevice(device.id)"
-                    >
-                      移除
-                    </el-button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <el-divider />
-
             <div class="security-section">
               <h3>双重验证</h3>
               <el-form label-width="200px">
@@ -324,9 +201,9 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Lock,
-  Check,
   Delete
 } from '@element-plus/icons-vue'
+import { userApi } from '@/api'
 
 defineOptions({ name: "AccountSettingsView" })
 
@@ -339,7 +216,6 @@ const activeTab = ref('password')
 
 // 加载状态
 const passwordLoading = ref(false)
-const privacyLoading = ref(false)
 const deactivateLoading = ref(false)
 
 // 密码修改表单
@@ -378,41 +254,11 @@ const passwordRules = reactive({
   ]
 })
 
-// 隐私设置
-const privacySettings = reactive({
-  emailVisible: false,
-  phoneVisible: false,
-  birthdayVisible: 'private',
-  locationVisible: true,
-  allowMessages: true,
-  showOnlineStatus: true,
-  commentNotification: true,
-  likeNotification: false
-})
-
 // 账户安全设置
 const securitySettings = reactive({
   emailVerified: true,
   phoneVerified: false
 })
-
-// 登录设备列表
-const loginDevices = ref([
-  {
-    id: 1,
-    name: 'Chrome on Windows',
-    location: '湖北省武汉市',
-    lastLogin: '2024-01-20 14:30',
-    current: true
-  },
-  {
-    id: 2,
-    name: 'Safari on iPhone',
-    location: '广东省深圳市',
-    lastLogin: '2024-01-19 10:15',
-    current: false
-  }
-])
 
 // 账户注销表单
 const deactivateForm = reactive({
@@ -465,17 +311,19 @@ const changePassword = async () => {
 
     passwordLoading.value = true
 
-    // 这里应该调用实际的API
-    // await userApi.changePassword(passwordForm)
-
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // 调用真实的API
+    await userApi.changePassword({
+      current_password: passwordForm.currentPassword,
+      new_password: passwordForm.newPassword
+    })
 
     ElMessage.success('密码修改成功')
     resetPasswordForm()
   } catch (error) {
     if (error.message) {
       ElMessage.error('密码修改失败：' + error.message)
+    } else {
+      ElMessage.error('密码修改失败，请检查当前密码是否正确')
     }
   } finally {
     passwordLoading.value = false
@@ -490,63 +338,25 @@ const resetPasswordForm = () => {
   passwordFormRef.value?.clearValidate()
 }
 
-// 保存隐私设置
-const savePrivacySettings = async () => {
-  try {
-    privacyLoading.value = true
-
-    // 这里应该调用实际的API
-    // await userApi.updatePrivacySettings(privacySettings)
-
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 1000))
-
-    ElMessage.success('隐私设置保存成功')
-  } catch (error) {
-    ElMessage.error('保存隐私设置失败')
-  } finally {
-    privacyLoading.value = false
-  }
-}
-
 // 验证邮箱
 const verifyEmail = async () => {
   try {
-    ElMessage.info('验证邮件已发送，请检查您的邮箱')
+    await userApi.sendEmailVerification()
+    ElMessage.success('验证邮件已发送，请检查您的邮箱')
     securitySettings.emailVerified = true
   } catch (error) {
-    ElMessage.error('发送验证邮件失败')
+    ElMessage.error('发送验证邮件失败：' + (error.message || '未知错误'))
   }
 }
 
 // 验证手机
 const verifyPhone = async () => {
   try {
-    ElMessage.info('验证短信已发送，请检查您的手机')
+    await userApi.sendPhoneVerification()
+    ElMessage.success('验证短信已发送，请检查您的手机')
     securitySettings.phoneVerified = true
   } catch (error) {
-    ElMessage.error('发送验证短信失败')
-  }
-}
-
-// 移除设备
-const removeDevice = async (deviceId) => {
-  try {
-    await ElMessageBox.confirm('确定要移除该设备吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-
-    // 这里应该调用实际的API
-    // await userApi.removeDevice(deviceId)
-
-    loginDevices.value = loginDevices.value.filter(device => device.id !== deviceId)
-    ElMessage.success('设备已移除')
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('移除设备失败')
-    }
+    ElMessage.error('发送验证短信失败：' + (error.message || '未知错误'))
   }
 }
 
@@ -568,11 +378,12 @@ const deactivateAccount = async () => {
 
     deactivateLoading.value = true
 
-    // 这里应该调用实际的API
-    // await userApi.deactivateAccount(deactivateForm)
-
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    // 调用真实的API
+    await userApi.deactivateAccount({
+      reason: deactivateForm.reason,
+      other_reason: deactivateForm.otherReason,
+      password: deactivateForm.password
+    })
 
     ElMessage.success('账户注销申请已提交，将在24小时内处理完成')
 
@@ -590,16 +401,15 @@ const deactivateAccount = async () => {
 // 获取账户设置信息
 const fetchAccountSettings = async () => {
   try {
-    // 这里应该调用实际的API
-    // const response = await userApi.getAccountSettings()
-    // Object.assign(privacySettings, response.data.privacy)
-    // Object.assign(securitySettings, response.data.security)
-    // loginDevices.value = response.data.devices
-
-    // 模拟数据
-    console.log('获取账户设置信息...')
+    // 获取账户安全设置(验证状态等)
+    const userInfo = await userApi.getUserInfo()
+    if (userInfo.data) {
+      securitySettings.emailVerified = userInfo.data.email_verified ?? true
+      securitySettings.phoneVerified = userInfo.data.phone_verified ?? false
+    }
   } catch (error) {
-    ElMessage.error('获取账户设置失败')
+    console.error('获取账户设置失败:', error)
+    // 不显示错误消息，使用默认值
   }
 }
 
@@ -631,7 +441,6 @@ onMounted(() => {
 }
 
 .password-card,
-.privacy-card,
 .security-card,
 .deactivate-card {
   margin-top: 20px;
@@ -664,53 +473,15 @@ onMounted(() => {
   margin-bottom: 4px;
 }
 
-.privacy-section,
 .security-section {
   margin-bottom: 24px;
 }
 
-.privacy-section h3,
 .security-section h3 {
   margin-bottom: 16px;
   color: #333;
   font-size: 16px;
   font-weight: 500;
-}
-
-.privacy-actions {
-  margin-top: 24px;
-  text-align: center;
-}
-
-.device-list {
-  margin-bottom: 16px;
-}
-
-.device-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  margin-bottom: 12px;
-}
-
-.device-name {
-  font-weight: 500;
-  color: #333;
-  margin-bottom: 4px;
-}
-
-.device-details {
-  font-size: 14px;
-  color: #666;
-}
-
-.device-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
 }
 
 .verification-status {
@@ -765,17 +536,6 @@ onMounted(() => {
   .password-form,
   .deactivate-form {
     max-width: 100%;
-  }
-
-  .device-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .device-actions {
-    width: 100%;
-    justify-content: flex-end;
   }
 }
 </style>

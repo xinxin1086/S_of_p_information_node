@@ -78,7 +78,9 @@
                   <el-icon v-else><reading /></el-icon>
                 </div>
                 <div class="result-content">
+                  <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized with DOMPurify -->
                   <div class="result-title" v-html="highlightKeyword(result.title)"></div>
+                  <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized with DOMPurify -->
                   <div class="result-summary" v-html="highlightKeyword(result.summary)"></div>
                   <div class="result-meta">
                     <span class="result-type">{{ getTypeText(result.type) }}</span>
@@ -113,6 +115,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Search, Bell, Calendar, Reading } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
+import { sanitizeHighlight } from '@/utils/sanitizeHtml'
 
 defineOptions({ name: "SearchView" })
 
@@ -208,7 +211,9 @@ const highlightKeyword = (text) => {
   if (!searchQuery.value.trim()) return text
   const keyword = searchQuery.value.trim()
   const regex = new RegExp(`(${keyword})`, 'gi')
-  return text.replace(regex, '<mark>$1</mark>')
+  const highlighted = text.replace(regex, '<mark>$1</mark>')
+  // 净化高亮后的HTML，防止XSS攻击
+  return sanitizeHighlight(highlighted)
 }
 
 const navigateToDetail = (result) => {

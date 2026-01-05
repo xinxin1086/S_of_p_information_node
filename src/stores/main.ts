@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import type { UserInfo } from '@/types/auth'
 
 /**
  * 主Store - 管理全局状态
@@ -85,11 +86,11 @@ export const useMainStore = defineStore('main', () => {
       ]
     },
     {
-      title: '捕鱼者功能',
+      title: '组织用户',
       children: [
-        { title: '活动管理', path: '/user/fisher/my-activities' },
-        { title: '创建活动', path: '/user/fisher/create-activity' },
-        { title: '活动统计', path: '/user/fisher/activity-stats' }
+        { title: '控制台', path: '/user/weave/dashboard' },
+        { title: '我的活动', path: '/user/weave/my-activities' },
+        { title: '创建活动', path: '/user/weave/create-activity' }
       ]
     },
     {
@@ -102,7 +103,7 @@ export const useMainStore = defineStore('main', () => {
   ])
 
   // 设置用户信息
-  const setUser = (userInfo: any) => {
+  const setUser = (userInfo: UserInfo) => {
     user.value = userInfo
   }
 

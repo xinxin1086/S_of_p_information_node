@@ -1,5 +1,6 @@
-import { ref, readonly } from 'vue'
 import { ElMessage, ElNotification, ElLoading } from 'element-plus'
+import { ref, readonly } from 'vue'
+
 import type { ApiError } from '@/types/auth'
 import ErrorHandler, { AppError, ErrorType } from '@/utils/errorHandler'
 
@@ -14,7 +15,7 @@ export const useErrorHandler = () => {
   /**
    * 处理错误（增强版本，使用ErrorHandler）
    */
-  const handleError = (rawError: any, context?: string) => {
+  const handleError = (rawError: unknown, context?: string) => {
     const appError = ErrorHandler.handle(rawError, context)
     currentAppError.value = appError
     error.value = appError.toApiError()
@@ -254,7 +255,7 @@ export const useErrorHandler = () => {
   /**
    * 判断是否需要重新认证
    */
-  const shouldReauth = (rawError?: any) => {
+  const shouldReauth = (rawError?: unknown) => {
     if (rawError) {
       return ErrorHandler.shouldReauth(rawError)
     }
@@ -264,7 +265,7 @@ export const useErrorHandler = () => {
   /**
    * 判断是否应该重试
    */
-  const shouldRetry = (rawError?: any) => {
+  const shouldRetry = (rawError?: unknown) => {
     if (rawError) {
       return ErrorHandler.shouldRetry(rawError)
     }
@@ -343,6 +344,7 @@ export const useErrorHandler = () => {
 export const useApiOperation = () => {
   const { handleError, showSuccess } = useErrorHandler()
   const loading = ref(false)
+  const lastError = ref<AppError | null>(null)
 
   /**
    * 执行API操作
@@ -370,7 +372,6 @@ export const useApiOperation = () => {
     } = options || {}
 
     loading.value = true
-    let lastError: any = null
 
     for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
       try {
@@ -382,15 +383,15 @@ export const useApiOperation = () => {
 
         onSuccess?.(result)
         return result
-      } catch (error: any) {
-        lastError = error
+      } catch (err) {
+        lastError.value = ErrorHandler.handle(err)
 
         // 使用ErrorHandler判断是否应该重试
-        if (!ErrorHandler.shouldRetry(error) || attempt > maxRetries) {
+        if (!ErrorHandler.shouldRetry(err) || attempt > maxRetries) {
           if (showErrorMessage) {
-            handleError(error)
+            handleError(err)
           }
-          onError?.(ErrorHandler.handle(error))
+          onError?.(ErrorHandler.handle(err))
           return null
         }
 
@@ -417,6 +418,7 @@ export const useApiOperation = () => {
 
   return {
     loading: readonly(loading),
+    lastError: readonly(lastError),
     execute,
     executeWithRetry
   }

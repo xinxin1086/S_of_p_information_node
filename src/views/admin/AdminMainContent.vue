@@ -258,37 +258,37 @@ const goToNoticeDetail = (id: number | string) => {
   router.push(`/admin/content/notice-detail/${id}`)
 }
 
-// 快速操作方法 - 使用权限系统
+// 统一的权限检查辅助函数
+const checkAdminPermission = (): boolean => {
+  if (!hasPermission('ADMIN')) {
+    ElMessage.warning('您需要管理员权限才能执行此操作')
+    return false
+  }
+  return true
+}
+
+// 快速操作方法 - 优化后的权限检查
 const goToUserManagement = () => {
-  if (hasPermission('ADMIN')) {
-    // 跳转到管理员用户管理页面
+  if (checkAdminPermission()) {
     router.push('/admin/user/admin')
-  } else {
-    ElMessage.warning('您没有用户管理权限')
   }
 }
 
 const goToContentManagement = () => {
-  if (hasPermission('ADMIN')) {
-    // 跳转到公告管理页面作为内容管理入口
+  if (checkAdminPermission()) {
     router.push('/admin/content/notice')
-  } else {
-    ElMessage.warning('您没有内容管理权限')
   }
 }
 
 const goToActivityManagement = () => {
-  if (hasPermission('ADMIN')) {
-    // 跳转到活动管理页面
+  if (checkAdminPermission()) {
     router.push('/admin/content/activity')
-  } else {
-    ElMessage.warning('您没有活动管理权限')
   }
 }
 
 
 // 定时器
-let timeTimer: NodeJS.Timeout | null = null
+let timeTimer: number | null = null
 
 // 生命周期
 onMounted(() => {

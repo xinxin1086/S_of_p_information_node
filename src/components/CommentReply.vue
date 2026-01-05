@@ -68,34 +68,48 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getAvatarUrl } from '@/utils/avatar.js'
 import { useAuthStore } from '@/stores'
 
-// Props
-const props = defineProps({
-  reply: {
-    type: Object,
-    required: true
-  },
-  replyingTo: {
-    type: Object,
-    default: null
-  },
-  maxNestingLevel: {
-    type: Number,
-    default: 5 // 最大嵌套层级，防止无限递归
-  },
-  currentNestingLevel: {
-    type: Number,
-    default: 1
-  }
+interface Reply {
+  id: number | string
+  author_display?: string
+  author_avatar?: string
+  content: string
+  create_time: string
+  author_user_id?: number | string
+  parent_comment_id?: number | string
+  replies?: Reply[]
+}
+
+interface Props {
+  /** 回复数据 */
+  reply: Reply
+  /** 正在回复的评论 */
+  replyingTo?: Reply | null
+  /** 最大嵌套层级 */
+  maxNestingLevel?: number
+  /** 当前嵌套层级 */
+  currentNestingLevel?: number
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  replyingTo: null,
+  maxNestingLevel: 5,
+  currentNestingLevel: 1
 })
 
-// Emits
-const emit = defineEmits(['reply-to-comment', 'delete-comment'])
+interface Emits {
+  /** 回复评论 */
+  'reply-to-comment': [reply: Reply]
+  /** 删除评论 */
+  'delete-comment': [commentId: number | string]
+}
+
+const emit = defineEmits<Emits>()
 
 // 用户认证状态
 const authStore = useAuthStore()
@@ -109,18 +123,20 @@ const shouldHideReplyBtn = computed(() => {
 
 // 判断当前用户是否可以回复
 const canReply = computed(() => {
-  return authStore.isAuthenticated && authStore.user?.role !== 'admin'
+  return authStore.isAuthenticated && authStore.user?.role !== 'ADMIN' && authStore.user?.role !== 'SUPER_ADMIN'
 })
 
 // 判断当前用户是否可以删除此回复
 const canDeleteReply = computed(() => {
+  // 管理员不能删除回复，只有作者本人可以删除自己的回复
   return authStore.isAuthenticated &&
-         authStore.user?.role !== 'admin' && // 管理员不能删除回复
+         authStore.user?.role !== 'ADMIN' &&
+         authStore.user?.role !== 'SUPER_ADMIN' &&
          props.reply.author_user_id === authStore.user.id
 })
 
 // 工具方法
-const formatRelativeTime = (dateString) => {
+const formatRelativeTime = (dateString: string): string => {
   if (!dateString) return ''
 
   const date = new Date(dateString)

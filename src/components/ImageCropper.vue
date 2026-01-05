@@ -75,31 +75,72 @@
   />
 </template>
 
-<script setup>
-import { ref, nextTick, onUnmounted, watch } from 'vue';
-import { VueCropper } from 'vue-cropper';
-import 'vue-cropper/dist/index.css';
-import { formatAvatarUrl } from '@/utils/common/format.js';
+<script setup lang="ts">
+import { ref, nextTick, onUnmounted, watch } from 'vue'
+import { VueCropper } from 'vue-cropper'
+import 'vue-cropper/dist/index.css'
+import { formatAvatarUrl } from '@/utils/common/format.js'
+
+interface CropperOption {
+  img: string
+  size: number
+  outputSize: number
+  outputType: string
+  full: boolean
+  canMove: boolean
+  canMoveBox: boolean
+  fixedBox: boolean
+  original: boolean
+  autoCrop: boolean
+  autoCropWidth: number
+  autoCropHeight: number
+  centerBox: boolean
+  high: boolean
+  max: number
+}
+
+interface PreviewData {
+  url: string
+  w: number
+  h: number
+  div: Record<string, string>
+  img: Record<string, string>
+}
 
 // Props
-const props = defineProps({
-  modelValue: String,
-  size: { type: Number, default: 200 },
-});
+interface Props {
+  /** 头像URL (v-model) */
+  modelValue?: string
+  /** 裁剪尺寸 */
+  size?: number
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  size: 200
+})
 
 // Emits
-const emit = defineEmits(['update:modelValue', 'cropped-file-ready', 'upload-fail']);
+interface Emits {
+  /** 更新头像URL */
+  'update:modelValue': [value: string]
+  /** 裁剪完成，文件就绪 */
+  'cropped-file-ready': [file: File]
+  /** 上传失败 */
+  'upload-fail': [error: string]
+}
+
+const emit = defineEmits<Emits>()
 
 // 状态
-const isCropModalOpen = ref(false);
-const previewUrl = ref(formatAvatarUrl(props.modelValue) || '');
-const cropperRef = ref(null);
-const fileInputRef = ref(null);
-const tempBlobUrls = ref([]);
-const previews = ref({}); // 修复：补充const声明（之前遗漏）
+const isCropModalOpen = ref(false)
+const previewUrl = ref(formatAvatarUrl(props.modelValue) || '')
+const cropperRef = ref<any>(null)
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const tempBlobUrls = ref<string[]>([])
+const previews = ref<PreviewData>({} as PreviewData)
 
 // 核心配置项
-const option = ref({
+const option = ref<CropperOption>({
   img: '',
   size: 1,
   outputType: 'jpeg',
@@ -122,42 +163,43 @@ const openUpload = () => {
 };
 
 // 上传图片
-const uploadImg = (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+const uploadImg = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
 
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
   if (!allowedTypes.includes(file.type)) {
-    emit('upload-fail', '仅支持JPG、PNG、WebP格式图片');
-    e.target.value = '';
-    return;
+    emit('upload-fail', '仅支持JPG、PNG、WebP格式图片')
+    target.value = ''
+    return
   }
   if (file.size > option.value.max) {
-    emit('upload-fail', '文件大小不能超过2MB');
-    e.target.value = '';
-    return;
+    emit('upload-fail', '文件大小不能超过2MB')
+    target.value = ''
+    return
   }
 
-  const reader = new FileReader();
+  const reader = new FileReader()
   reader.onload = (e) => {
-    let data;
-    if (typeof e.target.result === 'object') {
-      data = window.URL.createObjectURL(new Blob([e.target.result]));
-      tempBlobUrls.value.push(data);
+    let data: string
+    if (typeof e.target?.result === 'object') {
+      data = window.URL.createObjectURL(new Blob([e.target.result]))
+      tempBlobUrls.value.push(data)
     } else {
-      data = e.target.result;
+      data = e.target?.result as string
     }
-    option.value.img = data;
-    isCropModalOpen.value = true;
-  };
-  reader.readAsArrayBuffer(file);
-  e.target.value = '';
-};
+    option.value.img = data
+    isCropModalOpen.value = true
+  }
+  reader.readAsArrayBuffer(file)
+  target.value = ''
+}
 
 // 图片加载完成回调
-const imgLoad = (msg) => {
-  console.log('图片加载完成：', msg);
-};
+const imgLoad = (msg: string) => {
+  console.log('图片加载完成：', msg)
+}
 
 // 确认裁剪
 const confirmCrop = () => {

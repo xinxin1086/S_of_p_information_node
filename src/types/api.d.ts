@@ -2,8 +2,6 @@
  * API相关类型定义
  */
 
-import type { ApiError, ApiResponse } from './auth'
-
 // HTTP方法类型
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS'
 
@@ -11,11 +9,11 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 
 export interface RequestConfig {
   method?: HttpMethod
   headers?: Record<string, string>
-  body?: any
+  body?: unknown
   timeout?: number
   useAuth?: boolean
   baseURL?: string
-  params?: Record<string, any>
+  params?: Record<string, unknown>
   responseType?: 'json' | 'text' | 'blob' | 'arrayBuffer'
   withCredentials?: boolean
 }
@@ -26,8 +24,8 @@ export interface ResponseConfig {
   statusText: string
   headers: Record<string, string>
   config: RequestConfig
-  data: any
-  request?: any
+  data: unknown
+  request?: unknown
 }
 
 // 拦截器接口
@@ -40,17 +38,17 @@ export interface ResponseInterceptor {
 }
 
 export interface ErrorInterceptor {
-  (error: any): any
+  (error: unknown): unknown
 }
 
 // API客户端接口
 export interface ApiClient {
-  get<T = any>(url: string, config?: RequestConfig): Promise<T>
-  post<T = any>(url: string, data?: any, config?: RequestConfig): Promise<T>
-  put<T = any>(url: string, data?: any, config?: RequestConfig): Promise<T>
-  delete<T = any>(url: string, config?: RequestConfig): Promise<T>
-  patch<T = any>(url: string, data?: any, config?: RequestConfig): Promise<T>
-  request<T = any>(config: RequestConfig & { url: string }): Promise<T>
+  get<T = unknown>(url: string, config?: RequestConfig): Promise<T>
+  post<T = unknown>(url: string, data?: unknown, config?: RequestConfig): Promise<T>
+  put<T = unknown>(url: string, data?: unknown, config?: RequestConfig): Promise<T>
+  delete<T = unknown>(url: string, config?: RequestConfig): Promise<T>
+  patch<T = unknown>(url: string, data?: unknown, config?: RequestConfig): Promise<T>
+  request<T = unknown>(config: RequestConfig & { url: string }): Promise<T>
 
   // 拦截器管理
   addRequestInterceptor(interceptor: RequestInterceptor): number
@@ -99,7 +97,7 @@ export interface BatchResult<T> {
   successful: T[]
   failed: Array<{
     item: T
-    error: any
+    error: Error
   }>
   totalProcessed: number
   successCount: number
@@ -111,11 +109,11 @@ export interface FileUploadOptions {
   url: string
   file: File | Blob
   fieldName?: string
-  data?: Record<string, any>
+  data?: Record<string, unknown>
   headers?: Record<string, string>
   onProgress?: (progress: number) => void
-  onSuccess?: (response: any) => void
-  onError?: (error: any) => void
+  onSuccess?: (response: unknown) => void
+  onError?: (error: Error) => void
   timeout?: number
 }
 
@@ -166,7 +164,7 @@ export interface WebSocketConfig {
   onError?: (event: Event) => void
 }
 
-export interface WebSocketMessage<T = any> {
+export interface WebSocketMessage<T = unknown> {
   type: string
   data: T
   timestamp?: number

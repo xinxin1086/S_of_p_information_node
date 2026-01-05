@@ -12,19 +12,20 @@
   </div>
 </template>
 
-<script setup>
-defineProps({
-  text: {
-    type: String,
-    default: ''
-  },
-  overlay: {
-    type: Boolean,
-    default: false
-  }
-})
-
+<script setup lang="ts">
 defineOptions({ name: "Loading" })
+
+interface Props {
+  /** 加载文本 */
+  text?: string
+  /** 是否使用遮罩层模式 */
+  overlay?: boolean
+}
+
+withDefaults(defineProps<Props>(), {
+  text: '',
+  overlay: false
+})
 </script>
 
 <style scoped>

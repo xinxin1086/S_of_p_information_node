@@ -119,6 +119,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ArrowLeft } from '@element-plus/icons-vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { adminApi } from '@/api/index.js';
 import { formatErrorMessage } from '@/utils/apiHelper.js';
 
@@ -243,19 +244,32 @@ const handleViewComments = (discussion) => {
 
 // 单个删除
 const handleDelete = async (discussion) => {
-  if (!confirm('确定要删除该讨论吗？删除后相关的评论也会被删除。')) return;
+  try {
+    await ElMessageBox.confirm(
+      '确定要删除该讨论吗？删除后相关的评论也会被删除。',
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    );
+  } catch {
+    return;
+  }
+
   isLoading.value = true;
 
   try {
     const response = await adminApi.activityDiscussion.delete(discussion.id);
     if (response.success) {
-      alert('删除成功！');
+      ElMessage.success('删除成功！');
       fetchDiscussions();
     } else {
-      alert('删除失败：' + (response.message || '未知错误'));
+      ElMessage.error('删除失败：' + (response.message || '未知错误'));
     }
   } catch (error) {
-    alert('删除失败：' + formatErrorMessage(error, '删除讨论失败'));
+    ElMessage.error('删除失败：' + formatErrorMessage(error, '删除讨论失败'));
   } finally {
     isLoading.value = false;
   }
@@ -263,17 +277,30 @@ const handleDelete = async (discussion) => {
 
 // 批量删除
 const handleBatchDelete = async () => {
-  if (!confirm(`确定要删除选中的${selectedIds.value.length}条讨论吗？删除后相关的评论也会被删除。`)) return;
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除选中的${selectedIds.value.length}条讨论吗？删除后相关的评论也会被删除。`,
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    );
+  } catch {
+    return;
+  }
+
   try {
     isLoading.value = true;
     const promises = selectedIds.value.map(id => adminApi.activityDiscussion.delete(id));
     await Promise.all(promises);
 
-    alert('批量删除成功！');
+    ElMessage.success('批量删除成功！');
     selectedIds.value = [];
     fetchDiscussions();
   } catch (error) {
-    alert('批量删除失败：' + formatErrorMessage(error, '批量删除讨论失败'));
+    ElMessage.error('批量删除失败：' + formatErrorMessage(error, '批量删除讨论失败'));
   } finally {
     isLoading.value = false;
   }

@@ -9,11 +9,7 @@ import type {
   RoleInfo,
   UserRole,
   LegacyUserRole,
-  NewUserRole,
-  LegacyUserResponse,
-  StandardUserResponse,
-  ApiResponse,
-  LegacyApiResponse
+  NewUserRole
 } from '@/types/auth'
 
 /**
@@ -61,33 +57,36 @@ export class DataMapper {
   /**
    * 从多种可能的字段名中提取头像URL
    */
-  static extractAvatar(userData: any): string {
-    return userData.avatar ||
-           userData.head_pic ||
-           userData.profile_image ||
-           userData.profileImage ||
+  static extractAvatar(userData: Record<string, unknown> | null | undefined): string {
+    if (!userData) return ''
+    return (userData.avatar as string) ||
+           (userData.head_pic as string) ||
+           (userData.profile_image as string) ||
+           (userData.profileImage as string) ||
            ''
   }
 
   /**
    * 从多种可能的字段名中提取用户名
    */
-  static extractUsername(userData: any): string {
-    return userData.username ||
-           userData.name ||
-           userData.nickname ||
-           userData.displayName ||
-           userData.account ||
+  static extractUsername(userData: Record<string, unknown> | null | undefined): string {
+    if (!userData) return '未知用户'
+    return (userData.username as string) ||
+           (userData.name as string) ||
+           (userData.nickname as string) ||
+           (userData.displayName as string) ||
+           (userData.account as string) ||
            '未知用户'
   }
 
   /**
    * 从多种可能的字段名中提取邮箱
    */
-  static extractEmail(userData: any): string {
-    return userData.email ||
-           userData.email_address ||
-           userData.contact_email ||
+  static extractEmail(userData: Record<string, unknown> | null | undefined): string {
+    if (!userData) return ''
+    return (userData.email as string) ||
+           (userData.email_address as string) ||
+           (userData.contact_email as string) ||
            ''
   }
 
@@ -120,7 +119,7 @@ export class DataMapper {
   /**
    * 映射用户信息：支持多种数据格式
    */
-  static mapUserInfo(rawData: any): UserInfo {
+  static mapUserInfo(rawData: Record<string, unknown>): UserInfo {
     if (!rawData) {
       throw new Error('用户信息为空')
     }
@@ -196,7 +195,7 @@ export class DataMapper {
   /**
    * 映射权限信息
    */
-  static mapPermissions(rawData: any): Permissions {
+  static mapPermissions(rawData: Record<string, unknown>): Permissions {
     if (!rawData) {
       throw new Error('权限信息为空')
     }
@@ -230,7 +229,7 @@ export class DataMapper {
   /**
    * 映射角色信息
    */
-  static mapRoleInfo(rawData: any): RoleInfo {
+  static mapRoleInfo(rawData: Record<string, unknown>): RoleInfo {
     if (!rawData) {
       return {
         role_name: '未知角色',
@@ -260,10 +259,10 @@ export class DataMapper {
   /**
    * 处理API响应：支持多种响应格式
    */
-  static processApiResponse<T>(response: any): T {
+  static processApiResponse<T>(response: unknown): T {
     // 处理标准格式 { success: true, data: ... }
-    if (response && typeof response === 'object' && response.data !== undefined) {
-      return response.data as T
+    if (response && typeof response === 'object' && response !== null && 'data' in response) {
+      return (response as { data: T }).data
     }
 
     // 处理简化格式，直接返回数据
@@ -273,7 +272,7 @@ export class DataMapper {
   /**
    * 处理登录响应：支持多种登录响应格式
    */
-  static processLoginResponse(response: any): {
+  static processLoginResponse(response: Record<string, unknown>): {
     user: UserInfo
     permissions?: Permissions
     token: string

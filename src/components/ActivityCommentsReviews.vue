@@ -368,7 +368,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useActivityStore } from '@/stores/activity'
@@ -376,55 +376,88 @@ import { useAuthStore } from '@/stores'
 import { getAvatarUrl } from '@/utils/avatar.js'
 import CommentReply from './CommentReply.vue'
 
-// Props
-const props = defineProps({
-  activity: {
-    type: Object,
-    required: true
-  },
-  comments: {
-    type: Array,
-    default: () => []
-  },
-  ratings: {
-    type: Array,
-    default: () => []
-  },
-  hasRated: {
-    type: Boolean,
-    default: false
-  },
-  submitting: {
-    type: Boolean,
-    default: false
-  },
-  ratingSubmitting: {
-    type: Boolean,
-    default: false
-  },
-  // 主题色配置
-  buttonColor: {
-    type: String,
-    default: '#409eff'
-  },
-  // 用户登录状态
-  isAuthenticated: {
-    type: Boolean,
-    default: false
+interface Activity {
+  id: number | string
+  avgScore?: number
+  ratingCount?: number
+  [key: string]: unknown
+}
+
+interface Comment {
+  id: number | string
+  content: string
+  author_display?: string
+  author_avatar?: string
+  author_user_id?: number | string
+  create_time: string
+  replies?: Comment[]
+  [key: string]: unknown
+}
+
+interface Rating {
+  id: number | string
+  rating?: number
+  score?: number
+  comment?: string
+  user?: {
+    username?: string
+    avatar?: string
+    [key: string]: unknown
   }
+  [key: string]: unknown
+}
+
+// Props
+interface Props {
+  /** 活动数据 */
+  activity: Activity
+  /** 评论列表 */
+  comments?: Comment[]
+  /** 评分列表 */
+  ratings?: Rating[]
+  /** 是否已评分 */
+  hasRated?: boolean
+  /** 评论提交中 */
+  submitting?: boolean
+  /** 评分提交中 */
+  ratingSubmitting?: boolean
+  /** 按钮主题色 */
+  buttonColor?: string
+  /** 用户是否已登录 */
+  isAuthenticated?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  comments: () => [],
+  ratings: () => [],
+  hasRated: false,
+  submitting: false,
+  ratingSubmitting: false,
+  buttonColor: '#409eff',
+  isAuthenticated: false
 })
 
 // Emits
-const emit = defineEmits([
-  'submit-comment',
-  'submit-reply',
-  'submit-rating',
-  'reply-comment',
-  'cancel-reply',
-  'update:ratings',
-  'load-replies',
-  'delete-comment'
-])
+interface Emits {
+  /** 提交评论 */
+  'submit-comment': [content: string]
+  /** 提交回复 */
+  'submit-reply': [commentId: number | string, content: string, parentId?: number | string]
+  /** 提交评分 */
+  'submit-rating': [rating: number, comment: string]
+  /** 回复评论 */
+  'reply-comment': [comment: Comment]
+  /** 取消回复 */
+  'cancel-reply': []
+  /** 更新评分列表 */
+  'update:ratings': [ratings: Rating[]]
+  /** 加载回复 */
+  'load-replies': [commentId: number | string]
+  /** 删除评论 */
+  'delete-comment': [commentId: number | string]
+}
+
+const emit = defineEmits<Emits>()
 
 const activeTab = ref('discussion')
 const showCommentForm = ref(false)
@@ -444,12 +477,12 @@ const authStore = useAuthStore()
 // 权限控制计算属性
 const canComment = computed(() => {
   // 必须已登录且不是管理员
-  return authStore.isAuthenticated && authStore.user?.role !== 'admin'
+  return authStore.isAuthenticated && authStore.user?.role !== 'ADMIN' && authStore.user?.role !== 'SUPER_ADMIN'
 })
 
 const canRate = computed(() => {
   // 必须已登录且不是管理员
-  return authStore.isAuthenticated && authStore.user?.role !== 'admin'
+  return authStore.isAuthenticated && authStore.user?.role !== 'ADMIN' && authStore.user?.role !== 'SUPER_ADMIN'
 })
 
 // 用户信息缓存相关变量已移除 - 直接使用讨论数据中的 author_display 和 author_avatar
@@ -552,14 +585,6 @@ const buttonStyle = computed(() => ({
   borderColor: props.buttonColor
 }))
 
-
-// 获取用户头像的方法（保留用于评分数据）
-const getUserAvatar = (user) => {
-  if (!user) return null
-  // 支持多种头像字段名称
-  const avatarPath = user.avatar || user.profile_image || user.author_avatar || user.rater_avatar || null
-  return getAvatarUrl(avatarPath)
-}
 
 // loadUserInfoForComment 和 preloadUserInfos 函数已移除 - 不再需要额外的用户信息获取
 

@@ -180,16 +180,16 @@ const fetchComments = async () => {
     if (result.success) {
       // 处理可能的嵌套数据结构
       const commentsData = result.data?.items || result.data || []
-      comments.value = commentsData.map(comment => ({
-        id: comment.id,
-        content: comment.content,
-        create_time: comment.create_time,
-        author_display: comment.author_display || '匿名用户',
-        author_user_id: comment.author_user_id,
-        author_avatar: comment.author_avatar, // 新增头像字段
-        discuss_id: comment.discuss_id,
-        parent_comment_id: comment.parent_comment_id,
-        replies: comment.replies || [] // 使用API返回的回复数据
+      comments.value = commentsData.filter(Boolean).map(comment => ({
+        id: comment?.id,
+        content: comment?.content,
+        create_time: comment?.create_time,
+        author_display: comment?.author_display || '匿名用户',
+        author_user_id: comment?.author_user_id,
+        author_avatar: comment?.author_avatar, // 新增头像字段
+        discuss_id: comment?.discuss_id,
+        parent_comment_id: comment?.parent_comment_id,
+        replies: comment?.replies || [] // 使用API返回的回复数据
       }))
     } else {
       console.warn('获取评论列表返回失败:', result.error)
@@ -233,14 +233,8 @@ const handleSubmitComment = async ({ content }) => {
     }
   } catch (error) {
     console.error('发表讨论失败:', error)
-    // 处理网络错误和服务器错误
-    if (error.response?.status === 500) {
-      ElMessage.error('服务器内部错误，请稍后再试或联系管理员')
-    } else if (error.response?.status === 401) {
-      ElMessage.error('请先登录后再发表讨论')
-    } else {
-      ElMessage.error('网络连接异常，请检查网络后重试')
-    }
+    // 错误已由 request.ts 拦截器统一处理，这里只需记录日志
+    // 如果需要自定义错误处理，请使用 useErrorHandler composable
   } finally {
     submitting.value = false
   }
@@ -278,14 +272,8 @@ const handleSubmitReply = async ({ content, discussion_id, parent_comment_id }) 
     }
   } catch (error) {
     console.error('回复失败:', error)
-    // 处理网络错误和服务器错误
-    if (error.response?.status === 500) {
-      ElMessage.error('服务器内部错误，请稍后再试或联系管理员')
-    } else if (error.response?.status === 401) {
-      ElMessage.error('请先登录后再发表回复')
-    } else {
-      ElMessage.error('网络连接异常，请检查网络后重试')
-    }
+    // 错误已由 request.ts 拦截器统一处理，这里只需记录日志
+    // 如果需要自定义错误处理，请使用 useErrorHandler composable
   } finally {
     submitting.value = false
   }
@@ -314,11 +302,12 @@ const handleLoadReplies = async (discussionId) => {
       const discussion = comments.value.find(c => c.id === discussionId)
       if (discussion) {
         // 确保回复数据包含头像字段
-        discussion.replies = result.data.map(reply => ({
+        const repliesData = result.data || []
+        discussion.replies = repliesData.filter(Boolean).map(reply => ({
           ...reply,
           author_avatar: reply.author_avatar // 确保包含头像字段
         }))
-        discussion.hasMoreReplies = result.data.length >= 10 // 假设每页10条，如果满了就可能有更多
+        discussion.hasMoreReplies = repliesData.length >= 10 // 假设每页10条，如果满了就可能有更多
       }
     } else {
       console.error('加载回复失败:', result.error)

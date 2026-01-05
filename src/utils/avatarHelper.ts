@@ -93,7 +93,7 @@ export const generateAvatarFromUsername = (username: string): string => {
  * @param user 用户对象
  * @returns 头像URL
  */
-export const getUserAvatar = (user: any): string => {
+export const getUserAvatar = (user: Record<string, unknown> | null | undefined): string => {
   if (!user) return getDefaultAvatar()
 
   // 优先级：avatar > head_pic > profile_image

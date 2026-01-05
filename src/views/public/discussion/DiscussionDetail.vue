@@ -16,11 +16,11 @@
       <div class="main-post">
         <div class="post-header">
           <div class="author-info">
-            <el-avatar :src="post.author.avatar" :size="50">
-              {{ post.author.username?.charAt(0)?.toUpperCase() }}
+            <el-avatar :src="post.author?.avatar" :size="50">
+              {{ post.author?.username?.charAt(0)?.toUpperCase() || '?' }}
             </el-avatar>
             <div class="author-details">
-              <h4 class="author-name">{{ post.author.username }}</h4>
+              <h4 class="author-name">{{ post.author?.username || '未知用户' }}</h4>
               <p class="post-time">{{ formatDateTime(post.created_at) }}</p>
             </div>
           </div>
@@ -47,7 +47,8 @@
           <el-tag :type="getCategoryTagType(post.category)" class="category-tag">
             {{ getCategoryLabel(post.category) }}
           </el-tag>
-          <div class="post-body" v-html="formatContent(post.content)"></div>
+          <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized with DOMPurify -->
+<div class="post-body" v-html="formatContent(post.content)"></div>
         </div>
 
         <div class="post-stats">
@@ -66,7 +67,7 @@
         </div>
 
         <!-- 主讨论回复按钮 -->
-        <div class="post-reply-actions" v-if="authStore.isAuthenticated && !showFixedReplyInput && authStore.user?.role !== 'admin'">
+        <div class="post-reply-actions" v-if="authStore.isAuthenticated && !showFixedReplyInput && authStore.user?.role !== 'ADMIN' && authStore.user?.role !== 'SUPER_ADMIN'">
           <el-button
             size="small"
             text
@@ -110,13 +111,13 @@
             class="reply-item"
           >
             <div class="reply-avatar">
-              <el-avatar :src="reply.author.avatar" :size="40">
-                {{ reply.author.username?.charAt(0)?.toUpperCase() }}
+              <el-avatar :src="reply.author?.avatar" :size="40">
+                {{ reply.author?.username?.charAt(0)?.toUpperCase() || '?' }}
               </el-avatar>
             </div>
             <div class="reply-content">
               <div class="reply-header">
-                <span class="author">{{ reply.author.username }}</span>
+                <span class="author">{{ reply.author?.username || '未知用户' }}</span>
                 <span class="time">{{ formatDateTime(reply.created_at) }}</span>
                 <div class="reply-actions">
                   <el-button
@@ -130,7 +131,7 @@
                     {{ isReplyLiked(reply.id) ? '已赞' : '赞' }} ({{ reply.like_count }})
                   </el-button>
                   <el-button
-                    v-if="!showFixedReplyInput && authStore.user?.role !== 'admin'"
+                    v-if="!showFixedReplyInput && authStore.user?.role !== 'ADMIN' && authStore.user?.role !== 'SUPER_ADMIN'"
                     size="small"
                     text
                     @click="openReplyInput(reply.id)"
@@ -140,7 +141,8 @@
                   </el-button>
                 </div>
               </div>
-              <div class="reply-body" v-html="formatContent(reply.content)"></div>
+              <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized with DOMPurify -->
+<div class="reply-body" v-html="formatContent(reply.content)"></div>
 
               <!-- 二级回复 -->
               <div v-if="reply.replies && reply.replies.length > 0" class="sub-replies">
@@ -149,15 +151,16 @@
                   :key="subReply.id"
                   class="sub-reply-item"
                 >
-                  <el-avatar :src="subReply.author.avatar" :size="30">
-                    {{ subReply.author.username?.charAt(0)?.toUpperCase() }}
+                  <el-avatar :src="subReply.author?.avatar" :size="30">
+                    {{ subReply.author?.username?.charAt(0)?.toUpperCase() || '?' }}
                   </el-avatar>
                   <div class="sub-reply-content">
                     <div class="sub-reply-header">
-                      <span class="author">{{ subReply.author.username }}</span>
+                      <span class="author">{{ subReply.author?.username || '未知用户' }}</span>
                       <span class="time">{{ formatDateTime(subReply.created_at) }}</span>
                     </div>
-                    <div class="sub-reply-body" v-html="formatContent(subReply.content)"></div>
+                    <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized with DOMPurify -->
+<div class="sub-reply-body" v-html="formatContent(subReply.content)"></div>
                   </div>
                 </div>
               </div>
@@ -199,7 +202,7 @@
     </div>
 
     <!-- 底部固定回复输入框 -->
-    <div v-if="showFixedReplyInput && authStore.isAuthenticated && authStore.user?.role !== 'admin'" class="fixed-reply-input">
+    <div v-if="showFixedReplyInput && authStore.isAuthenticated && authStore.user?.role !== 'ADMIN' && authStore.user?.role !== 'SUPER_ADMIN'" class="fixed-reply-input">
       <div class="reply-input-wrapper">
         <div class="reply-input-header">
           <span class="reply-target">回复 @{{ replyTargetUser }}...</span>
@@ -230,6 +233,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElLoading } from 'element-plus'
 import { Star, Share, View, ChatDotRound } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores'
+import { sanitizeRichText } from '@/utils/sanitizeHtml'
 
 const route = useRoute()
 const router = useRouter()
@@ -253,7 +257,7 @@ const likedReplies = ref(new Set())
 
 // 权限控制计算属性
 const canReply = computed(() => {
-  return authStore.isAuthenticated && authStore.user?.role !== 'admin'
+  return authStore.isAuthenticated && authStore.user?.role !== 'ADMIN' && authStore.user?.role !== 'SUPER_ADMIN'
 })
 
 const categories = [
@@ -449,7 +453,7 @@ const openReplyInput = (replyId) => {
   const reply = replies.value.find(r => r.id === replyId)
   if (reply) {
     replyContent.value = ''
-    replyTargetUser.value = reply.author.username
+    replyTargetUser.value = reply.author?.username || '楼主'
     showReplyId.value = replyId
     showFixedReplyInput.value = true
 
@@ -575,10 +579,12 @@ const getCategoryTagType = (category) => {
 }
 
 const formatContent = (content) => {
-  return content
+  const formatted = content
     .replace(/\n/g, '<br>')
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
+  // 净化格式化后的HTML，防止XSS攻击
+  return sanitizeRichText(formatted)
 }
 
 const formatDateTime = (timeString) => {

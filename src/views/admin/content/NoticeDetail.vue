@@ -56,7 +56,8 @@
 
       <!-- 公告内容 -->
       <div class="notice-body">
-        <div class="content-wrapper" v-html="noticeData.release_notice"></div>
+        <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized with DOMPurify -->
+<div class="content-wrapper" v-html="sanitizedNoticeContent"></div>
       </div>
 
       <!-- 附件列表 -->
@@ -83,7 +84,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
@@ -95,6 +96,7 @@ import {
   Document
 } from '@element-plus/icons-vue'
 import { useNoticeStore } from '@/stores/notice'
+import { sanitizeRichText } from '@/utils/sanitizeHtml'
 
 const route = useRoute()
 const router = useRouter()
@@ -105,6 +107,11 @@ const loading = ref(false)
 const errorMessage = ref('')
 const noticeData = ref(null)
 const attachments = ref([])
+
+// 净化后的公告内容
+const sanitizedNoticeContent = computed(() => {
+  return sanitizeRichText(noticeData.value?.release_notice)
+})
 
 // 方法
 const goBack = () => {

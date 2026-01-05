@@ -225,7 +225,7 @@ export class PermissionManager {
    * 评估权限条件
    */
   private evaluateConditions(
-    conditions: Record<string, any> = {},
+    conditions: Record<string, unknown> = {},
     context?: PermissionCondition
   ): boolean {
     if (!context) return true
@@ -340,10 +340,10 @@ export class PermissionManager {
     action: PermissionAction,
     condition?: PermissionCondition
   ) {
-    return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
+    return function (target: unknown, propertyName: string, descriptor: PropertyDescriptor) {
       const method = descriptor.value
 
-      descriptor.value = function (...args: any[]) {
+      descriptor.value = function (...args: unknown[]) {
         const permissionManager = this.permissionManager as PermissionManager
 
         if (!permissionManager || !permissionManager.hasResourcePermission(resource, action, condition)) {
@@ -359,10 +359,10 @@ export class PermissionManager {
    * 角色装饰器工厂
    */
   static requireRole(role: UserRole) {
-    return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
+    return function (target: unknown, propertyName: string, descriptor: PropertyDescriptor) {
       const method = descriptor.value
 
-      descriptor.value = function (...args: any[]) {
+      descriptor.value = function (...args: unknown[]) {
         const permissionManager = this.permissionManager as PermissionManager
 
         if (!permissionManager || !permissionManager.hasRole(role)) {
@@ -448,27 +448,6 @@ export const checkLevel = (minimumLevel: number): boolean => {
 
 export const checkFeature = (feature: string): boolean => {
   return permissionManager.hasFeaturePermission(feature)
-}
-
-// Vue Composition API 权限钩子
-export const usePermissions = () => {
-  return {
-    permissionManager,
-    checkPermission,
-    checkRole,
-    checkLevel,
-    checkFeature,
-    getCurrentRole: () => permissionManager.getCurrentRole(),
-    getCurrentLevel: () => permissionManager.getCurrentLevel(),
-    getAccessibleResources: () => permissionManager.getAccessibleResources(),
-    getResourceActions: (resource: PermissionResource) => permissionManager.getResourceActions(resource),
-    canBatchOperate: (
-      resource: PermissionResource,
-      action: PermissionAction,
-      itemCount?: number
-    ) => permissionManager.canBatchOperate(resource, action, itemCount),
-    generateReport: () => permissionManager.generatePermissionReport()
-  }
 }
 
 export default PermissionManager
