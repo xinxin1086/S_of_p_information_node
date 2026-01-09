@@ -167,9 +167,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import {
   Document,
   User,
@@ -177,6 +174,10 @@ import {
   DataAnalysis,
   Loading
 } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+
 import { useAuthStore, usePermissions } from '@/stores'
 import {
   fetchNoticeList,

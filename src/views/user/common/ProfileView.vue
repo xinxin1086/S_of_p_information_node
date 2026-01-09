@@ -176,9 +176,6 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { userApi } from '@/api'
 import {
   User,
   Message,
@@ -194,6 +191,11 @@ import {
   Calendar as ActivityIcon,
   Star
 } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { ref, reactive, onMounted } from 'vue'
+
+import { userApi } from '@/api'
+
 
 defineOptions({ name: "ProfileView" })
 

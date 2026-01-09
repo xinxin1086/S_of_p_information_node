@@ -102,18 +102,18 @@ function checkAdminPermission(
  * 检查组织用户权限
  * @param hasPermission 权限检查函数
  * @param to 目标路由
- * @param next 下一步回调
+ * @param _next 下一步回调（未使用但保留参数以保持签名一致）
  * @returns 是否已处理导航
  */
 function checkOrganizationPermission(
-  hasPermission: (permission: string) => boolean,
+  hasPermission: (_permission: string) => boolean,
   to: RouteLocationNormalized,
-  next: (to?: string | Location) => void
+  _next: (to?: string | Location) => void
 ): boolean {
   if (requiresOrganization(to.path) || to.meta?.requiresOrganization) {
     if (!hasPermission('ORGANIZATION')) {
       ElMessage.error('只有组织用户可以访问此功能')
-      next('/user/dashboard')
+      _next('/user/dashboard')
       return true
     }
   }
@@ -124,19 +124,24 @@ function checkOrganizationPermission(
  * 检查细粒度权限
  * @param hasPermission 权限检查函数
  * @param to 目标路由
- * @param next 下一步回调
+ * @param _next 下一步回调（未使用但保留参数以保持签名一致）
  * @returns 是否已处理导航
  */
 function checkFineGrainedPermissions(
-  hasPermission: (permission: string) => boolean,
+  hasPermission: (_permission: string) => boolean,
   to: RouteLocationNormalized,
-  next: (to?: string | Location) => void
+  _next: (to?: string | Location) => void
 ): boolean {
+  // 防止重定向循环：如果目标已经是 /user/dashboard，不再拦截
+  if (to.path === '/user/dashboard') {
+    return false
+  }
+
   // 统一检查所有 /admin/ 路径的权限
   // 如果不是管理员，访问任何管理后台页面都需要拦截
   if (to.path.startsWith('/admin/') && !hasPermission('ADMIN')) {
     ElMessage.error('需要管理员权限才能访问此功能')
-    next('/admin/dashboard')
+    _next('/user/dashboard') // 重定向到用户仪表板而不是管理仪表板
     return true
   }
 

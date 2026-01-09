@@ -148,9 +148,6 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useAuthStore, usePermissions } from '@/stores'
-import { ElMessage } from 'element-plus'
 import {
   User,
   Edit,
@@ -158,13 +155,12 @@ import {
   Document,
   ChatLineRound,
   Star,
-  Trophy,
-  Calendar,
-  Bell,
-  Reading,
-  Compass,
-  Comment
+  Trophy
 } from '@element-plus/icons-vue'
+import { ref, computed, onMounted } from 'vue'
+
+import api from '@/api'
+import { useAuthStore, usePermissions } from '@/stores'
 
 // Store
 const authStore = useAuthStore()
@@ -253,7 +249,7 @@ const getActivityIcon = (type) => {
 
 const fetchUserStats = async () => {
   try {
-    const response = await userApi.getUserStats()
+    const response = await api.userApi.getUserStats()
     userStats.value = response.data
   } catch (error) {
     console.error('获取用户统计失败:', error)
@@ -262,7 +258,7 @@ const fetchUserStats = async () => {
 
 const fetchRecentActivities = async () => {
   try {
-    const response = await userApi.getRecentActivities()
+    const response = await api.userApi.getRecentActivities()
     recentActivities.value = response.data
   } catch (error) {
     console.error('获取最近活动失败:', error)

@@ -69,10 +69,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getAvatarUrl } from '@/utils/avatar.js'
+import { computed } from 'vue'
+
 import { useAuthStore } from '@/stores'
+import { getAvatarUrl } from '@/utils/avatar.js'
 
 interface Reply {
   id: number | string

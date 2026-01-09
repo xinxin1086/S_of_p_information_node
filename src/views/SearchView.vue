@@ -110,11 +110,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import { Search, Bell, Calendar, Reading } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
+import { ElMessage } from 'element-plus'
+import { ref, onMounted, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+
+import api from '@/api'
 import { sanitizeHighlight } from '@/utils/sanitizeHtml'
 
 defineOptions({ name: "SearchView" })
@@ -147,8 +149,29 @@ const performSearch = async () => {
 
   loading.value = true
   try {
-    // 模拟API调用
-    setTimeout(() => {
+    // 调用真实的搜索API
+    const response = await api.searchApi.search({
+      query: searchQuery.value,
+      type: searchType.value,
+      sortBy: sortBy.value,
+      page: currentPage.value,
+      size: pageSize.value
+    })
+
+    if (response.success && response.data) {
+      searchResults.value = response.data.results || []
+      total.value = response.data.total || 0
+    } else {
+      searchResults.value = []
+      total.value = 0
+      ElMessage.warning('未找到相关结果')
+    }
+  } catch (error) {
+    console.error('搜索失败:', error)
+
+    // 如果API调用失败，可以回退到模拟数据用于开发测试
+    if (import.meta.env.DEV) {
+      console.warn('API调用失败，使用模拟数据')
       const mockResults = [
         {
           id: 1,
@@ -176,13 +199,11 @@ const performSearch = async () => {
         }
       ]
 
-      // 根据搜索类型过滤结果
       let filteredResults = mockResults
       if (searchType.value !== 'all') {
         filteredResults = mockResults.filter(item => item.type === searchType.value)
       }
 
-      // 根据关键词过滤结果（简单模拟）
       if (searchQuery.value) {
         const keyword = searchQuery.value.toLowerCase()
         filteredResults = filteredResults.filter(item =>
@@ -193,11 +214,11 @@ const performSearch = async () => {
 
       searchResults.value = filteredResults
       total.value = filteredResults.length
-      loading.value = false
-    }, 800)
-  } catch (error) {
-    console.error('搜索失败:', error)
-    ElMessage.error('搜索失败，请稍后重试')
+      ElMessage.info('开发模式：使用模拟数据')
+    } else {
+      ElMessage.error('搜索失败，请稍后重试')
+    }
+  } finally {
     loading.value = false
   }
 }
@@ -232,6 +253,19 @@ const navigateToDetail = (result) => {
   }
 }
 
+// 加载热门搜索标签
+const loadHotSearches = async () => {
+  try {
+    const response = await api.searchApi.getHotSearches()
+    if (response.success && response.data) {
+      hotSearchTags.value = response.data.tags || hotSearchTags.value
+    }
+  } catch (error) {
+    console.error('加载热门搜索失败:', error)
+    // 保持默认的热门搜索标签
+  }
+}
+
 const getTypeText = (type) => {
   const typeMap = {
     notice: '公告',
@@ -247,6 +281,9 @@ const formatTime = (date) => {
 
 // 生命周期
 onMounted(() => {
+  // 加载热门搜索标签
+  loadHotSearches()
+
   // 从URL参数获取搜索关键词
   const query = route.query.q
   if (query) {

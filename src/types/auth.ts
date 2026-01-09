@@ -171,6 +171,7 @@ export interface ApiLoginResponse {
 export interface ApiError {
   code: string
   message: string
+  userMessage?: string // 用户友好的错误消息
   details?: Record<string, unknown>
   isPermissionError?: boolean
   isNetworkError?: boolean
@@ -182,7 +183,9 @@ export interface ApiError {
 
 // 认证状态
 export enum AuthStatus {
+  // eslint-disable-next-line no-unused-vars
   IDLE = 'idle',
+  // eslint-disable-next-line no-unused-vars
   LOADING = 'loading',
   AUTHENTICATED = 'authenticated',
   UNAUTHENTICATED = 'unauthenticated',

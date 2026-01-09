@@ -8,7 +8,7 @@ import { tokenManager } from '@/utils/tokenManager'
 // API响应接口定义
 interface ApiResponse<T = unknown> {
   success: boolean
-  data: T
+  data: T | null
   message: string
   total?: number
   items?: T[]
@@ -201,7 +201,7 @@ export async function callWithAuth<T = unknown>(
     if (requireAuth && !getAuthToken()) {
       return {
         success: false,
-        data: null as any,
+        data: null,
         message: '未登录，请先登录'
       }
     }

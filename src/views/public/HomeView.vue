@@ -170,12 +170,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { Bell, Reading, Calendar, InfoFilled, Location, Clock, Document, Right, Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { fetchNoticeList, getNoticeTypeTag, getNoticeTypeText } from '@/utils/notice'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+
 import { useActivityStore } from '@/stores/activity'
+import { fetchNoticeList, getNoticeTypeTag, getNoticeTypeText } from '@/utils/notice'
 
 const router = useRouter()
 const activityStore = useActivityStore()

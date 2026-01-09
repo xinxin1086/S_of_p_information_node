@@ -6,12 +6,20 @@
 import { request } from '@/utils/request'
 
 /**
+ * 公告类型枚举
+ * SYSTEM: 系统通知
+ * ACTIVITY: 活动公告
+ * GENERAL: 其他公告
+ */
+export type NoticeType = 'SYSTEM' | 'ACTIVITY' | 'GENERAL'
+
+/**
  * 公告列表项接口类型定义
  */
 export interface NoticeItem {
   id: number | string
   title: string
-  type: 'system' | 'feature' | 'activity' | 'news'
+  type: NoticeType
   createdAt: string | Date
   expireTime: string | Date | null
   updateTime?: string | Date
@@ -203,14 +211,13 @@ export const fetchNoticeDetail = async (noticeId: number | string): Promise<Noti
  * @param typeText 中文公告类型
  * @returns 英文公告类型
  */
-export const getNoticeTypeFromText = (typeText: string): NoticeItem['type'] => {
-  const typeMap: Record<string, NoticeItem['type']> = {
-    '系统通知': 'system',
-    '活动公告': 'activity',
-    '其他公告': 'news',
-    '功能更新': 'feature'
+export const getNoticeTypeFromText = (typeText: string): NoticeType => {
+  const typeMap: Record<string, NoticeType> = {
+    '系统通知': 'SYSTEM',
+    '活动公告': 'ACTIVITY',
+    '其他公告': 'GENERAL'
   }
-  return typeMap[typeText] || 'system'
+  return typeMap[typeText] || 'SYSTEM'
 }
 
 /**
@@ -218,12 +225,11 @@ export const getNoticeTypeFromText = (typeText: string): NoticeItem['type'] => {
  * @param type 公告类型
  * @returns Element Plus 标签类型
  */
-export const getNoticeTypeTag = (type: NoticeItem['type']): string => {
-  const typeMap: Record<NoticeItem['type'], string> = {
-    system: 'danger',
-    feature: 'success',
-    activity: 'warning',
-    news: 'info'
+export const getNoticeTypeTag = (type: NoticeType): string => {
+  const typeMap: Record<NoticeType, string> = {
+    SYSTEM: 'danger',
+    ACTIVITY: 'warning',
+    GENERAL: 'info'
   }
   return typeMap[type] || 'info'
 }
@@ -233,12 +239,11 @@ export const getNoticeTypeTag = (type: NoticeItem['type']): string => {
  * @param type 公告类型
  * @returns 中文公告类型
  */
-export const getNoticeTypeText = (type: NoticeItem['type']): string => {
-  const typeMap: Record<NoticeItem['type'], string> = {
-    system: '系统通知',
-    feature: '功能更新',
-    activity: '活动公告',
-    news: '新闻资讯'
+export const getNoticeTypeText = (type: NoticeType): string => {
+  const typeMap: Record<NoticeType, string> = {
+    SYSTEM: '系统通知',
+    ACTIVITY: '活动公告',
+    GENERAL: '其他公告'
   }
   return typeMap[type] || '公告'
 }

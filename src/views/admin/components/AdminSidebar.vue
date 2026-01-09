@@ -48,8 +48,9 @@
 <script setup>
 defineOptions({ name: "AdminSidebar" })
 import { ref, computed } from 'vue'
-import { useMainStore, usePermissions } from '@/stores'
 import { useRoute, useRouter } from 'vue-router'
+
+import { useMainStore, usePermissions } from '@/stores'
 
 const store = useMainStore()
 const route = useRoute()

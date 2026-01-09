@@ -103,17 +103,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import {
   ChatDotRound,
   Star,
   Bell
 } from '@element-plus/icons-vue'
-import { userApi } from '@/api'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
+import { ElMessage } from 'element-plus'
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+
+import { userApi } from '@/api'
+
 import 'dayjs/locale/zh-cn'
 
 dayjs.extend(relativeTime)
@@ -196,7 +198,7 @@ const handleNotificationClick = async (notification) => {
   if (notification.target_type && notification.target_id) {
     const routeMap = {
       'post': `/forum/post/${notification.target_id}`,
-      'discussion': `/activity/${notification.target_id}`,
+      'discussion': `/activities/${notification.target_id}`,
       'comment': `/forum/post/${notification.target_id}`
     }
 

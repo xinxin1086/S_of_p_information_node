@@ -3,7 +3,7 @@
  * 用于消除重复的 API 调用逻辑，统一错误处理和 Token 管理
  */
 import { ElMessage } from 'element-plus'
-import { ref } from 'vue'
+import { ref, type Ref } from 'vue'
 
 import type { ApiError } from '@/types/auth'
 import { tokenManager } from '@/utils/tokenManager'
@@ -13,7 +13,7 @@ import { tokenManager } from '@/utils/tokenManager'
  */
 export interface ApiResponse<T = unknown> {
   success: boolean
-  data?: T
+  data?: T | null
   message?: string
   code?: string
   error?: string
@@ -28,9 +28,9 @@ export interface ApiCallOptions<T = unknown> {
   /** 是否显示加载状态（默认 false） */
   showLoading?: boolean
   /** 自定义错误处理函数 */
-  onError?: (error: unknown) => void
+  onError?: (_error: unknown) => void
   /** 自定义成功处理函数 */
-  onSuccess?: (data: T) => void
+  onSuccess?: (_data: T) => void
   /** 是否需要认证（默认 true，会自动添加 Token） */
   requireAuth?: boolean
   /** 是否在错误时停止（用于批量调用，默认 true） */
@@ -42,13 +42,13 @@ export interface ApiCallOptions<T = unknown> {
  */
 export interface ApiCallResult<T = unknown> {
   /** 执行 API 调用 */
-  execute: (...args: unknown[]) => Promise<ApiResponse<T>>
+  execute: (..._args: unknown[]) => Promise<ApiResponse<T>>
   /** 是否正在加载 */
-  loading: ReturnType<typeof ref<boolean>>
+  loading: Ref<boolean>
   /** 错误信息 */
-  error: ReturnType<typeof ref<unknown>>
+  error: Ref<unknown>
   /** 响应数据 */
-  data: ReturnType<typeof ref<T | null>>
+  data: Ref<T | null>
 }
 
 /**
@@ -72,7 +72,7 @@ export interface ApiCallResult<T = unknown> {
  * await execute(articleData)
  * ```
  */
-export function useApiCall<T = unknown>(
+export function useApiCall<T extends unknown = unknown>(
   apiFn: (...args: unknown[]) => Promise<ApiResponse<T>>,
   options: ApiCallOptions<T> = {}
 ): ApiCallResult<T> {
@@ -120,7 +120,9 @@ export function useApiCall<T = unknown>(
       // 处理响应
       if (result.success) {
         data.value = result.data || null
-        onSuccess?.(result.data)
+        if (result.data !== undefined && result.data !== null) {
+          onSuccess?.(result.data)
+        }
         return result
       } else {
         const errorMsg = result.message || result.error || '操作失败'
@@ -164,7 +166,7 @@ export function useApiCall<T = unknown>(
     execute,
     loading,
     error,
-    data
+    data: data as Ref<T | null>
   }
 }
 
@@ -181,10 +183,10 @@ export function useApiCall<T = unknown>(
  * await authenticatedApi(articleId)
  * ```
  */
-export function createAuthenticatedApi<T extends (...args: unknown[]) => unknown>(
+export function createAuthenticatedApi<T extends (..._args: unknown[]) => any>(
   apiFn: T
 ): T {
-  return ((...args: unknown[]) => {
+  return ((..._args: unknown[]) => {
     const token = tokenManager.getAccessToken()
     if (!token) {
       return Promise.reject({
@@ -193,7 +195,7 @@ export function createAuthenticatedApi<T extends (...args: unknown[]) => unknown
         error: 'NO_TOKEN'
       })
     }
-    return apiFn(...args)
+    return apiFn(..._args)
   }) as T
 }
 
@@ -213,7 +215,7 @@ export function createAuthenticatedApi<T extends (...args: unknown[]) => unknown
  * ])
  * ```
  */
-export async function batchApiCalls<T = unknown>(
+export async function batchApiCalls<T extends unknown = unknown>(
   apiCalls: Array<() => Promise<ApiResponse<T>>>,
   options: ApiCallOptions = {}
 ): Promise<ApiResponse<T>[]> {
@@ -255,7 +257,7 @@ export async function batchApiCalls<T = unknown>(
  * ])
  * ```
  */
-export async function serialApiCalls<T = unknown>(
+export async function serialApiCalls<T extends unknown = unknown>(
   apiCalls: Array<() => Promise<ApiResponse<T>>>,
   options: ApiCallOptions = {}
 ): Promise<ApiResponse<T>[]> {
@@ -318,7 +320,7 @@ export async function serialApiCalls<T = unknown>(
  * )
  * ```
  */
-export async function retryApiCall<T = unknown>(
+export async function retryApiCall<T extends unknown = unknown>(
   apiFn: () => Promise<ApiResponse<T>>,
   maxRetries: number = 3,
   retryDelay: number = 1000,

@@ -5,9 +5,9 @@
 
 // Vue相关类型扩展
 declare module '@vue/runtime-core' {
-  interface ComponentCustomProperties {
-    $ errorHandler: {
-      handle: (error: unknown, context?: string) => never
+  export interface ComponentCustomProperties {
+    $errorHandler: {
+      handle: (error: unknown, context?: string) => void
       shouldReauth: (error: unknown) => boolean
       shouldRetry: (error: unknown) => boolean
     }

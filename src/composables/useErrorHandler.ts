@@ -355,8 +355,8 @@ export const useApiOperation = () => {
       showSuccessMessage?: boolean
       successMessage?: string
       showErrorMessage?: boolean
-      onSuccess?: (data: T) => void
-      onError?: (error: AppError) => void
+      onSuccess?: (_data: T) => void
+      onError?: (_error: AppError) => void
       maxRetries?: number
       retryDelay?: number
     }

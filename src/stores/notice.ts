@@ -154,6 +154,8 @@ export const useNoticeStore = defineStore('notice', () => {
   )
 
   const createNotice = async (noticeData: Record<string, unknown>) => {
+    // 数据已经在前端组件中转换完成，这里直接传递
+    console.log('📝 Store层创建公告（接收到的数据）:', noticeData)
     return await _createNotice(noticeData)
   }
 
@@ -179,6 +181,8 @@ export const useNoticeStore = defineStore('notice', () => {
   )
 
   const updateNotice = async (id: number | string, noticeData: Record<string, unknown>) => {
+    // 数据已经在前端组件中转换完成，这里直接传递
+    console.log('📝 Store层更新公告（接收到的数据）:', { id, noticeData })
     return await _updateNotice(id, noticeData)
   }
 
@@ -202,6 +206,38 @@ export const useNoticeStore = defineStore('notice', () => {
 
   const deleteNotice = async (id: number | string) => {
     return await _deleteNotice(id)
+  }
+
+  // 管理员端：置顶/取消置顶公告
+  const { execute: _togglePinNotice } = useApiCall(
+    noticeApi.togglePinNotice,
+    {
+      onSuccess: (data, args) => {
+        const [id] = args
+
+        // 更新列表中对应项的置顶状态
+        const index = adminNotices.value.findIndex(notice => notice.id === id)
+        if (index !== -1) {
+          const currentState = adminNotices.value[index].is_pinned || false
+          adminNotices.value[index] = {
+            ...adminNotices.value[index],
+            is_pinned: !currentState
+          }
+        }
+
+        // 如果当前正在查看该公告详情，也更新详情
+        if (currentNotice.value?.id === id) {
+          currentNotice.value = {
+            ...currentNotice.value,
+            is_pinned: !currentNotice.value.is_pinned
+          }
+        }
+      }
+    }
+  )
+
+  const togglePinNotice = async (id: number | string) => {
+    return await _togglePinNotice(id)
   }
 
   // 工具函数：清空当前公告
@@ -245,6 +281,7 @@ export const useNoticeStore = defineStore('notice', () => {
     createNotice,
     updateNotice,
     deleteNotice,
+    togglePinNotice,
 
     // 工具方法
     clearCurrentNotice,

@@ -87,9 +87,6 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores'
 import {
   User,
   Phone,
@@ -100,8 +97,13 @@ import {
   Plus,
   List
 } from '@element-plus/icons-vue'
-import { formatAvatarUrl } from '@/utils/common/format'
 import dayjs from 'dayjs'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+
+import { useAuthStore } from '@/stores'
+import { formatAvatarUrl } from '@/utils/common/format'
+
 
 const router = useRouter()
 const authStore = useAuthStore()

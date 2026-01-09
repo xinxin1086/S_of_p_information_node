@@ -11,9 +11,9 @@
 
 <script setup>
 defineOptions({ name: "AdminDashboard" })
+import AdminMainContent from './AdminMainContent.vue'
 import AdminHeader from './components/AdminHeader.vue'
 import AdminSidebar from './components/AdminSidebar.vue'
-import AdminMainContent from './AdminMainContent.vue'
 </script>
 
 <style scoped>

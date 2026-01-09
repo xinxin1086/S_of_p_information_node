@@ -172,9 +172,6 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Search,
   Plus,
@@ -182,6 +179,10 @@ import {
   View,
   Star
 } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+
 import { useActivityStore } from '@/stores/activity'
 
 const router = useRouter()

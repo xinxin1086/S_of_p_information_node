@@ -60,9 +60,10 @@
 </template>
 
 <script setup>
+import { View, Star } from '@element-plus/icons-vue'
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { View, Star } from '@element-plus/icons-vue'
+
 import { useScienceStore } from '@/stores/science'
 import { tokenManager } from '@/utils/tokenManager'
 

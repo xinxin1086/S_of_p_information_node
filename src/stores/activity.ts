@@ -166,7 +166,7 @@ export const useActivityStore = defineStore('activity', () => {
   )
   const fetchMyActivities = async (params = {}) => await _fetchMyActivities(params)
 
-  // 获取活动统计（捕鱼者功能）
+  // 获取活动统计（组织者功能）
   const fetchActivityStats = async () => {
     try {
       const token = tokenManager.getAccessToken()

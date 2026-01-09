@@ -309,8 +309,6 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Search,
   Calendar,
@@ -319,6 +317,9 @@ import {
   Close,
   RefreshLeft
 } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, reactive, computed, onMounted } from 'vue'
+
 import { useActivityStore } from '@/stores/activity'
 import { sanitizeRichText } from '@/utils/sanitizeHtml'
 
@@ -363,7 +364,15 @@ const loadActivities = async () => {
     })
 
     if (result.success) {
-      activities.value = (result.data || []).map(a => ({
+      // 处理不同的数据结构
+      let activityList = []
+      if (Array.isArray(result.data)) {
+        activityList = result.data
+      } else if (result.data?.items && Array.isArray(result.data.items)) {
+        activityList = result.data.items
+      }
+
+      activities.value = activityList.map(a => ({
         ...a,
         processing: false
       }))

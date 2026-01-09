@@ -197,12 +197,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Lock,
   Delete
 } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, reactive, onMounted } from 'vue'
+
 import { userApi } from '@/api'
 
 defineOptions({ name: "AccountSettingsView" })

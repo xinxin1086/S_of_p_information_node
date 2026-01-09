@@ -71,6 +71,7 @@
 <script setup>
 import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+
 import { useListCommonLogic } from '@/utils/admin/admin_info_edit.js';
 import { formatAvatarUrl } from '@/utils/common/format.js';
 import '@/styles/admin/admin_info_edit.css';

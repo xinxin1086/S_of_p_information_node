@@ -4,8 +4,9 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { onMounted } from 'vue'
+
 import { useAuthStore } from '@/stores/auth'
 import { preloadCriticalComponents } from '@/utils/asyncComponents'
 

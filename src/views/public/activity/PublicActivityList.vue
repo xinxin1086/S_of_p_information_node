@@ -83,10 +83,10 @@
 </template>
 
 <script setup>
+import { Location, Calendar, User } from '@element-plus/icons-vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Location, Calendar, User } from '@element-plus/icons-vue'
-import { useActivityStore } from '@/stores/activity'
+
 import {
   STATUS_FILTER_LABELS,
   getStatusText,
@@ -94,6 +94,7 @@ import {
   getStatusClass,
   getStatusesByFilter
 } from '@/config/activityStatus'
+import { useActivityStore } from '@/stores/activity'
 
 const router = useRouter()
 const activityStore = useActivityStore()

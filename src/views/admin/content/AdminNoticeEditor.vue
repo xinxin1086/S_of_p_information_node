@@ -252,9 +252,6 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   ArrowLeft,
   View,
@@ -262,9 +259,13 @@ import {
   Promotion,
   Plus
 } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
+import { BASE_URL } from '@/config.js'
 import { useNoticeStore } from '@/stores/notice'
 import { getNoticeTypeFromText } from '@/utils/notice'
-import { BASE_URL } from '@/config.js'
 import { sanitizeRichText } from '@/utils/sanitizeHtml'
 import { tokenManager } from '@/utils/tokenManager'
 // TinyMCE 已移除，使用基础文本编辑器
@@ -364,7 +365,7 @@ const formatDate = (dateStr) => {
 const getNoticeTypeTag = (type) => {
   const typeMap = {
     '系统通知': 'danger',
-    '活动公告': 'primary',
+    '活动公告': 'warning',
     '其他公告': 'info'
   }
   return typeMap[type] || 'info'
@@ -599,21 +600,23 @@ const handleSaveDraft = async () => {
     await formRef.value.validate()
     loading.value = true
 
-    const data = {
-      release_title: noticeData.value.release_title.trim(),
-      notice_type: noticeData.value.notice_type,
-      release_notice: noticeData.value.release_notice,
+    // 转换数据格式以匹配后端API
+    const submitData = {
+      title: noticeData.value.release_title.trim(),
+      content: noticeData.value.release_notice,
+      notice_type: noticeTypeMapping[noticeData.value.notice_type] || 'GENERAL',
       expiration: noticeData.value.expiration ? new Date(noticeData.value.expiration).toISOString() : null,
-      attachments: noticeData.value.attachments
+      is_top: false,
+      attachments: Array.isArray(noticeData.value.attachments) ? [...noticeData.value.attachments] : []
     }
 
-    console.log('💾 保存草稿:', data)
+    console.log('💾 保存草稿（转换后的数据）:', submitData)
 
     let result
     if (isEdit.value) {
-      result = await noticeStore.updateNotice(noticeData.value.id, data)
+      result = await noticeStore.updateNotice(noticeData.value.id, submitData)
     } else {
-      result = await noticeStore.createNotice(data)
+      result = await noticeStore.createNotice(submitData)
     }
 
     if (result.success) {
@@ -633,6 +636,13 @@ const handleSaveDraft = async () => {
   }
 }
 
+// 公告类型映射（中文 -> 英文代码）
+const noticeTypeMapping = {
+  '系统通知': 'SYSTEM',
+  '活动公告': 'ACTIVITY',
+  '其他公告': 'GENERAL'
+}
+
 // 发布公告
 const handlePublish = async () => {
   try {
@@ -650,21 +660,23 @@ const handlePublish = async () => {
 
     loading.value = true
 
-    const data = {
-      release_title: noticeData.value.release_title.trim(),
-      notice_type: noticeData.value.notice_type,
-      release_notice: noticeData.value.release_notice,
+    // 转换数据格式以匹配后端API
+    const submitData = {
+      title: noticeData.value.release_title.trim(),
+      content: noticeData.value.release_notice,
+      notice_type: noticeTypeMapping[noticeData.value.notice_type] || 'GENERAL',
       expiration: noticeData.value.expiration ? new Date(noticeData.value.expiration).toISOString() : null,
-      attachments: noticeData.value.attachments
+      is_top: false,
+      attachments: Array.isArray(noticeData.value.attachments) ? [...noticeData.value.attachments] : []
     }
 
-    console.log('📤 ' + (isEdit.value ? '更新' : '发布') + '公告:', data)
+    console.log('📤 ' + (isEdit.value ? '更新' : '发布') + '公告（转换后的数据）:', submitData)
 
     let result
     if (isEdit.value) {
-      result = await noticeStore.updateNotice(noticeData.value.id, data)
+      result = await noticeStore.updateNotice(noticeData.value.id, submitData)
     } else {
-      result = await noticeStore.createNotice(data)
+      result = await noticeStore.createNotice(submitData)
     }
 
     if (result.success) {

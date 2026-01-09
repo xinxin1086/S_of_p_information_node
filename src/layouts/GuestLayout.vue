@@ -110,10 +110,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 import { Search, ChatLineRound, Position, Phone } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
 import { useAuthStore } from '@/stores'
 import { formatAvatarUrl, generateAvatarFromUsername } from '@/utils/avatarHelper'
 

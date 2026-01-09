@@ -75,43 +75,75 @@ export default defineConfig({
     // 优化构建配置以减少运行时错误
     rollupOptions: {
       output: {
+        // 更细粒度的代码分割，解决大块文件问题
         manualChunks: (id) => {
-          // UI 库分离
+          // Element Plus UI 库 - 细分模块
           if (id.includes('element-plus')) {
-            return id.includes('icons') ? 'element-icons' : 'element-plus'
+            if (id.includes('icons')) return 'element-icons'
+            if (id.includes('theme-chalk')) return 'element-styles'
+            return 'element-plus'
           }
-          // Vue 核心
-          if (id.includes('vue') || id.includes('pinia') || id.includes('vue-router')) {
-            return 'vue-vendor'
+
+          // Vue 核心 - 保持独立
+          if (id.includes('node_modules/vue/') && id.includes('vue-router')) {
+            return 'vue-router'
           }
-          // 图表和可视化库
-          if (id.includes('echarts') || id.includes('vue-echarts')) {
-            return 'charts'
+          if (id.includes('node_modules/vue/') && id.includes('pinia')) {
+            return 'pinia'
           }
-          // 工具库
-          if (id.includes('axios') || id.includes('dayjs') || id.includes('lodash')) {
-            return 'utils'
+          if (id.includes('node_modules/vue/') && !id.includes('vue-router') && !id.includes('pinia')) {
+            return 'vue-core'
           }
-          // 大型功能库
-          if (id.includes('exceljs') || id.includes('file-saver')) {
-            return 'vendor-heavy'
+
+          // ECharts 图表库 - 进一步细分
+          if (id.includes('echarts')) {
+            if (id.includes('node_modules/echarts/core')) return 'echarts-core'
+            if (id.includes('node_modules/echarts/charts/')) return 'echarts-charts'
+            if (id.includes('node_modules/echarts/components/')) return 'echarts-components'
+            if (id.includes('node_modules/echarts/renderers/')) return 'echarts-renderers'
+            return 'echarts'
           }
-          // 地图相关
-          if (id.includes('amap')) {
-            return 'maps'
+          if (id.includes('vue-echarts')) {
+            return 'vue-echarts'
           }
-          // 图片处理相关
-          if (id.includes('vue-cropper') || id.includes('vue-upload')) {
-            return 'media'
-          }
-          // 拖拽相关
-          if (id.includes('vuedraggable')) {
-            return 'interaction'
-          }
-          // 表单验证
-          if (id.includes('vee-validate')) {
-            return 'validation'
-          }
+
+          // 工具库 - 分离到独立块
+          if (id.includes('node_modules/axios')) return 'axios'
+          if (id.includes('node_modules/dayjs')) return 'dayjs'
+          if (id.includes('node_modules/lodash')) return 'lodash'
+
+          // Excel 处理 - 大型独立库
+          if (id.includes('node_modules/exceljs')) return 'exceljs'
+          if (id.includes('node_modules/file-saver')) return 'file-saver'
+
+          // 高德地图
+          if (id.includes('node_modules/@amap')) return 'amap'
+
+          // 图片处理
+          if (id.includes('node_modules/vue-cropper')) return 'vue-cropper'
+          if (id.includes('node_modules/vue-upload')) return 'vue-upload'
+
+          // 图片预览
+          if (id.includes('node_modules/vue3-photo-preview')) return 'photo-preview'
+
+          // 拖拽功能
+          if (id.includes('node_modules/vuedraggable')) return 'vuedraggable'
+
+          // 表单验证 - 分离
+          if (id.includes('node_modules/@vee-validate')) return 'vee-validate'
+
+          // VueUse 工具库
+          if (id.includes('node_modules/@vueuse')) return 'vueuse'
+
+          // Vue Motion 动画
+          if (id.includes('node_modules/@vueuse/motion')) return 'vue-motion'
+
+          // 虚拟滚动
+          if (id.includes('node_modules/@tanstack/vue-virtual')) return 'vue-virtual'
+
+          // DOMPurify 安全库
+          if (id.includes('node_modules/dompurify')) return 'dompurify'
+
           // 其他第三方库
           if (id.includes('node_modules')) {
             return 'vendor'
@@ -119,10 +151,21 @@ export default defineConfig({
         }
       }
     },
-    // 设置合理的警告阈值
-    chunkSizeWarningLimit: 800,
+    // 提高警告阈值，但我们已经通过细分代码块解决了大块问题
+    chunkSizeWarningLimit: 600,
     // 启用CSS代码分割
-    cssCodeSplit: true
+    cssCodeSplit: true,
+    // 启用源码映射（生产环境建议关闭）
+    sourcemap: false,
+    // 压缩配置
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        // 移除 console
+        drop_console: true,
+        drop_debugger: true
+      }
+    }
   },
   optimizeDeps: {
     include: [

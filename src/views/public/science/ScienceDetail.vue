@@ -80,10 +80,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, View, Star } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
 import { useScienceStore } from '@/stores/science'
 import { sanitizeRichText } from '@/utils/sanitizeHtml'
 import { tokenManager } from '@/utils/tokenManager'

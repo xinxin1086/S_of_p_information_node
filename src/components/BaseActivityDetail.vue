@@ -146,10 +146,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { ArrowLeft, Location, Calendar, User, Phone, Message } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, computed } from 'vue'
+
 import { useAuthStore } from '@/stores'
 import { sanitizeRichText } from '@/utils/sanitizeHtml'
 
@@ -201,7 +201,6 @@ interface Emits {
 
 const emit = defineEmits<Emits>()
 
-const router = useRouter()
 const authStore = useAuthStore()
 
 // 净化后的活动描述

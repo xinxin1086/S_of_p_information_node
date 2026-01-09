@@ -19,8 +19,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { User } from '@element-plus/icons-vue'
+import { computed } from 'vue'
+
 import { getAvatarUrl, DEFAULT_AVATAR } from '@/utils/avatar.js'
 import { getUserAvatarField } from '@/utils/userFormat.js'
 

@@ -20,7 +20,9 @@ export { useScienceStore } from './science'
  * 整合了基于角色的权限检查和基于资源的权限检查
  */
 import { computed } from 'vue'
+
 import { useAuthStore as _useAuthStore } from './auth'
+
 import {
   checkPermission as checkResourcePermission,
   checkRole,

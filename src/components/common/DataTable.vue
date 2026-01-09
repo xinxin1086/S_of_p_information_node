@@ -168,19 +168,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref } from 'vue'
 import {
   Plus,
   Delete,
   Search,
   Refresh,
-  ArrowDown,
-  Edit,
-  View,
-  Delete as DeleteIcon
+  ArrowDown
 } from '@element-plus/icons-vue'
-import { useAuthStore, usePermissions } from '@/stores'
+import { ElMessage, ElMessageBox } from 'element-plus'
+
+import { usePermissions } from '@/stores'
 import type { UserRole } from '@/types/auth'
 
 // 列配置接口
@@ -308,7 +306,6 @@ const emit = defineEmits<{
   action: [action: TableAction, row: Record<string, unknown>, index: number]
 }>()
 
-const authStore = useAuthStore()
 const { hasPermission, hasFeaturePermission } = usePermissions()
 const searchKeyword = ref('')
 const selectedRows = ref<Record<string, unknown>[]>([])
@@ -405,7 +402,7 @@ const handleBatchDelete = async () => {
 
     ElMessage.success('批量删除成功')
     selectedRows.value = []
-  } catch (error) {
+  } catch (_error) {
     // 用户取消操作
   } finally {
     batchDeleteLoading.value = false

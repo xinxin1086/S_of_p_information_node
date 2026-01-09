@@ -151,7 +151,7 @@ export const scienceApi = {
 
   // 获取科普文章列表（专用公开接口）
   getScienceList(params: QueryParams = {}): Promise<ApiResponse<ScienceArticle[]>> {
-    return request.get('/api/public/science/articles', params)
+    return request.get('/api/public/science/articles', { params })
   },
 
   // 获取科普文章详情（专用公开接口）
@@ -178,14 +178,14 @@ export const scienceApi = {
 
   // 获取科普文章点赞状态（需要认证）
   getScienceLikeStatus(articleIds: number[]): Promise<ApiResponse<UnknownResponse>> {
-    return request.get('/api/science/like/status', { article_ids: articleIds.join(',') })
+    return request.get('/api/science/like/status', { params: { article_ids: articleIds.join(',') } })
   },
 
   // ========== 用户科普文章管理 ==========
 
   // 获取我的科普文章列表
   getMyArticles(params: QueryParams = {}): Promise<ApiResponse<ScienceArticle[]>> {
-    return request.get('/api/science/user/articles', params)
+    return request.get('/api/science/user/articles', { params })
   },
 
   // 创建科普文章
@@ -210,7 +210,7 @@ export const activityApi = {
 
   // 获取活动列表（专用公开接口）
   getPublicActivities(params: QueryParams = {}): Promise<ApiResponse<Activity[]>> {
-    return request.get('/api/public/activities/activities', params)
+    return request.get('/api/public/activities/activities', { params })
   },
 
   // 获取活动详情（专用公开接口）
@@ -220,7 +220,7 @@ export const activityApi = {
 
   // 获取活动评分（公开接口）
   getActivityRatings(activityId: number, params: QueryParams = {}): Promise<ApiResponse<UnknownResponse>> {
-    return request.get(`/api/public/activities/activities/${activityId}`, params)
+    return request.get(`/api/public/activities/activities/${activityId}`, { params })
   },
 
   // ========== 认证接口（需要JWT Token） ==========
@@ -247,14 +247,14 @@ export const activityApi = {
 
   // 获取我的预约记录
   getMyBookings(params: QueryParams = {}): Promise<ApiResponse<BookingData[]>> {
-    return request.get('/api/activities/my-bookings', params)
+    return request.get('/api/activities/my-bookings', { params })
   },
 
   // ========== 组织者专属功能 ==========
 
   // 获取我创建的活动
   getMyActivities(params: QueryParams = {}): Promise<ApiResponse<Activity[]>> {
-    return request.get('/api/activities/my-activities', params)
+    return request.get('/api/activities/my-activities', { params })
   },
 
   // 更新活动信息
@@ -276,7 +276,7 @@ export const activityApi = {
 
   // 获取活动讨论列表
   getDiscussions(activityId: number, params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get(`/api/activities/${activityId}/discussion`, params)
+    return request.get(`/api/activities/${activityId}/discussion`, { params })
   },
 
   // 创建讨论留言
@@ -286,13 +286,13 @@ export const activityApi = {
 
   // 获取讨论留言列表（需要登录）
   getDiscussionComments(discussionId: number, params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get(`/api/activities/discussion/${discussionId}/comment`, params)
+    return request.get(`/api/activities/discussion/${discussionId}/comment`, { params })
   },
 
   // 获取讨论留言列表（公开接口，无需登录）
   // 使用新接口路径: /api/activities/discussion/:id/comment
   getPublicDiscussionComments(discussionId: number, params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get(`/api/activities/discussion/${discussionId}/comment`, params)
+    return request.get(`/api/activities/discussion/${discussionId}/comment`, { params })
   },
 
   // 删除讨论留言
@@ -309,7 +309,7 @@ export const activityApi = {
 
   // 获取活动评分详情
   getActivityRatingsDetail(activityId: number, params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get(`/api/activities/${activityId}/rating`, params)
+    return request.get(`/api/activities/${activityId}/rating`, { params })
   },
 
   // ========== 用户活动统计 ==========
@@ -321,7 +321,7 @@ export const activityApi = {
 
   // 获取用户活动列表
   getUserActivitiesList(params: QueryParams = {}): Promise<ApiResponse<Activity[]>> {
-    return request.get('/api/activities/user/activities', params)
+    return request.get('/api/activities/user/activities', { params })
   }
 }
 
@@ -330,6 +330,16 @@ export const userApi = {
   // 获取用户个人信息
   getUserInfo(): Promise<ApiResponse<UserData>> {
     return request.get('/api/user/user/info')
+  },
+
+  // 获取用户统计数据
+  getUserStats(): Promise<ApiResponse<UnknownResponse>> {
+    return request.get('/api/user/user/stats')
+  },
+
+  // 获取最近活动
+  getRecentActivities(params: QueryParams = {}): Promise<ApiResponse<Activity[]>> {
+    return request.get('/api/user/user/recent-activities', { params })
   },
 
   // 更新用户个人信息
@@ -477,7 +487,7 @@ export const userApi = {
     type?: 'all' | 'reply' | 'like' | 'system'
     is_read?: boolean
   }): Promise<ApiResponse<UnknownResponse>> {
-    return request.get('/api/user/user/notifications', params)
+    return request.get('/api/user/user/notifications', { params })
   },
 
   /**
@@ -549,7 +559,7 @@ export const adminApi = {
 
   // 获取待审核内容
   getPendingContent(params: QueryParams = {}): Promise<ApiResponse<UnknownResponse>> {
-    return request.get('/api/admin/content/pending/all', params)
+    return request.get('/api/admin/content/pending/all', { params })
   },
 
   // 批量审核内容
@@ -564,7 +574,7 @@ export const adminApi = {
 
   // 导出内容
   exportContent(params: QueryParams = {}): Promise<ApiResponse<UnknownResponse>> {
-    return request.get('/api/admin/content/export', params)
+    return request.get('/api/admin/content/export', { params })
   },
 
   // 获取内容统计
@@ -576,7 +586,7 @@ export const adminApi = {
 
   // 获取用户列表
   getUserList(params: QueryParams = {}): Promise<ApiResponse<UserData[]>> {
-    return request.get('/api/user/admin/users', params)
+    return request.get('/api/user/admin/users', { params })
   },
 
   // 管理用户
@@ -629,7 +639,7 @@ export const adminApi = {
 
     // 获取科普文章列表（专用接口）
     list(params: QueryParams = {}): Promise<ApiResponse<ScienceArticle[]>> {
-      return request.get('/api/admin/science/articles', params)
+      return request.get('/api/admin/science/articles', { params })
     }
   },
 
@@ -638,37 +648,131 @@ export const adminApi = {
   activity: {
     // 创建活动（专用接口）
     create(data: Partial<Activity>): Promise<ApiResponse<Activity>> {
-      return request.post('/api/activities/create', data)
+      return request.post('/api/activities/admin/activities', data)
     },
 
     // 更新活动（专用接口）
     update(id: number, data: Partial<Activity>): Promise<ApiResponse<Activity>> {
-      return request.put(`/api/activities/update/${id}`, data)
+      return request.put(`/api/activities/admin/activities/${id}`, data)
     },
 
-    // 删除活动（专用接口）
+    // 删除活动（软删除） 匹配后端：DELETE /api/activities/admin/activities/{id}
     delete(id: number): Promise<ApiResponse<UnknownResponse>> {
-      return request.delete(`/api/activities/delete/${id}`)
+      return request.delete(`/api/activities/admin/activities/${id}`);
     },
 
-    // 批量删除活动（专用接口）
+    // 批量删除活动  后端无独立批量接口 → 前端循环调用单删（兼容业务）
     batchDelete(ids: number[]): Promise<ApiResponse<UnknownResponse>> {
-      return request.post('/api/activities/batch-delete', { ids })
+      // 并发执行批量删除，统一返回结果（后端仅支持单条软删除）
+      const promiseArr = ids.map(id => request.delete(`/api/activities/admin/activities/${id}`));
+      return Promise.all(promiseArr).then((): ApiResponse<UnknownResponse> => {
+        return { success: true, message: '批量删除成功', data: null };
+      });
     },
 
-    // 获取活动列表（专用接口）
-    // 临时使用公开接口，直到后端实现管理员专用接口
-    list(params: QueryParams = {}): Promise<ApiResponse<Activity[]>> {
-      return request.get('/api/public/activities/activities', params)
+    // 获取活动列表  替换为管理员专用接口：GET /api/activities/admin/activities
+    list(params: QueryParams = {}): Promise<ApiResponse<{
+      total: number;
+      page: number;
+      size: number;
+      items: Activity[];
+    }>> {
+      return request.get('/api/activities/admin/activities', { params });
     },
 
-    // 更新用户显示信息
-    updateUserDisplays(): Promise<ApiResponse<UnknownResponse>> {
-      return request.post('/api/admin/activity/update-user-displays', {})
+    // ========== 新增：后端已实现的管理员专属接口（前端必加，完整覆盖业务） ==========
+    // 获取单活动详情  匹配后端：GET /api/activities/admin/activities/{id}
+    detail(id: number): Promise<ApiResponse<Activity>> {
+      return request.get(`/api/activities/admin/activities/${id}`);
+    },
+
+    // 获取活动预约列表  匹配后端：GET /api/activities/admin/activities/{id}/bookings
+    getBookings(activityId: number, params: QueryParams = {}): Promise<ApiResponse<{
+      total: number;
+      page: number;
+      size: number;
+      items: UnknownResponse[]; // 预约列表项
+    }>> {
+      return request.get(`/api/activities/admin/activities/${activityId}/bookings`, { params });
+    },
+
+    // 更新预约状态  匹配后端：PUT /api/activities/admin/activities/{aid}/bookings/{bid}/status
+    updateBookingStatus(activityId: number, bookingId: number, data: {
+      status: 'booked' | 'cancelled' | 'attended' | 'absent';
+      notes?: string;
+    }): Promise<ApiResponse<UnknownResponse>> {
+      return request.put(
+        `/api/activities/admin/activities/${activityId}/bookings/${bookingId}/status`,
+        data
+      );
+    },
+
+    // 批量更新预约状态  匹配后端：POST /api/activities/admin/activities/{id}/bookings/batch
+    batchUpdateBookings(activityId: number, data: {
+      operation: 'confirm_attendance' | 'mark_absent' | 'cancel';
+      booking_ids: number[];
+    }): Promise<ApiResponse<UnknownResponse>> {
+      return request.post(
+        `/api/activities/admin/activities/${activityId}/bookings/batch`,
+        data
+      );
+    },
+
+    // 获取活动统计数据  匹配后端：GET /api/activities/admin/activities/{id}/statistics
+    getStatistics(activityId: number): Promise<ApiResponse<UnknownResponse>> {
+      return request.get(`/api/activities/admin/activities/${activityId}/statistics`);
+    },
+
+    // 获取活动汇总数据  匹配后端：GET /api/activities/admin/activities/summary
+    getSummary(): Promise<ApiResponse<UnknownResponse>> {
+      return request.get('/api/activities/admin/activities/summary');
+    }
+  },
+
+  // ========== 活动评分管理 ==========
+
+  activityRating: {
+    // 获取活动评分列表
+    list(params: QueryParams = {}): Promise<ApiResponse<{
+      list: unknown[];
+      total: number;
+    }>> {
+      return request.get('/api/activities/admin/ratings', { params });
+    },
+
+    // 删除活动评分
+    delete(id: number): Promise<ApiResponse<UnknownResponse>> {
+      return request.delete(`/api/activities/admin/ratings/${id}`);
+    },
+
+    // 批量删除评分
+    batchDelete(ids: number[]): Promise<ApiResponse<UnknownResponse>> {
+      return request.post('/api/activities/admin/ratings/batch-delete', { rating_ids: ids });
+    }
+  },
+
+  // ========== 活动讨论管理 ==========
+
+  activityDiscussion: {
+    // 获取活动讨论列表
+    list(params: QueryParams = {}): Promise<ApiResponse<{
+      list: unknown[];
+      total: number;
+    }>> {
+      return request.get('/api/activities/admin/discussions', { params });
+    },
+
+    // 删除活动讨论
+    delete(id: number): Promise<ApiResponse<UnknownResponse>> {
+      return request.delete(`/api/activities/admin/discussions/${id}`);
+    },
+
+    // 批量删除讨论
+    batchDelete(ids: number[]): Promise<ApiResponse<UnknownResponse>> {
+      return request.post('/api/activities/admin/discussions/batch-delete', { discussion_ids: ids });
     }
   }
 }
-
 // 用户认证API接口
 export const authApi = {
   /**
@@ -704,13 +808,13 @@ export const authApi = {
   }
 }
 
-// 论坛API接口
-export const forumApi = {
+// 论坛API接口 (已废弃，请使用 extended.ts 中的 forumApi)
+export const forumApiDeprecated = {
   // ========== 帖子管理 ==========
 
   // 获取帖子列表
   getPostList(params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get('/api/forum/post', params)
+    return request.get('/api/forum/post', { params })
   },
 
   // 获取帖子详情
@@ -735,7 +839,7 @@ export const forumApi = {
 
   // 获取热门帖子
   getHotPosts(params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get('/api/forum/post/hot', params)
+    return request.get('/api/forum/post/hot', { params })
   },
 
   // 获取帖子分类
@@ -745,14 +849,14 @@ export const forumApi = {
 
   // 搜索帖子
   searchPosts(params: QueryParams): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get('/api/forum/post/search', params)
+    return request.get('/api/forum/post/search', { params })
   },
 
   // ========== 楼层管理 ==========
 
   // 获取帖子楼层列表
   getFloorList(postId: number, params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get(`/api/forum/floor/post/${postId}`, params)
+    return request.get(`/api/forum/floor/post/${postId}`, { params })
   },
 
   // 创建楼层回复
@@ -764,7 +868,7 @@ export const forumApi = {
 
   // 获取楼层回复列表
   getReplyList(floorId: number, params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get(`/api/forum/reply/floor/${floorId}`, params)
+    return request.get(`/api/forum/reply/floor/${floorId}`, { params })
   },
 
   // 创建回复
@@ -780,8 +884,8 @@ export const forumApi = {
   },
 
   // 获取点赞状态
-  getLikeStatus(request: QueryParams): Promise<ApiResponse<UnknownResponse>> {
-    return request.get('/api/forum/like/status', request)
+  getLikeStatus(params: QueryParams): Promise<ApiResponse<UnknownResponse>> {
+    return request.get('/api/forum/like/status', { params })
   },
 
   // ========== 访问记录 ==========
@@ -808,7 +912,7 @@ export const forumApi = {
 
   // 获取论坛通知列表
   getNotifications(params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get('/api/forum/notifications', params)
+    return request.get('/api/forum/notifications', { params })
   },
 
   // 标记通知为已读
@@ -830,7 +934,8 @@ export const forumApi = {
 }
 
 // 管理员论坛接口
-export const forumAdminApi = {
+// 管理员论坛接口 (已废弃，请使用 extended.ts 中的 forumAdminApi)
+export const forumAdminApiDeprecated = {
   // 处理举报
   handleReport(reportData: ReportHandleData): Promise<ApiResponse<UnknownResponse>> {
     return request.post('/api/forum/admin/report/handle', reportData)
@@ -848,7 +953,7 @@ export const noticeApi = {
 
   // 获取公告列表（专用公开接口）
   getPublicNotices(params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get('/api/public/notice/list', params)
+    return request.get('/api/public/notice/list', { params })
   },
 
   // 获取公告详情（专用公开接口）
@@ -858,12 +963,12 @@ export const noticeApi = {
 
   // 获取最新公告（公开接口）
   getLatestNotices(params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get('/api/public/notice/list', { ...params, size: 5 })
+    return request.get('/api/public/notice/list', { params: { ...params, size: 5 } })
   },
 
   // 获取置顶公告（公开接口）
   get pinnedNotices(): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get('/api/public/notice/list', { is_pinned: true })
+    return request.get('/api/public/notice/list', { params: { is_pinned: true } })
   },
 
   // 获取公告类型（公开接口）
@@ -877,60 +982,51 @@ export const noticeApi = {
   },
 
   // ========== 管理员接口（需要认证） ==========
+  // 蓝图路由前缀: /api/notice/admin
 
-  // 获取管理员公告列表（完整功能）
+  // 获取管理员公告列表（GET/POST /api/notice/admin/list）
   getAdminNotices(params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get('/api/admin/notices', params)
+    return request.get('/api/notice/admin/list', { params })
   },
 
   // 获取管理员公告详情
   getAdminNoticeDetail(noticeId: number): Promise<ApiResponse<UnknownResponse>> {
-    return request.get(`/api/admin/notices/${noticeId}`)
+    return request.get(`/api/notice/admin/detail/${noticeId}`)
   },
 
-  // 创建公告
+  // 创建公告（POST /api/notice/admin/create）
   createNotice(noticeData: NoticeData): Promise<ApiResponse<NoticeData>> {
-    return request.post('/api/admin/notices', noticeData)
+    return request.post('/api/notice/admin/create', noticeData)
   },
 
-  // 更新公告
+  // 更新公告（PUT /api/notice/admin/update/<notice_id>）
   updateNotice(noticeId: number, noticeData: Partial<NoticeData>): Promise<ApiResponse<NoticeData>> {
-    return request.put(`/api/admin/notices/${noticeId}`, noticeData)
+    return request.put(`/api/notice/admin/update/${noticeId}`, noticeData)
   },
 
-  // 删除公告
+  // 删除公告（DELETE /api/notice/admin/delete/<notice_id>）
   deleteNotice(noticeId: number): Promise<ApiResponse<UnknownResponse>> {
-    return request.delete(`/api/admin/notices/${noticeId}`)
+    return request.delete(`/api/notice/admin/delete/${noticeId}`)
   },
 
-  // 批量删除公告
-  batchDeleteNotices(noticeIds: number[]): Promise<ApiResponse<UnknownResponse>> {
-    return request.post('/api/admin/notices/batch-delete', { notice_ids: noticeIds })
+  // 置顶切换（POST /api/notice/admin/top/<notice_id>）
+  togglePinNotice(noticeId: number): Promise<ApiResponse<UnknownResponse>> {
+    return request.post(`/api/notice/admin/top/${noticeId}`, {})
   },
 
-  // 发布公告（将状态改为已发布）
-  publishNotice(noticeId: number): Promise<ApiResponse<UnknownResponse>> {
-    return request.post(`/api/admin/notices/${noticeId}/publish`, {})
-  },
-
-  // 撤回公告（将状态改为草稿）
-  unpublishNotice(noticeId: number): Promise<ApiResponse<UnknownResponse>> {
-    return request.post(`/api/admin/notices/${noticeId}/unpublish`, {})
-  },
-
-  // 置顶公告
+  // 置顶公告（兼容旧代码）
   pinNotice(noticeId: number): Promise<ApiResponse<UnknownResponse>> {
-    return request.post(`/api/admin/notices/${noticeId}/pin`, {})
+    return request.post(`/api/notice/admin/top/${noticeId}`, {})
   },
 
-  // 取消置顶公告
+  // 取消置顶公告（兼容旧代码，复用toggle接口）
   unpinNotice(noticeId: number): Promise<ApiResponse<UnknownResponse>> {
-    return request.post(`/api/admin/notices/${noticeId}/unpin`, {})
+    return request.post(`/api/notice/admin/top/${noticeId}`, {})
   },
 
-  // 获取公告统计信息
+  // 获取公告统计信息（GET /api/notice/admin/statistics）
   getNoticeStats(): Promise<ApiResponse<UnknownResponse>> {
-    return request.get('/api/admin/notices/stats')
+    return request.get('/api/notice/admin/statistics')
   }
 }
 
@@ -940,7 +1036,7 @@ export default {
   adminApi,
   userApi,
   authApi,
-  forumApi,
-  forumAdminApi,
+  forumApi: forumApiDeprecated, // 使用重命名后的版本
+  forumAdminApi: forumAdminApiDeprecated, // 使用重命名后的版本
   noticeApi
 }

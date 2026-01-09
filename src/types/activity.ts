@@ -2,9 +2,11 @@
  * 活动相关的TypeScript类型定义
  */
 
-// 活动状态枚举
+// 活动状态枚举（与 config/activityStatus.ts 保持一致，用于类型定义）
 export enum ActivityStatus {
+  // eslint-disable-next-line no-unused-vars
   DRAFT = 'draft',
+  // eslint-disable-next-line no-unused-vars
   PUBLISHED = 'published',
   ONGOING = 'ongoing',
   COMPLETED = 'completed',

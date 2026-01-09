@@ -216,10 +216,6 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { useAuthStore } from '@/stores'
-import { userApi } from '@/api'
 import {
   User,
   Upload,
@@ -228,7 +224,13 @@ import {
   Lock,
   CircleCheck
 } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { VueCropper } from 'vue-cropper'
+
+import { userApi } from '@/api'
+import { useAuthStore } from '@/stores'
+
 
 defineOptions({ name: "ProfileEditView" })
 
@@ -408,6 +410,8 @@ const removeAvatar = () => {
   }).then(() => {
     userInfo.avatar = ''
     ElMessage.success('头像已删除')
+  }).catch(() => {
+    // 用户取消操作
   })
 }
 

@@ -61,7 +61,7 @@ export class TokenManager {
    * 解析JWT Token的payload部分
    * 提取为私有方法，避免在多个方法中重复相同的解析逻辑
    */
-  private parseJwtPayload(token: string): any {
+  private parseJwtPayload(token: string): Record<string, unknown> {
     // 验证Token格式
     if (typeof token !== 'string' || !token.includes('.')) {
       throw new Error('Token格式无效，期望JWT格式')
@@ -83,7 +83,11 @@ export class TokenManager {
       base64Payload += '='
     }
 
-    return JSON.parse(atob(base64Payload))
+    try {
+      return JSON.parse(atob(base64Payload))
+    } catch (error) {
+      throw new Error('JWT Token payload解析失败，Token格式无效')
+    }
   }
 
   /**
@@ -328,15 +332,32 @@ export function createAuthHeaders(): Record<string, string> {
 /**
  * 处理API错误响应
  */
-export function handleApiError(error: any): ApiError {
+export function handleApiError(error: unknown): ApiError {
+  // 类型守卫：检查是否为 Axios 错误对象
+  const isAxiosError = (err: unknown): err is { response?: { status: number; data?: Record<string, unknown> }; request?: unknown; message?: string } => {
+    return typeof err === 'object' && err !== null && ('response' in err || 'request' in err)
+  }
+
+  if (!isAxiosError(error)) {
+    // 不是 Axios 错误，返回通用错误
+    return {
+      code: 'UNKNOWN_ERROR',
+      message: '未知错误',
+      isNetworkError: false,
+      isPermissionError: false,
+      isServerError: false,
+      isValidationError: false
+    }
+  }
+
   if (error.response) {
     // 服务器响应了错误状态码
     const status = error.response.status
-    const data = error.response.data || {}
+    const data = (error.response.data as Record<string, unknown>) || {}
 
     return {
-      code: data.code || `HTTP_${status}`,
-      message: data.message || `请求失败 (${status})`,
+      code: (data.code as string) || `HTTP_${status}`,
+      message: (data.message as string) || `请求失败 (${status})`,
       details: data.details,
       isPermissionError: status === 403,
       isServerError: status >= 500,

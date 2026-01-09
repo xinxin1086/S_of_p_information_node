@@ -201,20 +201,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ArrowDown, Heart, ChatDotRound } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { usePermissions } from '@/utils/permissions'
+
 import { forumApi } from '@/api/extended'
+import { useAuthStore } from '@/stores/auth'
 import type { ForumPost, ForumPostListParams } from '@/types/forum'
 import { formatTime } from '@/utils/format'
-import { ArrowDown, View, Heart, ChatDotRound } from '@element-plus/icons-vue'
+import { usePermissions } from '@/utils/permissions'
+
 
 // Composition API
 const router = useRouter()
 const authStore = useAuthStore()
-const { checkPermission, hasAdminRights, getCurrentRole } = usePermissions()
+const { checkPermission, hasAdminRights } = usePermissions()
 
 // 响应式数据
 const loading = ref(false)
@@ -380,7 +382,7 @@ const handleLockPost = async (post: ForumPost) => {
   }
 }
 
-const handleHidePost = async (post: ForumPost) => {
+const handleHidePost = async (_post: ForumPost) => {
   try {
     await ElMessageBox.confirm('确定要隐藏这个帖子吗？', '确认隐藏', {
       type: 'warning'

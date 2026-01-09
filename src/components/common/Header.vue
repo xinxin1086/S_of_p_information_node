@@ -170,12 +170,6 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { useMainStore } from '@/stores'
-import { useAuthStore, usePermissions } from '@/stores'
-import { getUserAvatar } from '@/utils/avatarHelper'
 import {
   ArrowLeft,
   Search,
@@ -185,6 +179,13 @@ import {
   SwitchButton,
   ArrowDown
 } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+
+import { useMainStore , useAuthStore, usePermissions } from '@/stores'
+import { getUserAvatar } from '@/utils/avatarHelper'
+
 
 // Props
 const props = defineProps({
@@ -298,16 +299,13 @@ const authStore = useAuthStore()
 
 // 使用新的权限系统
 const {
-  hasPermission,
   currentRole,
   isAdmin,
   isSuperAdmin,
-  userPermissions,
   permissions
 } = usePermissions()
 
 // Router
-const route = useRoute()
 const router = useRouter()
 
 // 响应式数据

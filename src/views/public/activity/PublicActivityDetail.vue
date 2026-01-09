@@ -32,13 +32,14 @@
 </template>
 
 <script setup>
+import { ElMessage } from 'element-plus'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { useActivityStore } from '@/stores/activity'
-import { useAuthStore } from '@/stores'
-import BaseActivityDetail from '@/components/BaseActivityDetail.vue'
+
 import ActivityCommentsReviews from '@/components/ActivityCommentsReviews.vue'
+import BaseActivityDetail from '@/components/BaseActivityDetail.vue'
+import { useAuthStore } from '@/stores'
+import { useActivityStore } from '@/stores/activity'
 
 const route = useRoute()
 const router = useRouter()

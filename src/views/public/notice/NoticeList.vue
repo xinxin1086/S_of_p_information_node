@@ -62,9 +62,10 @@
 </template>
 
 <script setup lang="ts">
+import { ElMessage, ElLoading, ElEmpty } from 'element-plus'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElLoading, ElEmpty } from 'element-plus'
+
 import { useNoticeStore } from '@/stores/notice'
 import {
   getNoticeTypeTag,

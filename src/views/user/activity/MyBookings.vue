@@ -107,10 +107,11 @@
 </template>
 
 <script setup>
+import { Location, Calendar, Clock, Close, Warning } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Location, Calendar, Clock, Close, Warning } from '@element-plus/icons-vue'
+
 import { useActivityStore } from '@/stores/activity'
 
 const router = useRouter()

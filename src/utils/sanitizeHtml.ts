@@ -3,8 +3,8 @@
  * 使用 DOMPurify 防止 XSS 攻击
  */
 
-import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import DOMPurify from 'dompurify'
+import { ref, computed, type Ref, type ComputedRef } from 'vue'
 
 /**
  * DOMPurify 配置选项
@@ -243,7 +243,7 @@ export function sanitizeClassName(className: string | null | undefined): string 
  * @param config - 净化配置
  * @returns 净化后的数组
  */
-export function sanitizeBatch<T extends Record<string, any>>(
+export function sanitizeBatch<T extends Record<string, unknown>>(
   items: T[],
   fields: (keyof T)[],
   config: DOMPurify.Config = BASE_SANITIZE_CONFIG

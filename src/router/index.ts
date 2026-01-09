@@ -9,8 +9,8 @@ import {
 } from '@/utils/asyncComponents'
 
 // 核心页面组件 (首屏关键组件保持同步加载)
-import LoginView from '../views/public/LoginView.vue'
 import PublicHomeView from '../views/public/HomeView.vue'
+import LoginView from '../views/public/LoginView.vue'
 
 // 布局组件 - 改为懒加载优化首屏性能
 const AdminLayout = () => import('../layouts/AdminLayout.vue')

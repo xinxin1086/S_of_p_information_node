@@ -54,10 +54,13 @@
 <script setup>
 import { ref, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+
 import { getCommonFormRules } from '@/utils/admin/admin_info_edit.js';
 import '@/styles/admin/admin_info_edit.css';
 import ImageCropper from '@/components/ImageCropper.vue';
+
 import axios from 'axios';
+
 import { BASE_URL } from '@/config';
 
 const router = useRouter();

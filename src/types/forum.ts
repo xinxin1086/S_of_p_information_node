@@ -66,7 +66,8 @@ export interface UpdateForumPostRequest {
 }
 
 // 帖子列表查询参数
-export interface ForumPostListParams extends PaginationParams {
+export interface ForumPostListParams extends Omit<PaginationParams, 'page'> {
+  page?: number // 覆盖 PaginationParams 的必填 page，改为可选
   category?: ForumPostCategory
   status?: ForumPostStatus
   author_id?: number

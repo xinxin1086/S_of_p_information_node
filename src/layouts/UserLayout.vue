@@ -154,12 +154,6 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { useMainStore } from '@/stores'
-import { useAuthStore, usePermissions } from '@/stores'
-import { getUserAvatar } from '@/utils/avatarHelper'
 import {
   Menu,
   Bell,
@@ -177,6 +171,14 @@ import {
   Tools,
   DataAnalysis
 } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
+import api from '@/api'
+import { useMainStore , useAuthStore, usePermissions } from '@/stores'
+import { getUserAvatar } from '@/utils/avatarHelper'
+
 
 // Store
 const mainStore = useMainStore()
@@ -188,7 +190,6 @@ const {
   currentRole,
   isAdmin,
   isSuperAdmin,
-  userPermissions,
   permissions,
   user
 } = usePermissions()
@@ -373,7 +374,7 @@ const handleUserMenuCommand = async (command) => {
   }
 }
 
-const handleMenuSelect = (index) => {
+const handleMenuSelect = (_index) => {
   // 移动端选择菜单后关闭侧边栏
   if (isMobile.value) {
     mainStore.sidebarCollapsed = true
@@ -381,7 +382,19 @@ const handleMenuSelect = (index) => {
 }
 
 const showNotifications = () => {
-  ElMessage.info('通知功能开发中...')
+  router.push('/user/notifications')
+}
+
+// 获取未读通知数量
+const fetchUnreadCount = async () => {
+  try {
+    const response = await api.userApi.getUnreadCount()
+    if (response?.data) {
+      unreadCount.value = response.data.count || 0
+    }
+  } catch (error) {
+    console.error('获取未读通知数量失败:', error)
+  }
 }
 
 const getMenuIcon = (iconName) => {
@@ -410,6 +423,11 @@ const checkMobile = () => {
 onMounted(() => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
+
+  // 如果用户已登录,获取未读通知数量
+  if (authStore.isAuthenticated) {
+    fetchUnreadCount()
+  }
 })
 
 onUnmounted(() => {

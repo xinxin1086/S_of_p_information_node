@@ -183,10 +183,11 @@
 </template>
 
 <script setup>
+import { Plus, ChatDotRound, View, Star } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, ChatDotRound, View, Star } from '@element-plus/icons-vue'
+
 import { useAuthStore } from '@/stores'
 
 const router = useRouter()
@@ -269,7 +270,7 @@ const generateMockPosts = () => {
       category: 'bait',
       author: {
         id: 1,
-        username: '钓鱼大师',
+        username: '户外爱好者',
         avatar: ''
       },
       created_at: '2024-01-15T10:30:00',
@@ -334,7 +335,7 @@ const generateMockPosts = () => {
       view_count: 198,
       like_count: 53,
       last_reply: {
-        author: '城市钓鱼人',
+        author: '城市户外达人',
         time: '2024-01-15T20:45:00'
       }
     },

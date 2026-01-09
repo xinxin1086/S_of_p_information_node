@@ -236,7 +236,7 @@ export interface ValidationOptions {
   /** 是否验证 data 字段存在性 */
   validateDataExists?: boolean
   /** 自定义验证函数 */
-  customValidator?: (response: ApiResponse) => boolean
+  customValidator?: (_response: ApiResponse) => boolean
 }
 
 /**
@@ -284,7 +284,7 @@ export function validateResponse(
 /**
  * 响应数据转换器
  */
-export type ResponseTransformer<T, R = T> = (data: T) => R
+export type ResponseTransformer<T, R = T> = (_data: T) => R
 
 /**
  * 应用转换器到响应数据

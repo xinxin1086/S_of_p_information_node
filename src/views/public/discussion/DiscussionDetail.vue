@@ -228,10 +228,11 @@
 </template>
 
 <script setup>
+import { Star, Share, View, ChatDotRound } from '@element-plus/icons-vue'
+import { ElMessage, ElLoading } from 'element-plus'
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElLoading } from 'element-plus'
-import { Star, Share, View, ChatDotRound } from '@element-plus/icons-vue'
+
 import { useAuthStore } from '@/stores'
 import { sanitizeRichText } from '@/utils/sanitizeHtml'
 
@@ -272,7 +273,7 @@ const categories = [
 ]
 
 const sortedReplies = computed(() => {
-  return replies.value.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  return [...replies.value].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
 })
 
 const totalPages = computed(() => {
@@ -311,7 +312,7 @@ const generateMockData = () => {
     category: 'bait',
     author: {
       id: 1,
-      username: '钓鱼大师',
+      username: '户外爱好者',
       avatar: ''
     },
     created_at: '2024-01-15T10:30:00',
@@ -337,7 +338,7 @@ const generateMockData = () => {
           content: '记得要控制好发酵时间，夏天30分钟就差不多了。',
           author: {
             id: 1,
-            username: '钓鱼大师',
+            username: '户外爱好者',
             avatar: ''
           },
           created_at: '2024-01-15T15:30:00',

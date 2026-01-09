@@ -76,9 +76,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, onUnmounted, watch } from 'vue'
+import { ref, onUnmounted, watch } from 'vue'
 import { VueCropper } from 'vue-cropper'
+
 import 'vue-cropper/dist/index.css'
+import type { UnknownResponse } from '@/api'
 import { formatAvatarUrl } from '@/utils/common/format.js'
 
 interface CropperOption {
@@ -134,7 +136,7 @@ const emit = defineEmits<Emits>()
 // 状态
 const isCropModalOpen = ref(false)
 const previewUrl = ref(formatAvatarUrl(props.modelValue) || '')
-const cropperRef = ref<any>(null)
+const cropperRef = ref<UnknownResponse | null>(null)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const tempBlobUrls = ref<string[]>([])
 const previews = ref<PreviewData>({} as PreviewData)

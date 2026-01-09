@@ -369,12 +369,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
-import { useActivityStore } from '@/stores/activity'
+import { ref, computed, nextTick } from 'vue'
+
+import CommentReply from './CommentReply.vue'
+
 import { useAuthStore } from '@/stores'
 import { getAvatarUrl } from '@/utils/avatar.js'
-import CommentReply from './CommentReply.vue'
+
 
 interface Activity {
   id: number | string
@@ -471,7 +473,6 @@ const ratingForm = ref({
 })
 
 // 用户信息相关
-const activityStore = useActivityStore()
 const authStore = useAuthStore()
 
 // 权限控制计算属性
@@ -544,24 +545,11 @@ const isReplyingToDiscussion = (discussion) => {
   return false
 }
 
-// 判断是否为主讨论
-const isMainDiscussion = (comment) => {
-  // 主讨论通常有 discuss_id 字段，或者是 comments 数组中的顶级项
-  return comment.discuss_id !== undefined || comment.parent_comment_id === undefined
-}
-
 // 判断是否应该隐藏主讨论的回复按钮
 const shouldHideMainDiscussionReplyBtn = (discussion) => {
   return replyingTo.value &&
          replyingTo.value.id === discussion.id &&
          replyingTo.value.parent_comment_id === undefined
-}
-
-// 判断是否应该隐藏子回复的回复按钮
-const shouldHideReplyBtn = (reply) => {
-  return replyingTo.value &&
-         replyingTo.value.id === reply.id &&
-         replyingTo.value.parent_comment_id !== undefined
 }
 
 // 加载详细评分数据的方法

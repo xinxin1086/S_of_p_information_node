@@ -291,8 +291,6 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Search,
   Calendar,
@@ -301,6 +299,9 @@ import {
   Close,
   RefreshLeft
 } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, reactive, computed, onMounted } from 'vue'
+
 import { useNoticeStore } from '@/stores/notice'
 
 const noticeStore = useNoticeStore()

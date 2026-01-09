@@ -304,8 +304,6 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Search,
   Calendar,
@@ -314,6 +312,9 @@ import {
   Close,
   RefreshLeft
 } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, reactive, computed, onMounted } from 'vue'
+
 import { useScienceStore } from '@/stores/science'
 import { sanitizeRichText } from '@/utils/sanitizeHtml'
 

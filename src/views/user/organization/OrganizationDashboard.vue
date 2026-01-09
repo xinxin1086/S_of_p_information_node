@@ -252,14 +252,81 @@
           </el-col>
         </el-row>
       </el-card>
+
+      <!-- 数据统计图表 -->
+      <div class="charts-section">
+        <el-card class="chart-card" shadow="hover">
+          <template #header>
+            <div class="card-header">
+              <el-icon><TrendCharts /></el-icon>
+              <span>活动趋势分析</span>
+              <el-radio-group v-model="trendPeriod" size="small" @change="updateTrendChart">
+                <el-radio-button label="week">周</el-radio-button>
+                <el-radio-button label="month">月</el-radio-button>
+                <el-radio-button label="year">年</el-radio-button>
+              </el-radio-group>
+            </div>
+          </template>
+          <div ref="trendChartRef" class="chart-container"></div>
+        </el-card>
+
+        <el-row :gutter="20">
+          <el-col :xs="24" :md="12">
+            <el-card class="chart-card" shadow="hover">
+              <template #header>
+                <div class="card-header">
+                  <el-icon><PieChart /></el-icon>
+                  <span>活动类型分布</span>
+                </div>
+              </template>
+              <div ref="categoryChartRef" class="chart-container"></div>
+            </el-card>
+          </el-col>
+
+          <el-col :xs="24" :md="12">
+            <el-card class="chart-card" shadow="hover">
+              <template #header>
+                <div class="card-header">
+                  <el-icon><DataLine /></el-icon>
+                  <span>参与度趋势</span>
+                </div>
+              </template>
+              <div ref="engagementChartRef" class="chart-container"></div>
+            </el-card>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :xs="24" :md="12">
+            <el-card class="chart-card" shadow="hover">
+              <template #header>
+                <div class="card-header">
+                  <el-icon><Calendar /></el-icon>
+                  <span>月度活动统计</span>
+                </div>
+              </template>
+              <div ref="monthlyChartRef" class="chart-container"></div>
+            </el-card>
+          </el-col>
+
+          <el-col :xs="24" :md="12">
+            <el-card class="chart-card" shadow="hover">
+              <template #header>
+                <div class="card-header">
+                  <el-icon><Trophy /></el-icon>
+                  <span>热门活动排行</span>
+                </div>
+              </template>
+              <div ref="rankingChartRef" class="chart-container"></div>
+            </el-card>
+          </el-col>
+        </el-row>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import {
   Grid,
   CircleCheck,
@@ -273,8 +340,17 @@ import {
   Document,
   Bell,
   Star,
-  Calendar
+  Calendar,
+  TrendCharts,
+  PieChart,
+  DataLine,
+  Trophy
 } from '@element-plus/icons-vue'
+import * as echarts from 'echarts'
+import { ElMessage } from 'element-plus'
+import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
+
 import { useActivityStore } from '@/stores/activity'
 
 const router = useRouter()
@@ -283,6 +359,20 @@ const activityStore = useActivityStore()
 const loading = ref(true)
 const recentActivities = ref([])
 const recentBookings = ref([])
+const trendPeriod = ref('month')
+
+// 图表引用
+const trendChartRef = ref(null)
+const categoryChartRef = ref(null)
+const engagementChartRef = ref(null)
+const monthlyChartRef = ref(null)
+const rankingChartRef = ref(null)
+
+let trendChart = null
+let categoryChart = null
+let engagementChart = null
+let monthlyChart = null
+let rankingChart = null
 
 // 统计数据
 const stats = reactive({
@@ -346,6 +436,263 @@ const loadDashboardData = async () => {
   }
 }
 
+// 初始化趋势图表
+const initTrendChart = () => {
+  if (!trendChartRef.value) return
+
+  trendChart = echarts.init(trendChartRef.value)
+
+  const option = {
+    tooltip: {
+      trigger: 'axis'
+    },
+    legend: {
+      data: ['创建活动', '参与人数', '完成活动']
+    },
+    xAxis: {
+      type: 'category',
+      data: ['1月', '2月', '3月', '4月', '5月', '6月']
+    },
+    yAxis: {
+      type: 'value'
+    },
+    series: [
+      {
+        name: '创建活动',
+        type: 'bar',
+        data: [5, 8, 12, 15, 10, 18],
+        itemStyle: { color: '#667eea' }
+      },
+      {
+        name: '参与人数',
+        type: 'line',
+        data: [50, 80, 120, 150, 100, 180],
+        smooth: true,
+        itemStyle: { color: '#f5576c' }
+      },
+      {
+        name: '完成活动',
+        type: 'line',
+        data: [4, 7, 10, 13, 8, 15],
+        smooth: true,
+        itemStyle: { color: '#43e97b' }
+      }
+    ]
+  }
+
+  trendChart.setOption(option)
+}
+
+// 更新趋势图表
+const updateTrendChart = () => {
+  if (!trendChart) return
+
+  // 根据选择的周期更新数据
+  let data = {}
+  if (trendPeriod.value === 'week') {
+    data = {
+      xAxis: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+      series: [2, 3, 1, 4, 2, 5, 3]
+    }
+  } else if (trendPeriod.value === 'month') {
+    data = {
+      xAxis: ['1月', '2月', '3月', '4月', '5月', '6月'],
+      series: [5, 8, 12, 15, 10, 18]
+    }
+  } else {
+    data = {
+      xAxis: ['2019', '2020', '2021', '2022', '2023', '2024'],
+      series: [20, 35, 50, 65, 80, 95]
+    }
+  }
+
+  trendChart.setOption({
+    xAxis: {
+      data: data.xAxis
+    },
+    series: [
+      { data: data.series },
+      { data: data.series.map(v => v * 10) },
+      { data: data.series.map(v => v * 0.8) }
+    ]
+  })
+}
+
+// 初始化活动类型分布饼图
+const initCategoryChart = () => {
+  if (!categoryChartRef.value) return
+
+  categoryChart = echarts.init(categoryChartRef.value)
+
+  const option = {
+    tooltip: {
+      trigger: 'item'
+    },
+    legend: {
+      orient: 'vertical',
+      left: 'left'
+    },
+    series: [
+      {
+        name: '活动类型',
+        type: 'pie',
+        radius: '50%',
+        data: [
+          { value: 12, name: '讲座' },
+          { value: 15, name: '比赛' },
+          { value: 10, name: '培训' },
+          { value: 8, name: '娱乐' },
+          { value: 5, name: '其他' }
+        ],
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
+          }
+        }
+      }
+    ]
+  }
+
+  categoryChart.setOption(option)
+}
+
+// 初始化参与度趋势图
+const initEngagementChart = () => {
+  if (!engagementChartRef.value) return
+
+  engagementChart = echarts.init(engagementChartRef.value)
+
+  const option = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow'
+      }
+    },
+    xAxis: {
+      type: 'category',
+      data: ['讲座', '比赛', '培训', '娱乐', '其他']
+    },
+    yAxis: {
+      type: 'value'
+    },
+    series: [
+      {
+        name: '参与率',
+        type: 'bar',
+        data: [85, 92, 78, 88, 75],
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#83bff6' },
+            { offset: 0.5, color: '#188df0' },
+            { offset: 1, color: '#188df0' }
+          ])
+        }
+      }
+    ]
+  }
+
+  engagementChart.setOption(option)
+}
+
+// 初始化月度活动统计图
+const initMonthlyChart = () => {
+  if (!monthlyChartRef.value) return
+
+  monthlyChart = echarts.init(monthlyChartRef.value)
+
+  const option = {
+    tooltip: {
+      trigger: 'axis'
+    },
+    legend: {
+      data: ['计划', '完成', '取消']
+    },
+    xAxis: {
+      type: 'category',
+      data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+    },
+    yAxis: {
+      type: 'value'
+    },
+    series: [
+      {
+        name: '计划',
+        type: 'bar',
+        stack: 'total',
+        data: [5, 8, 12, 15, 10, 18, 14, 16, 20, 18, 22, 25],
+        itemStyle: { color: '#667eea' }
+      },
+      {
+        name: '完成',
+        type: 'bar',
+        stack: 'total',
+        data: [4, 7, 10, 13, 8, 15, 12, 14, 18, 16, 20, 23],
+        itemStyle: { color: '#43e97b' }
+      },
+      {
+        name: '取消',
+        type: 'bar',
+        stack: 'total',
+        data: [1, 1, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2],
+        itemStyle: { color: '#f5576c' }
+      }
+    ]
+  }
+
+  monthlyChart.setOption(option)
+}
+
+// 初始化热门活动排行榜
+const initRankingChart = () => {
+  if (!rankingChartRef.value) return
+
+  rankingChart = echarts.init(rankingChartRef.value)
+
+  const option = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow'
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'value'
+    },
+    yAxis: {
+      type: 'category',
+      data: ['活动5', '活动4', '活动3', '活动2', '活动1'].reverse()
+    },
+    series: [
+      {
+        name: '参与人数',
+        type: 'bar',
+        data: [45, 68, 82, 95, 120].reverse(),
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+            { offset: 0, color: '#667eea' },
+            { offset: 1, color: '#764ba2' }
+          ])
+        },
+        label: {
+          show: true,
+          position: 'right'
+        }
+      }
+    ]
+  }
+
+  rankingChart.setOption(option)
+}
+
 // 导航方法
 const goToCreateActivity = () => {
   router.push('/user/weave/create-activity')
@@ -360,8 +707,11 @@ const goToActivityList = () => {
 }
 
 const goToStats = () => {
-  // 活动统计页面可能集成在当前页面或独立页面
-  ElMessage.info('数据统计功能开发中...')
+  // 滚动到统计图表部分
+  const chartsSection = document.querySelector('.charts-section')
+  if (chartsSection) {
+    chartsSection.scrollIntoView({ behavior: 'smooth' })
+  }
 }
 
 const viewActivity = (id) => {
@@ -434,7 +784,40 @@ const formatRelativeTime = (dateString) => {
 
 onMounted(() => {
   loadDashboardData()
+
+  // 初始化所有图表（延迟以确保DOM已渲染）
+  setTimeout(() => {
+    initTrendChart()
+    initCategoryChart()
+    initEngagementChart()
+    initMonthlyChart()
+    initRankingChart()
+  }, 100)
+
+  // 响应式调整图表大小
+  window.addEventListener('resize', handleResize)
 })
+
+onBeforeUnmount(() => {
+  // 销毁所有图表实例
+  trendChart?.dispose()
+  categoryChart?.dispose()
+  engagementChart?.dispose()
+  monthlyChart?.dispose()
+  rankingChart?.dispose()
+
+  // 移除事件监听
+  window.removeEventListener('resize', handleResize)
+})
+
+// 处理窗口大小调整
+const handleResize = () => {
+  trendChart?.resize()
+  categoryChart?.resize()
+  engagementChart?.resize()
+  monthlyChart?.resize()
+  rankingChart?.resize()
+}
 </script>
 
 <style scoped>
@@ -725,6 +1108,20 @@ onMounted(() => {
   font-weight: bold;
   color: #303133;
   margin-bottom: 10px;
+}
+
+.charts-section {
+  margin-top: 20px;
+}
+
+.chart-card {
+  margin-bottom: 20px;
+  border-radius: 8px;
+}
+
+.chart-container {
+  width: 100%;
+  height: 350px;
 }
 
 @media (max-width: 768px) {

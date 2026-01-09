@@ -86,11 +86,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Document, Clock } from '@element-plus/icons-vue'
 import { ElMessage, ElLoading, ElResult, ElButton, ElCard, ElTag, ElIcon } from 'element-plus'
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
 import { useNoticeStore } from '@/stores/notice'
+import { logger } from '@/utils/logger'
 import {
   getNoticeTypeTag,
   getNoticeTypeText,
@@ -98,7 +100,6 @@ import {
   getNoticeTypeFromText
 } from '@/utils/notice'
 import { sanitizeRichText } from '@/utils/sanitizeHtml'
-import { logger } from '@/utils/logger'
 
 const route = useRoute()
 const router = useRouter()

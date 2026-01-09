@@ -42,8 +42,8 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
 import { House, ArrowLeft, Bell, Reading, Calendar } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
 
 const router = useRouter()
 

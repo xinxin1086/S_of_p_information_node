@@ -72,10 +72,11 @@
 </template>
 
 <script setup>
+import { ArrowLeft } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { ArrowLeft } from '@element-plus/icons-vue'
+
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()

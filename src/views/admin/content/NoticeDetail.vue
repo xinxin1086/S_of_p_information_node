@@ -84,9 +84,6 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import {
   ArrowLeft,
   Edit,
@@ -95,6 +92,10 @@ import {
   Refresh,
   Document
 } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
 import { useNoticeStore } from '@/stores/notice'
 import { sanitizeRichText } from '@/utils/sanitizeHtml'
 
@@ -136,7 +137,7 @@ const formatDate = (dateStr) => {
 const getNoticeTypeTag = (type) => {
   const typeMap = {
     '系统通知': 'danger',
-    '活动公告': 'primary',
+    '活动公告': 'warning',
     '其他公告': 'info'
   }
   return typeMap[type] || 'info'

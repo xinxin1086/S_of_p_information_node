@@ -66,6 +66,18 @@
           </span>
         </template>
       </el-table-column>
+      <!-- 置顶状态列 -->
+      <el-table-column label="置顶" width="80" align="center">
+        <template #default="scope">
+          <el-switch
+            v-model="scope.row.is_pinned"
+            @change="handleTogglePin(scope.row)"
+            :loading="isLoading"
+            active-color="#409eff"
+            inactive-color="#dcdfe6"
+          />
+        </template>
+      </el-table-column>
       <!-- 操作列（与管理员组件一致：编辑+删除） -->
       <el-table-column label="操作" width="160">
         <template #default="scope">
@@ -148,10 +160,11 @@
 </template>
 
 <script setup>
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+
 import { useNoticeStore } from '@/stores/notice';
-import { ElMessage, ElMessageBox } from 'element-plus';
 
 const router = useRouter();
 const noticeStore = useNoticeStore();
@@ -334,6 +347,34 @@ const handleDelete = async (notice) => {
   } catch (error) {
     console.error('删除公告错误:', error);
     ElMessage.error('删除失败：' + error.message);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// 置顶切换
+const handleTogglePin = async (notice) => {
+  try {
+    isLoading.value = true;
+    console.log('📌 切换置顶状态:', notice.id, '当前状态:', notice.is_pinned);
+
+    const response = await noticeStore.togglePinNotice(notice.id);
+
+    if (response.success) {
+      // 置顶状态已经在 store 中自动更新
+      const newStatus = notice.is_pinned;
+      ElMessage.success(newStatus ? '置顶成功！' : '取消置顶成功！');
+      await fetchNotices(); // 刷新列表以确保排序正确
+    } else {
+      // 失败时恢复原状态
+      notice.is_pinned = !notice.is_pinned;
+      ElMessage.error('操作失败：' + (response.error || '未知错误'));
+    }
+  } catch (error) {
+    // 失败时恢复原状态
+    notice.is_pinned = !notice.is_pinned;
+    console.error('置顶切换错误:', error);
+    ElMessage.error('操作失败：' + error.message);
   } finally {
     isLoading.value = false;
   }

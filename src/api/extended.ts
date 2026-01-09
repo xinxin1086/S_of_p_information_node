@@ -59,7 +59,7 @@ export const authExtendedApi = {
    */
   async register(userData: RegisterRequest): Promise<RegisterResponse> {
     try {
-      const response = await request.post(USER_AUTH_API.REGISTER, userData)
+      const response = await request.post<RegisterResponse>(USER_AUTH_API.REGISTER, userData)
       return response
     } catch (error) {
       console.error('用户注册失败:', error)
@@ -71,9 +71,9 @@ export const authExtendedApi = {
    * Token验证
    * 接口路径: POST /api/user/auth/verify
    */
-  async verifyToken(request: TokenVerifyRequest): Promise<TokenVerifyResponse> {
+  async verifyToken(data: TokenVerifyRequest): Promise<TokenVerifyResponse> {
     try {
-      const response = await request.post(USER_AUTH_API.VERIFY, request)
+      const response = await request.post<TokenVerifyResponse>(USER_AUTH_API.VERIFY, data)
       return response
     } catch (error) {
       console.error('Token验证失败:', error)
@@ -85,9 +85,9 @@ export const authExtendedApi = {
    * 刷新Token
    * 接口路径: POST /api/user/auth/refresh
    */
-  async refreshToken(request: TokenRefreshRequest): Promise<TokenRefreshResponse> {
+  async refreshToken(data: TokenRefreshRequest): Promise<TokenRefreshResponse> {
     try {
-      const response = await request.post(USER_AUTH_API.REFRESH, request)
+      const response = await request.post<TokenRefreshResponse>(USER_AUTH_API.REFRESH, data)
       return response
     } catch (error) {
       console.error('Token刷新失败:', error)
@@ -99,9 +99,9 @@ export const authExtendedApi = {
    * 发送密码重置验证码
    * 接口路径: POST /api/user/auth/password/reset
    */
-  async sendPasswordReset(request: PasswordResetRequest): Promise<{ success: boolean; message: string }> {
+  async sendPasswordReset(data: PasswordResetRequest): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await request.post(USER_AUTH_API.PASSWORD_RESET, request)
+      const response = await request.post<{ success: boolean; message: string }>(USER_AUTH_API.PASSWORD_RESET, data)
       return response
     } catch (error) {
       console.error('发送密码重置验证码失败:', error)
@@ -113,9 +113,9 @@ export const authExtendedApi = {
    * 确认密码重置
    * 接口路径: POST /api/user/auth/password/reset/confirm
    */
-  async confirmPasswordReset(request: PasswordResetConfirmRequest): Promise<{ success: boolean; message: string }> {
+  async confirmPasswordReset(data: PasswordResetConfirmRequest): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await request.post(USER_AUTH_API.PASSWORD_RESET_CONFIRM, request)
+      const response = await request.post<{ success: boolean; message: string }>(USER_AUTH_API.PASSWORD_RESET_CONFIRM, data)
       return response
     } catch (error) {
       console.error('密码重置失败:', error)
@@ -127,9 +127,9 @@ export const authExtendedApi = {
    * 发送邮箱验证码
    * 接口路径: POST /api/user/auth/email/verify
    */
-  async sendEmailVerification(request: EmailVerifyRequest): Promise<{ success: boolean; message: string }> {
+  async sendEmailVerification(data: EmailVerifyRequest): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await request.post(USER_AUTH_API.EMAIL_VERIFY, request)
+      const response = await request.post<{ success: boolean; message: string }>(USER_AUTH_API.EMAIL_VERIFY, data)
       return response
     } catch (error) {
       console.error('发送邮箱验证码失败:', error)
@@ -141,9 +141,9 @@ export const authExtendedApi = {
    * 确认邮箱验证
    * 接口路径: POST /api/user/auth/email/verify/confirm
    */
-  async confirmEmailVerification(request: EmailVerifyConfirmRequest): Promise<{ success: boolean; message: string }> {
+  async confirmEmailVerification(data: EmailVerifyConfirmRequest): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await request.post(USER_AUTH_API.EMAIL_VERIFY_CONFIRM, request)
+      const response = await request.post<{ success: boolean; message: string }>(USER_AUTH_API.EMAIL_VERIFY_CONFIRM, data)
       return response
     } catch (error) {
       console.error('邮箱验证失败:', error)
@@ -155,9 +155,9 @@ export const authExtendedApi = {
    * 发送手机验证码
    * 接口路径: POST /api/user/auth/phone/verify
    */
-  async sendPhoneVerification(request: PhoneVerifyRequest): Promise<{ success: boolean; message: string }> {
+  async sendPhoneVerification(data: PhoneVerifyRequest): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await request.post(USER_AUTH_API.PHONE_VERIFY, request)
+      const response = await request.post<{ success: boolean; message: string }>(USER_AUTH_API.PHONE_VERIFY, data)
       return response
     } catch (error) {
       console.error('发送手机验证码失败:', error)
@@ -169,9 +169,9 @@ export const authExtendedApi = {
    * 确认手机验证
    * 接口路径: POST /api/user/auth/phone/verify/confirm
    */
-  async confirmPhoneVerification(request: PhoneVerifyConfirmRequest): Promise<{ success: boolean; message: string }> {
+  async confirmPhoneVerification(data: PhoneVerifyConfirmRequest): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await request.post(USER_AUTH_API.PHONE_VERIFY_CONFIRM, request)
+      const response = await request.post<{ success: boolean; message: string }>(USER_AUTH_API.PHONE_VERIFY_CONFIRM, data)
       return response
     } catch (error) {
       console.error('手机验证失败:', error)
@@ -189,7 +189,7 @@ export const forumApi = {
    */
   async getPostList(params: ForumPostListParams = {}): Promise<ForumPostListResponse> {
     try {
-      const response = await request.get(FORUM_API.POST, params)
+      const response = await request.get<ForumPostListResponse>(FORUM_API.POST, { params })
       return response
     } catch (error) {
       console.error('获取帖子列表失败:', error)
@@ -203,7 +203,7 @@ export const forumApi = {
    */
   async getPostDetail(postId: number): Promise<ForumPost> {
     try {
-      const response = await request.get(FORUM_API.POST_DETAIL(postId))
+      const response = await request.get<ForumPost>(FORUM_API.POST_DETAIL(postId))
       // 如果用户已登录，记录访问
       if (tokenManager.isLoggedIn()) {
         await this.recordVisit(postId)
@@ -222,7 +222,7 @@ export const forumApi = {
   async createPost(postData: CreateForumPostRequest): Promise<ForumPost> {
     try {
       const token = tokenManager.getAccessToken()
-      const response = await request.post(FORUM_API.POST, postData, {
+      const response = await request.post<ForumPost>(FORUM_API.POST, postData, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -241,7 +241,7 @@ export const forumApi = {
   async updatePost(postId: number, postData: UpdateForumPostRequest): Promise<ForumPost> {
     try {
       const token = tokenManager.getAccessToken()
-      const response = await request.put(FORUM_API.POST_DETAIL(postId), postData, {
+      const response = await request.put<ForumPost>(FORUM_API.POST_DETAIL(postId), postData, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -260,7 +260,7 @@ export const forumApi = {
   async deletePost(postId: number): Promise<{ success: boolean; message: string }> {
     try {
       const token = tokenManager.getAccessToken()
-      const response = await request.delete(FORUM_API.POST_DETAIL(postId), {
+      const response = await request.delete<{ success: boolean; message: string }>(FORUM_API.POST_DETAIL(postId), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -278,7 +278,7 @@ export const forumApi = {
    */
   async getHotPosts(params: HotPostsParams = {}): Promise<ForumPost[]> {
     try {
-      const response = await request.get(FORUM_API.POST_HOT, params)
+      const response = await request.get<ForumPost[]>(FORUM_API.POST_HOT, { params })
       return response
     } catch (error) {
       console.error('获取热门帖子失败:', error)
@@ -292,7 +292,7 @@ export const forumApi = {
    */
   async getCategories(): Promise<ForumCategoryStats[]> {
     try {
-      const response = await request.get(FORUM_API.POST_CATEGORIES)
+      const response = await request.get<ForumCategoryStats[]>(FORUM_API.POST_CATEGORIES)
       return response
     } catch (error) {
       console.error('获取帖子分类失败:', error)
@@ -306,7 +306,7 @@ export const forumApi = {
    */
   async searchPosts(params: ForumSearchParams): Promise<ForumPostListResponse> {
     try {
-      const response = await request.get(FORUM_API.POST_SEARCH, params)
+      const response = await request.get<ForumPostListResponse>(FORUM_API.POST_SEARCH, { params })
       return response
     } catch (error) {
       console.error('搜索帖子失败:', error)
@@ -322,7 +322,7 @@ export const forumApi = {
    */
   async getFloorList(postId: number, params: { page?: number; page_size?: number } = {}): Promise<ForumFloorListResponse> {
     try {
-      const response = await request.get(`/api/forum/floor/post/${postId}`, params)
+      const response = await request.get<ForumFloorListResponse>(`/api/forum/floor/post/${postId}`, { params })
       return response
     } catch (error) {
       console.error('获取楼层列表失败:', error)
@@ -337,7 +337,7 @@ export const forumApi = {
   async createFloor(floorData: CreateForumFloorRequest): Promise<ForumFloor> {
     try {
       const token = tokenManager.getAccessToken()
-      const response = await request.post('/api/forum/floor', floorData, {
+      const response = await request.post<ForumFloor>('/api/forum/floor', floorData, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -357,7 +357,7 @@ export const forumApi = {
    */
   async getReplyList(floorId: number, params: { page?: number; page_size?: number } = {}): Promise<ForumReplyListResponse> {
     try {
-      const response = await request.get(`/api/forum/reply/floor/${floorId}`, params)
+      const response = await request.get<ForumReplyListResponse>(`/api/forum/reply/floor/${floorId}`, { params })
       return response
     } catch (error) {
       console.error('获取回复列表失败:', error)
@@ -372,7 +372,7 @@ export const forumApi = {
   async createReply(replyData: CreateForumReplyRequest): Promise<ForumReply> {
     try {
       const token = tokenManager.getAccessToken()
-      const response = await request.post('/api/forum/reply', replyData, {
+      const response = await request.post<ForumReply>('/api/forum/reply', replyData, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -393,7 +393,7 @@ export const forumApi = {
   async toggleLike(likeData: ForumLikeRequest): Promise<{ success: boolean; liked: boolean; message: string }> {
     try {
       const token = tokenManager.getAccessToken()
-      const response = await request.post('/api/forum/like', likeData, {
+      const response = await request.post<{ success: boolean; liked: boolean; message: string }>('/api/forum/like', likeData, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -409,10 +409,11 @@ export const forumApi = {
    * 获取点赞状态
    * 接口路径: GET /api/forum/like/status
    */
-  async getLikeStatus(request: ForumLikeStatusRequest): Promise<ForumLikeStatusResponse> {
+  async getLikeStatus(data: ForumLikeStatusRequest): Promise<ForumLikeStatusResponse> {
     try {
       const token = tokenManager.getAccessToken()
-      const response = await request.get('/api/forum/like/status', request, {
+      const response = await request.get<ForumLikeStatusResponse>('/api/forum/like/status', {
+        params: data,
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -433,7 +434,7 @@ export const forumApi = {
   async recordVisit(postId: number): Promise<ForumVisit> {
     try {
       const token = tokenManager.getAccessToken()
-      const response = await request.post('/api/forum/visit', { post_id: postId }, {
+      const response = await request.post<ForumVisit>('/api/forum/visit', { post_id: postId }, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -453,7 +454,7 @@ export const forumApi = {
    */
   async getStatistics(): Promise<ForumStatistics> {
     try {
-      const response = await request.get('/api/forum/statistics')
+      const response = await request.get<ForumStatistics>('/api/forum/statistics')
       return response
     } catch (error) {
       console.error('获取论坛统计失败:', error)
@@ -469,7 +470,7 @@ export const forumApi = {
     try {
       const token = tokenManager.getAccessToken()
       const url = userId ? `/api/forum/user/stats/${userId}` : '/api/forum/user/stats'
-      const response = await request.get(url, {}, {
+      const response = await request.get<UserForumStats>(url, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -495,7 +496,8 @@ export const forumApi = {
   } = {}): Promise<{ list: ForumNotification[]; total: number; unread_count: number }> {
     try {
       const token = tokenManager.getAccessToken()
-      const response = await request.get('/api/forum/notifications', params, {
+      const response = await request.get<{ list: ForumNotification[]; total: number; unread_count: number }>('/api/forum/notifications', {
+        params,
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -514,7 +516,7 @@ export const forumApi = {
   async markNotificationAsRead(notificationId: number): Promise<{ success: boolean }> {
     try {
       const token = tokenManager.getAccessToken()
-      const response = await request.post(`/api/forum/notifications/${notificationId}/read`, {}, {
+      const response = await request.post<{ success: boolean }>(`/api/forum/notifications/${notificationId}/read`, {}, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -533,7 +535,7 @@ export const forumApi = {
   async markAllNotificationsAsRead(): Promise<{ success: boolean; marked_count: number }> {
     try {
       const token = tokenManager.getAccessToken()
-      const response = await request.post('/api/forum/notifications/mark-all-read', {}, {
+      const response = await request.post<{ success: boolean; marked_count: number }>('/api/forum/notifications/mark-all-read', {}, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -554,7 +556,7 @@ export const forumApi = {
   async createReport(reportData: CreateForumReportRequest): Promise<{ success: boolean; message: string }> {
     try {
       const token = tokenManager.getAccessToken()
-      const response = await request.post('/api/forum/report', reportData, {
+      const response = await request.post<{ success: boolean; message: string }>('/api/forum/report', reportData, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -577,7 +579,7 @@ export const forumAdminApi = {
   async handleReport(reportData: HandleForumReportRequest): Promise<{ success: boolean; message: string }> {
     try {
       const token = tokenManager.getAccessToken()
-      const response = await request.post('/api/forum/admin/report/handle', reportData, {
+      const response = await request.post<{ success: boolean; message: string }>('/api/forum/admin/report/handle', reportData, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -600,7 +602,7 @@ export const forumAdminApi = {
   }): Promise<{ success: boolean; message: string; affected_count: number }> {
     try {
       const token = tokenManager.getAccessToken()
-      const response = await request.post('/api/forum/admin/posts/batch', operationData, {
+      const response = await request.post<{ success: boolean; message: string; affected_count: number }>('/api/forum/admin/posts/batch', operationData, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
