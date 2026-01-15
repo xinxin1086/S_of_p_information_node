@@ -1,221 +1,115 @@
 <template>
-  <div class="science-manage">
-    <div class="page-header">
-      <h1>科普管理</h1>
-      <p>管理平台所有科普知识文章</p>
+  <div class="info-container">
+    <!-- 查询栏 -->
+    <div class="info-list-query-bar">
+      <el-input
+          v-model="searchKeyword"
+          placeholder="请输入科普标题查询"
+          class="info-form-input"
+          clearable
+          @clear="handleSearch"
+          @keyup.enter="handleSearch"
+      ></el-input>
+      <el-select
+          v-model="activeCategory"
+          placeholder="科普分类默认全部"
+          class="info-form-select"
+          style="width: 180px; margin-left: 12px;"
+          @change="handleCategoryFilter"
+      >
+        <el-option label="全部" value=""></el-option>
+        <el-option label="鱼类知识" value="鱼类知识"></el-option>
+        <el-option label="生态保护" value="生态保护"></el-option>
+        <el-option label="环保教育" value="环保教育"></el-option>
+        <el-option label="其他" value="其他"></el-option>
+      </el-select>
+      <el-select
+          v-model="activeStatus"
+          placeholder="状态默认全部"
+          class="info-form-select"
+          style="width: 180px; margin-left: 12px;"
+          @change="handleStatusFilter"
+      >
+        <el-option label="全部" value=""></el-option>
+        <el-option label="已发布" value="published"></el-option>
+        <el-option label="草稿" value="draft"></el-option>
+        <el-option label="已下架" value="archived"></el-option>
+      </el-select>
+      <button class="info-btn query-btn" @click="handleSearch" style="margin-left: 12px;">查询</button>
+      <button class="info-btn reset-btn" @click="handleRefresh" style="margin-left: 8px;">刷新</button>
     </div>
 
-    <div v-if="loading" class="loading-container">
-      <el-skeleton :rows="10" animated />
+    <!-- 操作栏 -->
+    <div class="info-list-action-bar">
+      <button class="info-btn add-btn" @click="handleCreate">新增科普</button>
+      <button class="info-btn batch-delete-btn" @click="handleBatchDelete" :disabled="selectedArticles.length === 0">
+        批量删除 ({{ selectedArticles.length }})
+      </button>
     </div>
 
-    <div v-else class="manage-content">
-      <!-- 操作栏 -->
-      <el-card class="action-card" shadow="hover">
-        <el-row :gutter="20" align="middle">
-          <el-col :span="8">
-            <el-input
-              v-model="searchKeyword"
-              placeholder="搜索科普标题"
-              clearable
-              @clear="handleSearch"
-              @keyup.enter="handleSearch"
-            >
-              <template #prefix>
-                <el-icon><Search /></el-icon>
-              </template>
-            </el-input>
-          </el-col>
-          <el-col :span="5">
-            <el-select
-              v-model="activeCategory"
-              placeholder="科普分类"
-              style="width: 100%"
-              @change="handleCategoryFilter"
-            >
-              <el-option label="全部分类" value="" />
-              <el-option label="鱼类知识" value="鱼类知识" />
-              <el-option label="生态保护" value="生态保护" />
-              <el-option label="环保教育" value="环保教育" />
-              <el-option label="其他" value="其他" />
-            </el-select>
-          </el-col>
-          <el-col :span="5">
-            <el-select
-              v-model="activeStatus"
-              placeholder="发布状态"
-              style="width: 100%"
-              @change="handleStatusFilter"
-            >
-              <el-option label="全部状态" value="" />
-              <el-option label="已发布" value="published" />
-              <el-option label="草稿" value="draft" />
-              <el-option label="已下架" value="archived" />
-            </el-select>
-          </el-col>
-          <el-col :span="6">
-            <div class="action-buttons">
-              <el-button type="primary" @click="handleCreate">
-                <el-icon><Plus /></el-icon>
-                新建科普
-              </el-button>
-              <el-button @click="handleRefresh">
-                <el-icon><Refresh /></el-icon>
-                刷新
-              </el-button>
-            </div>
-          </el-col>
-        </el-row>
-      </el-card>
+    <!-- 错误提示 -->
+    <div v-if="errorMessage" class="info-global-error">{{ errorMessage }}</div>
 
-      <!-- 统计卡片 -->
-      <el-row :gutter="20" class="stats-row">
-        <el-col :span="6">
-          <el-card class="stat-card">
-            <div class="stat-content">
-              <div class="stat-number">{{ stats.total }}</div>
-              <div class="stat-label">总计</div>
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :span="6">
-          <el-card class="stat-card published">
-            <div class="stat-content">
-              <div class="stat-number">{{ stats.published }}</div>
-              <div class="stat-label">已发布</div>
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :span="6">
-          <el-card class="stat-card draft">
-            <div class="stat-content">
-              <div class="stat-number">{{ stats.draft }}</div>
-              <div class="stat-label">草稿</div>
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :span="6">
-          <el-card class="stat-card archived">
-            <div class="stat-content">
-              <div class="stat-number">{{ stats.archived }}</div>
-              <div class="stat-label">已下架</div>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
+    <!-- 无数据提示 -->
+    <div v-if="!showTable && !errorMessage" class="info-list-empty-tip">暂无科普数据</div>
 
-      <!-- 科普文章列表 -->
-      <el-card class="table-card" shadow="hover">
-        <el-table
-          :data="articles"
-          style="width: 100%"
-          v-loading="loading"
-          @selection-change="handleSelectionChange"
-        >
-          <el-table-column type="selection" width="55" />
-          <el-table-column prop="id" label="ID" width="80" />
-          <el-table-column prop="title" label="标题" min-width="200">
-            <template #default="{ row }">
-              <div class="title-cell">
-                <div class="title-text">{{ row.title }}</div>
-                <div class="title-meta">
-                  <el-tag size="small" :type="getCategoryTagType(row.category)">
-                    {{ row.category }}
-                  </el-tag>
-                  <span class="view-count">
-                    <el-icon><View /></el-icon>
-                    {{ row.viewCount || 0 }}
-                  </span>
-                </div>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column prop="author" label="作者" width="120">
-            <template #default="{ row }">
-              <div class="author-cell">
-                <el-avatar :size="24" :src="row.authorAvatar">
-                  <el-icon><User /></el-icon>
-                </el-avatar>
-                <span>{{ row.author }}</span>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column prop="summary" label="摘要" min-width="200">
-            <template #default="{ row }">
-              <div class="summary-text">{{ row.summary }}</div>
-            </template>
-          </el-table-column>
-          <el-table-column prop="status" label="状态" width="100" align="center">
-            <template #default="{ row }">
-              <el-tag :type="getStatusTagType(row.status)">
-                {{ getStatusText(row.status) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="createdAt" label="创建时间" width="180">
-            <template #default="{ row }">
-              {{ formatTime(row.createdAt) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="220" align="center" fixed="right">
-            <template #default="{ row }">
-              <el-button type="primary" link size="small" @click="handleView(row)">
-                查看
-              </el-button>
-              <el-button type="warning" link size="small" @click="handleEdit(row)">
-                编辑
-              </el-button>
-              <el-dropdown @command="(command) => handleAction(command, row)">
-                <el-button type="info" link size="small">
-                  更多
-                  <el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                </el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item command="publish" v-if="row.status !== 'published'">
-                      <el-icon><Promotion /></el-icon>
-                      发布
-                    </el-dropdown-item>
-                    <el-dropdown-item command="archive" v-if="row.status !== 'archived'">
-                      <el-icon><Download /></el-icon>
-                      下架
-                    </el-dropdown-item>
-                    <el-dropdown-item command="delete" divided>
-                      <el-icon><Delete /></el-icon>
-                      删除
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </template>
-          </el-table-column>
-        </el-table>
+    <!-- 科普文章列表 -->
+    <el-table
+        :data="articles"
+        v-if="showTable"
+        border
+        class="info-list-table"
+        @selection-change="handleSelectionChange"
+    >
+      <el-table-column type="selection" width="55" />
+      <el-table-column type="index" label="序号" width="60" />
+      <el-table-column prop="id" label="ID" width="80">
+        <template #default="scope">{{ scope.row.id ?? '-' }}</template>
+      </el-table-column>
+      <el-table-column prop="title" label="标题" width="200">
+        <template #default="scope">{{ scope.row.title ?? '-' }}</template>
+      </el-table-column>
+      <el-table-column prop="category" label="分类" width="120">
+        <template #default="scope">
+          <el-tag :type="getCategoryTagType(scope.row.category)">
+            {{ scope.row.category ?? '-' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="author" label="作者" width="120">
+        <template #default="scope">{{ scope.row.author ?? '-' }}</template>
+      </el-table-column>
+      <el-table-column prop="summary" label="摘要" min-width="200">
+        <template #default="scope">{{ scope.row.summary ?? '-' }}</template>
+      </el-table-column>
+      <el-table-column prop="status" label="状态" width="100">
+        <template #default="scope">
+          <el-tag :type="getStatusTagType(scope.row.status)">
+            {{ getStatusText(scope.row.status) ?? '-' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="createdAt" label="创建时间" width="180">
+        <template #default="scope">{{ formatTime(scope.row.createdAt) ?? '-' }}</template>
+      </el-table-column>
+      <el-table-column label="操作" width="200">
+        <template #default="scope">
+          <button class="info-btn edit-btn" @click="handleEdit(scope.row)" style="margin-right: 4px;">编辑</button>
+          <button class="info-btn delete-btn" @click="handleDelete(scope.row)">删除</button>
+        </template>
+      </el-table-column>
+    </el-table>
 
-        <!-- 批量操作栏 -->
-        <div v-if="selectedArticles.length > 0" class="batch-actions">
-          <span class="selected-info">已选择 {{ selectedArticles.length }} 项</span>
-          <div class="batch-buttons">
-            <el-button size="small" @click="handleBatchPublish">批量发布</el-button>
-            <el-button size="small" @click="handleBatchArchive">批量下架</el-button>
-            <el-button size="small" type="danger" @click="handleBatchDelete">批量删除</el-button>
-          </div>
-        </div>
-
-        <div class="pagination">
-          <el-pagination
-            v-model:current-page="currentPage"
-            v-model:page-size="pageSize"
-            :page-sizes="[10, 20, 50, 100]"
-            :total="total"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handlePageChange"
-          />
-        </div>
-      </el-card>
+    <!-- 分页 -->
+    <div class="info-pagination" v-if="showTable">
+      <span>共 {{ total }} 条</span>
+      <button :disabled="currentPage === 1" @click="handlePageChange(currentPage - 1)">&lt;</button>
+      <button class="current-page">{{ currentPage }}</button>
+      <button :disabled="currentPage === totalPage" @click="handlePageChange(currentPage + 1)">&gt;</button>
     </div>
+  </div>
 
-    <!-- 查看/编辑对话框 -->
+    <!-- 新增/编辑对话框 -->
     <el-dialog
       v-model="detailDialogVisible"
       :title="detailMode === 'view' ? '查看科普' : '编辑科普'"
@@ -306,6 +200,7 @@ const activeStatus = ref('')
 const currentPage = ref(1)
 const pageSize = ref(20)
 const total = ref(0)
+const totalPage = computed(() => Math.ceil(total.value / pageSize.value) || 1)
 
 const articles = ref([])
 const selectedArticles = ref([])
@@ -313,6 +208,9 @@ const selectedArticles = ref([])
 const detailDialogVisible = ref(false)
 const detailMode = ref('view') // 'view' | 'edit'
 const currentArticle = ref(null)
+
+const showTable = ref(true)
+const errorMessage = ref('')
 
 // 净化后的文章内容（防止XSS攻击）
 const sanitizedArticleContent = computed(() => {
@@ -331,6 +229,9 @@ const stats = ref({
 const loadArticles = async () => {
   try {
     loading.value = true
+    errorMessage.value = ''
+    showTable.value = true
+
     // 这里应该调用真实的API
     // const response = await api.scienceApi.getArticles({
     //   page: currentPage.value,
@@ -365,7 +266,8 @@ const loadArticles = async () => {
     }
   } catch (error) {
     console.error('加载科普文章失败:', error)
-    ElMessage.error('加载科普文章失败')
+    errorMessage.value = '加载科普文章失败'
+    showTable.value = false
   } finally {
     loading.value = false
   }
@@ -599,198 +501,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.science-manage {
-  padding: 20px;
-}
-
-.page-header {
-  margin-bottom: 20px;
-}
-
-.page-header h1 {
-  margin: 0 0 5px 0;
-  color: #303133;
-  font-size: 24px;
-}
-
-.page-header p {
-  margin: 0;
-  color: #909399;
-  font-size: 14px;
-}
-
-.loading-container {
-  min-height: 400px;
-}
-
-.manage-content {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.action-card {
-  border-radius: 12px;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-}
-
-.stats-row {
-  margin-bottom: 0;
-}
-
-.stat-card {
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.stat-content {
-  text-align: center;
-  padding: 10px 0;
-}
-
-.stat-number {
-  font-size: 32px;
-  font-weight: bold;
-  color: #303133;
-  margin-bottom: 5px;
-}
-
-.stat-label {
-  font-size: 14px;
-  color: #909399;
-}
-
-.stat-card.published .stat-number {
-  color: #67c23a;
-}
-
-.stat-card.draft .stat-number {
-  color: #909399;
-}
-
-.stat-card.archived .stat-number {
-  color: #f56c6c;
-}
-
-.table-card {
-  border-radius: 12px;
-}
-
-.title-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.title-text {
-  font-weight: 500;
-  color: #303133;
-}
-
-.title-meta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.view-count {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: #909399;
-  font-size: 12px;
-}
-
-.author-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.summary-text {
-  color: #606266;
-  font-size: 14px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.batch-actions {
-  margin-top: 15px;
-  padding: 15px;
-  background: #f5f7fa;
-  border-radius: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.selected-info {
-  color: #606266;
-  font-weight: 500;
-}
-
-.batch-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-.pagination {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.detail-content {
-  max-height: 60vh;
-  overflow-y: auto;
-}
-
-.article-content {
-  padding: 15px;
-  background: #f5f7fa;
-  border-radius: 8px;
-  line-height: 1.8;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .science-manage {
-    padding: 10px;
-  }
-
-  .action-buttons {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .action-buttons .el-button {
-    width: 100%;
-  }
-
-  .stats-row {
-    margin-bottom: 10px;
-  }
-
-  .batch-actions {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .batch-buttons {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .batch-buttons .el-button {
-    width: 100%;
-  }
+/* 适配下拉框与输入框对齐 */
+.el-select {
+  vertical-align: middle;
 }
 </style>

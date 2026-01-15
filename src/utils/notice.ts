@@ -166,6 +166,9 @@ export const fetchNoticeList = async (
       } else {
         console.warn('⚠️ 未预期的数据结构:', response)
         console.warn('⚠️ 可用字段:', response ? Object.keys(response) : 'null')
+        if (response?.success === true) {
+          console.warn('⚠️ 后端返回 success=true 但 data 字段为空或格式不正确')
+        }
         return { items: [], total: 0 }
       }
     }

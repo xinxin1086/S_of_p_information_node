@@ -334,7 +334,7 @@ export const userApi = {
 
   // 获取用户统计数据
   getUserStats(): Promise<ApiResponse<UnknownResponse>> {
-    return request.get('/api/user/user/stats')
+    return request.get('/api/public/user/statistics')
   },
 
   // 获取最近活动

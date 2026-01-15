@@ -10,6 +10,7 @@ import router from './router'
 
 import 'element-plus/dist/index.css'
 import '@/styles/common/global.css'
+import '@/styles/admin/admin_info_edit.css'
 import { tokenManager } from '@/utils/tokenManager'
 
 const app = createApp(App)

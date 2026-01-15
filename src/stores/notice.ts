@@ -54,6 +54,11 @@ export const useNoticeStore = defineStore('notice', () => {
           total = data.total || data.data.length
         }
 
+        // 添加空数据日志，便于调试
+        if (items.length === 0 && total === 0) {
+          console.log('📭 公告列表为空 - 页码:', page, '每页数量:', size)
+        }
+
         publicNotices.value = items
         pagination.value = { page, size, total }
       }
@@ -114,6 +119,11 @@ export const useNoticeStore = defineStore('notice', () => {
         } else if (data?.data && Array.isArray(data.data)) {
           items = data.data
           total = data.total || data.data.length
+        }
+
+        // 添加空数据日志，便于调试
+        if (items.length === 0 && total === 0) {
+          console.log('📭 管理员公告列表为空 - 页码:', page, '每页数量:', size)
         }
 
         adminNotices.value = items

@@ -18,13 +18,12 @@
           v-model="queryParams.user_display"
           placeholder="请输入用户名查询"
           class="info-form-input"
-          style="width: 200px;"
       ></el-input>
       <el-input
           v-model="queryParams.content"
           placeholder="请输入留言内容查询"
           class="info-form-input"
-          style="width: 250px; margin-left: 12px;"
+          style="margin-left: 12px;"
       ></el-input>
       <el-select
           v-model="queryParams.parent_id"
@@ -351,41 +350,8 @@ onMounted(() => {
   color: #303133;
 }
 
-/* 删除按钮样式 */
-.delete-btn {
-  background-color: #f56c6c;
-  color: white;
-  border: 1px solid #f56c6c;
-}
-
-.delete-btn:hover {
-  background-color: #e64242;
-}
-
-/* 批量删除按钮样式 */
-.batch-delete-btn {
-  background-color: #ff4757;
-  color: white;
-  border: 1px solid #ff4757;
-}
-
-.batch-delete-btn:hover:not(:disabled) {
-  background-color: #ff3838;
-}
-
-.batch-delete-btn:disabled {
-  background-color: #c0c4cc;
-  border-color: #c0c4cc;
-  color: #606266;
-  cursor: not-allowed;
-}
-
-/* 表格树形结构样式 */
-.el-table .el-table__row {
-  cursor: default;
-}
-
-.el-table .el-table__row .el-table__cell {
-  border-bottom: 1px solid #ebeef5;
+/* 适配下拉框与输入框对齐 */
+.el-select {
+  vertical-align: middle;
 }
 </style>

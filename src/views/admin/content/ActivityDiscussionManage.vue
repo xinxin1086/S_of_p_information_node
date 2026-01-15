@@ -18,13 +18,12 @@
           v-model="queryParams.user_display"
           placeholder="请输入用户名查询"
           class="info-form-input"
-          style="width: 200px;"
       ></el-input>
       <el-input
           v-model="queryParams.content"
           placeholder="请输入讨论内容查询"
           class="info-form-input"
-          style="width: 250px; margin-left: 12px;"
+          style="margin-left: 12px;"
       ></el-input>
       <button class="info-btn query-btn" @click="handleQuery" style="margin-left: 12px;">查询</button>
       <button class="info-btn reset-btn" @click="handleReset" style="margin-left: 8px;">重置</button>
@@ -97,7 +96,7 @@
 
       <el-table-column label="操作" width="200">
         <template #default="scope">
-          <button class="info-btn comment-btn" @click="handleViewComments(scope.row)" style="margin-right: 4px;">
+          <button class="info-btn edit-btn" @click="handleViewComments(scope.row)" style="margin-right: 4px;">
             查看评论 ({{ scope.row.comment_count || 0 }})
           </button>
           <button class="info-btn delete-btn" @click="handleDelete(scope.row)">删除</button>
@@ -358,47 +357,5 @@ onMounted(() => {
   color: #909399;
   font-size: 12px;
   margin-left: 4px;
-}
-
-/* 查看评论按钮样式 */
-.comment-btn {
-  background-color: #409eff;
-  color: white;
-  border: 1px solid #409eff;
-  font-size: 12px;
-  padding: 4px 8px;
-}
-
-.comment-btn:hover {
-  background-color: #337ecc;
-}
-
-/* 删除按钮样式 */
-.delete-btn {
-  background-color: #f56c6c;
-  color: white;
-  border: 1px solid #f56c6c;
-}
-
-.delete-btn:hover {
-  background-color: #e64242;
-}
-
-/* 批量删除按钮样式 */
-.batch-delete-btn {
-  background-color: #ff4757;
-  color: white;
-  border: 1px solid #ff4757;
-}
-
-.batch-delete-btn:hover:not(:disabled) {
-  background-color: #ff3838;
-}
-
-.batch-delete-btn:disabled {
-  background-color: #c0c4cc;
-  border-color: #c0c4cc;
-  color: #606266;
-  cursor: not-allowed;
 }
 </style>
