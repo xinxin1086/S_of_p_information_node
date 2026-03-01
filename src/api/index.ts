@@ -74,76 +74,6 @@ interface AdminData {
   // 其他管理员字段...
 }
 
-// 论坛相关类型
-interface PostData {
-  title: string
-  content: string
-  category?: string
-  // 其他帖子字段...
-}
-
-interface FloorData {
-  post_id: number
-  content: string
-  // 其他楼层字段...
-}
-
-interface ReplyData {
-  floor_id: number
-  content: string
-  // 其他回复字段...
-}
-
-interface LikeData {
-  target_type: 'post' | 'floor' | 'reply'
-  target_id: number
-}
-
-interface ReportData {
-  target_type: 'post' | 'floor' | 'reply'
-  target_id: number
-  reason: string
-  description?: string
-}
-
-// 批量审核数据类型
-interface BatchReviewData {
-  content_ids: number[]
-  action: 'approve' | 'reject'
-  reason?: string
-}
-
-// 用户管理操作数据类型
-interface UserOperationData {
-  action: 'ban' | 'unban' | 'reset_password'
-  reason?: string
-  new_password?: string
-}
-
-// 举报处理数据类型
-interface ReportHandleData {
-  report_id: number
-  action: 'approve' | 'reject'
-  punishment_type?: 'warning' | 'ban'
-  reason?: string
-}
-
-// 批量帖子操作数据类型
-interface BatchPostOperationData {
-  post_ids: number[]
-  action: 'delete' | 'hide' | 'pin' | 'unpin'
-  reason?: string
-}
-
-// 公告相关类型
-interface NoticeData {
-  title: string
-  content: string
-  type: 'normal' | 'urgent' | 'system'
-  status: 'draft' | 'published'
-  is_pinned: boolean
-  // 其他公告字段...
-}
 
 // 科普文章API接口
 export const scienceApi = {
@@ -533,7 +463,13 @@ export const userApi = {
   }
 }
 
-// 管理员API接口（重构版 - 使用规范的RESTful API）
+interface UserOperationData {
+}
+
+interface BatchReviewData {
+}
+
+// 管理员API接口
 export const adminApi = {
   // ========== 管理员认证相关 ==========
 
@@ -670,7 +606,7 @@ export const adminApi = {
       });
     },
 
-    // 获取活动列表  替换为管理员专用接口：GET /api/activities/admin/activities
+    // 获取活动列表  ：GET /api/activities/admin/activities
     list(params: QueryParams = {}): Promise<ApiResponse<{
       total: number;
       page: number;
@@ -680,7 +616,6 @@ export const adminApi = {
       return request.get('/api/activities/admin/activities', { params });
     },
 
-    // ========== 新增：后端已实现的管理员专属接口（前端必加，完整覆盖业务） ==========
     // 获取单活动详情  匹配后端：GET /api/activities/admin/activities/{id}
     detail(id: number): Promise<ApiResponse<Activity>> {
       return request.get(`/api/activities/admin/activities/${id}`);
@@ -808,227 +743,6 @@ export const authApi = {
   }
 }
 
-// 论坛API接口 (已废弃，请使用 extended.ts 中的 forumApi)
-export const forumApiDeprecated = {
-  // ========== 帖子管理 ==========
-
-  // 获取帖子列表
-  getPostList(params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get('/api/forum/post', { params })
-  },
-
-  // 获取帖子详情
-  getPostDetail(postId: number): Promise<ApiResponse<UnknownResponse>> {
-    return request.get(`/api/forum/post/${postId}`)
-  },
-
-  // 创建帖子
-  createPost(postData: PostData): Promise<ApiResponse<UnknownResponse>> {
-    return request.post('/api/forum/post', postData)
-  },
-
-  // 更新帖子
-  updatePost(postId: number, postData: Partial<PostData>): Promise<ApiResponse<UnknownResponse>> {
-    return request.put(`/api/forum/post/${postId}`, postData)
-  },
-
-  // 删除帖子
-  deletePost(postId: number): Promise<ApiResponse<UnknownResponse>> {
-    return request.delete(`/api/forum/post/${postId}`)
-  },
-
-  // 获取热门帖子
-  getHotPosts(params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get('/api/forum/post/hot', { params })
-  },
-
-  // 获取帖子分类
-  getCategories(): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get('/api/forum/post/categories')
-  },
-
-  // 搜索帖子
-  searchPosts(params: QueryParams): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get('/api/forum/post/search', { params })
-  },
-
-  // ========== 楼层管理 ==========
-
-  // 获取帖子楼层列表
-  getFloorList(postId: number, params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get(`/api/forum/floor/post/${postId}`, { params })
-  },
-
-  // 创建楼层回复
-  createFloor(floorData: FloorData): Promise<ApiResponse<UnknownResponse>> {
-    return request.post('/api/forum/floor', floorData)
-  },
-
-  // ========== 回复管理 ==========
-
-  // 获取楼层回复列表
-  getReplyList(floorId: number, params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get(`/api/forum/reply/floor/${floorId}`, { params })
-  },
-
-  // 创建回复
-  createReply(replyData: ReplyData): Promise<ApiResponse<UnknownResponse>> {
-    return request.post('/api/forum/reply', replyData)
-  },
-
-  // ========== 点赞功能 ==========
-
-  // 点赞/取消点赞
-  toggleLike(likeData: LikeData): Promise<ApiResponse<UnknownResponse>> {
-    return request.post('/api/forum/like', likeData)
-  },
-
-  // 获取点赞状态
-  getLikeStatus(params: QueryParams): Promise<ApiResponse<UnknownResponse>> {
-    return request.get('/api/forum/like/status', { params })
-  },
-
-  // ========== 访问记录 ==========
-
-  // 记录帖子访问
-  recordVisit(postId: number): Promise<ApiResponse<UnknownResponse>> {
-    return request.post('/api/forum/visit', { post_id: postId })
-  },
-
-  // ========== 统计信息 ==========
-
-  // 获取论坛统计信息
-  getStatistics(): Promise<ApiResponse<UnknownResponse>> {
-    return request.get('/api/forum/statistics')
-  },
-
-  // 获取用户论坛统计
-  getUserStats(userId?: number): Promise<ApiResponse<UnknownResponse>> {
-    const url = userId ? `/api/forum/user/stats/${userId}` : '/api/forum/user/stats'
-    return request.get(url)
-  },
-
-  // ========== 通知系统 ==========
-
-  // 获取论坛通知列表
-  getNotifications(params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get('/api/forum/notifications', { params })
-  },
-
-  // 标记通知为已读
-  markNotificationAsRead(notificationId: number): Promise<ApiResponse<UnknownResponse>> {
-    return request.post(`/api/forum/notifications/${notificationId}/read`, {})
-  },
-
-  // 批量标记通知为已读
-  markAllNotificationsAsRead(): Promise<ApiResponse<UnknownResponse>> {
-    return request.post('/api/forum/notifications/mark-all-read', {})
-  },
-
-  // ========== 举报系统 ==========
-
-  // 创建举报
-  createReport(reportData: ReportData): Promise<ApiResponse<UnknownResponse>> {
-    return request.post('/api/forum/report', reportData)
-  }
-}
-
-// 管理员论坛接口
-// 管理员论坛接口 (已废弃，请使用 extended.ts 中的 forumAdminApi)
-export const forumAdminApiDeprecated = {
-  // 处理举报
-  handleReport(reportData: ReportHandleData): Promise<ApiResponse<UnknownResponse>> {
-    return request.post('/api/forum/admin/report/handle', reportData)
-  },
-
-  // 批量操作帖子
-  batchOperatePosts(operationData: BatchPostOperationData): Promise<ApiResponse<UnknownResponse>> {
-    return request.post('/api/forum/admin/posts/batch', operationData)
-  }
-}
-
-// 公告API接口
-export const noticeApi = {
-  // ========== 公开接口（无需认证） ==========
-
-  // 获取公告列表（专用公开接口）
-  getPublicNotices(params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get('/api/public/notice/list', { params })
-  },
-
-  // 获取公告详情（专用公开接口）
-  getPublicNoticeDetail(noticeId: number): Promise<ApiResponse<UnknownResponse>> {
-    return request.get(`/api/public/notice/detail/${noticeId}`)
-  },
-
-  // 获取最新公告（公开接口）
-  getLatestNotices(params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get('/api/public/notice/list', { params: { ...params, size: 5 } })
-  },
-
-  // 获取置顶公告（公开接口）
-  get pinnedNotices(): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get('/api/public/notice/list', { params: { is_pinned: true } })
-  },
-
-  // 获取公告类型（公开接口）
-  getNoticeTypes(): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get('/api/public/notice/types')
-  },
-
-  // 获取公告统计（公开接口）
-  getNoticeStatistics(): Promise<ApiResponse<UnknownResponse>> {
-    return request.get('/api/public/notice/statistics')
-  },
-
-  // ========== 管理员接口（需要认证） ==========
-  // 蓝图路由前缀: /api/notice/admin
-
-  // 获取管理员公告列表（GET/POST /api/notice/admin/list）
-  getAdminNotices(params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
-    return request.get('/api/notice/admin/list', { params })
-  },
-
-  // 获取管理员公告详情
-  getAdminNoticeDetail(noticeId: number): Promise<ApiResponse<UnknownResponse>> {
-    return request.get(`/api/notice/admin/detail/${noticeId}`)
-  },
-
-  // 创建公告（POST /api/notice/admin/create）
-  createNotice(noticeData: NoticeData): Promise<ApiResponse<NoticeData>> {
-    return request.post('/api/notice/admin/create', noticeData)
-  },
-
-  // 更新公告（PUT /api/notice/admin/update/<notice_id>）
-  updateNotice(noticeId: number, noticeData: Partial<NoticeData>): Promise<ApiResponse<NoticeData>> {
-    return request.put(`/api/notice/admin/update/${noticeId}`, noticeData)
-  },
-
-  // 删除公告（DELETE /api/notice/admin/delete/<notice_id>）
-  deleteNotice(noticeId: number): Promise<ApiResponse<UnknownResponse>> {
-    return request.delete(`/api/notice/admin/delete/${noticeId}`)
-  },
-
-  // 置顶切换（POST /api/notice/admin/top/<notice_id>）
-  togglePinNotice(noticeId: number): Promise<ApiResponse<UnknownResponse>> {
-    return request.post(`/api/notice/admin/top/${noticeId}`, {})
-  },
-
-  // 置顶公告（兼容旧代码）
-  pinNotice(noticeId: number): Promise<ApiResponse<UnknownResponse>> {
-    return request.post(`/api/notice/admin/top/${noticeId}`, {})
-  },
-
-  // 取消置顶公告（兼容旧代码，复用toggle接口）
-  unpinNotice(noticeId: number): Promise<ApiResponse<UnknownResponse>> {
-    return request.post(`/api/notice/admin/top/${noticeId}`, {})
-  },
-
-  // 获取公告统计信息（GET /api/notice/admin/statistics）
-  getNoticeStats(): Promise<ApiResponse<UnknownResponse>> {
-    return request.get('/api/notice/admin/statistics')
-  }
-}
 
 export default {
   scienceApi,
@@ -1036,7 +750,4 @@ export default {
   adminApi,
   userApi,
   authApi,
-  forumApi: forumApiDeprecated, // 使用重命名后的版本
-  forumAdminApi: forumAdminApiDeprecated, // 使用重命名后的版本
-  noticeApi
 }
