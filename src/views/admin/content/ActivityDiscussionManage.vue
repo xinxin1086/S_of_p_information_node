@@ -120,7 +120,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
-import { adminApi } from '@/api/index.js';
+import { adminApi } from '@/api/unified';
 import { formatErrorMessage } from '@/utils/apiHelper.js';
 
 const router = useRouter();
@@ -308,7 +308,7 @@ const handleBatchDelete = async () => {
 
 // 返回活动管理
 const goBack = () => {
-  router.push('/admin/activity-manage');
+  router.push('/admin/content/activity');
 };
 
 // 页面挂载时查询数据

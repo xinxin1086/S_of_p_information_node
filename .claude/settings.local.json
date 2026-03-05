@@ -1,12 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run lint:check:*)",
-      "Bash(npm run lint)",
-      "Bash(npm run build:*)",
-      "Bash(npx tsc --noEmit)"
-    ],
-    "deny": [],
-    "ask": []
+      "Bash(curl:*)",
+      "Bash(chmod:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(done)",
+      "Bash(npx eslint:*)",
+      "Bash(node:*)",
+      "Bash(npx vue-tsc:*)"
+    ]
   }
 }

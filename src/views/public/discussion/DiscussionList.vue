@@ -26,20 +26,6 @@
 
       <div class="toolbar-right">
         <el-select
-          v-model="selectedCategory"
-          placeholder="选择分类"
-          clearable
-          @change="filterPosts"
-        >
-          <el-option
-            v-for="category in categories"
-            :key="category.value"
-            :label="category.label"
-            :value="category.value"
-          />
-        </el-select>
-
-        <el-select
           v-model="sortBy"
           placeholder="排序方式"
           @change="sortPosts"
@@ -189,13 +175,14 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores'
+import { mockForumPosts, mockForumFloors } from '@/mock/forumMockData'
+import { addForumPost, getForumPosts } from '@/mock/forumMockStorage'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
 const loading = ref(false)
 const posts = ref([])
-const selectedCategory = ref('')
 const sortBy = ref('latest_reply')
 const currentPage = ref(1)
 const pageSize = ref(20)
@@ -214,36 +201,37 @@ const newPost = ref({
 const postRules = {
   title: [
     { required: true, message: '请输入帖子标题', trigger: 'blur' },
-    { min: 5, max: 100, message: '标题长度为 5 到 100 个字符', trigger: 'blur' }
+    {
+      min: 5,
+      max: 100,
+      message: '标题长度为 5 到 100 个字符',
+      trigger: 'blur'
+    }
   ],
   category: [
     { required: true, message: '请选择分类', trigger: 'change' }
   ],
   content: [
     { required: true, message: '请输入帖子内容', trigger: 'blur' },
-    { min: 10, max: 2000, message: '内容长度为 10 到 2000 个字符', trigger: 'blur' }
+    {
+      min: 10,
+      max: 2000,
+      message: '内容长度为 10 到 2000 个字符',
+      trigger: 'blur'
+    }
   ]
 }
 
+// 论坛分类配置（精简为4个主要分类）
 const categories = [
-  { label: '经验分享', value: 'experience' },
-  { label: '装备讨论', value: 'equipment' },
-  { label: '钓技交流', value: 'technique' },
-  { label: '饵料配方', value: 'bait' },
-  { label: '钓点推荐', value: 'spot' },
-  { label: '渔获展示', value: 'catch' },
-  { label: '闲聊灌水', value: 'chat' },
-  { label: '其他', value: 'other' }
+  { label: '经验分享', value: '经验分享' },
+  { label: '求助问答', value: '求助问答' },
+  { label: '活动交流', value: '活动交流' },
+  { label: '其他讨论', value: '其他讨论' }
 ]
 
 const filteredPosts = computed(() => {
-  let result = [...posts.value]
-
-  if (selectedCategory.value) {
-    result = result.filter(post => post.category === selectedCategory.value)
-  }
-
-  return sortPostList(result)
+  return sortPostList(posts.value)
 })
 
 const sortPostList = (postList) => {
@@ -261,124 +249,78 @@ const sortPostList = (postList) => {
   })
 }
 
-const generateMockPosts = () => {
-  const mockPosts = [
-    {
-      id: 1,
-      title: '分享一个超有效的鲫鱼饵料配方',
-      content: '最近研究出一个特别适合钓鲫鱼的饵料配方，主要原料包括玉米面、豆粕、鱼粉等。经过多次试验，效果非常好...',
-      category: 'bait',
-      author: {
-        id: 1,
-        username: '户外爱好者',
-        avatar: ''
-      },
-      created_at: '2024-01-15T10:30:00',
-      reply_count: 23,
-      view_count: 156,
-      like_count: 45,
-      last_reply: {
-        author: '新手小白',
-        time: '2024-01-16T14:20:00'
-      }
-    },
-    {
-      id: 2,
-      title: '新手入门：如何选择第一套渔具',
-      content: '很多朋友刚开始学钓鱼，不知道该买什么样的渔具。今天给大家整理一下新手入门的渔具选择建议...',
-      category: 'equipment',
-      author: {
-        id: 2,
-        username: '老司机',
-        avatar: ''
-      },
-      created_at: '2024-01-14T08:45:00',
-      reply_count: 18,
-      view_count: 234,
-      like_count: 32,
-      last_reply: {
-        author: '菜鸟求带',
-        time: '2024-01-15T16:30:00'
-      }
-    },
-    {
-      id: 3,
-      title: '野钓技巧：判断鱼情的几个要点',
-      content: '今天和大家分享一下野钓时如何判断鱼情，包括观察水色、天气变化、风向等对钓鱼的影响...',
-      category: 'technique',
-      author: {
-        id: 3,
-        username: '野钓达人',
-        avatar: ''
-      },
-      created_at: '2024-01-13T15:20:00',
-      reply_count: 35,
-      view_count: 289,
-      like_count: 67,
-      last_reply: {
-        author: '学习中的鱼友',
-        time: '2024-01-16T09:15:00'
-      }
-    },
-    {
-      id: 4,
-      title: '推荐几个周末去的好钓点',
-      content: '整理了几个附近适合周末休闲垂钓的地方，水质不错，鱼情也可以，有水库、河流等不同类型...',
-      category: 'spot',
-      author: {
-        id: 4,
-        username: '探路者',
-        avatar: ''
-      },
-      created_at: '2024-01-12T11:10:00',
-      reply_count: 27,
-      view_count: 198,
-      like_count: 53,
-      last_reply: {
-        author: '城市户外达人',
-        time: '2024-01-15T20:45:00'
-      }
-    },
-    {
-      id: 5,
-      title: '今天收获不错，晒晒渔获',
-      content: '今天去了东郊水库，天气很好，鱼情也不错。早上6点到的，一直钓到中午12点，收获满满...',
-      category: 'catch',
-      author: {
-        id: 5,
-        username: '幸运儿',
-        avatar: ''
-      },
-      created_at: '2024-01-11T07:30:00',
-      reply_count: 42,
-      view_count: 456,
-      like_count: 89,
-      last_reply: {
-        author: '羡慕中',
-        time: '2024-01-16T12:00:00'
-      }
-    }
-  ]
+/**
+ * 从论坛 mock 数据加载帖子
+ * 将 mockForumPosts 转换为页面所需的格式
+ * 合并静态数据和 localStorage 中的动态数据
+ */
+const loadForumPosts = () => {
+  // 获取 localStorage 中的动态帖子
+  const dynamicPosts = getForumPosts()
 
-  posts.value = mockPosts
-  total.value = mockPosts.length
+  // 合并静态帖子和动态帖子（去重）
+  const allPosts = [...mockForumPosts]
+  dynamicPosts.forEach(post => {
+    if (!allPosts.some(p => p.id === post.id)) {
+      allPosts.push(post)
+    }
+  })
+
+  // 获取所有已发布的帖子
+  const publishedPosts = allPosts.filter(post => post.status === 'published' && !post.is_deleted)
+
+  // 为每个帖子添加最后回复信息
+  const postsWithLastReply = publishedPosts.map(post => {
+    // 查找该帖子的所有楼层
+    const postFloors = mockForumFloors.filter(floor => floor.post_id === post.id)
+
+    // 找到最新的楼层作为最后回复
+    const latestFloor = postFloors.length > 0
+      ? postFloors.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
+      : null
+
+    return {
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      category: post.category, // 直接使用 mock 数据中的分类（已经是精简后的4个分类）
+      author: {
+        id: post.author_user_id,
+        username: post.author_display,
+        avatar: ''
+      },
+      created_at: post.created_at,
+      reply_count: post.comment_count,
+      view_count: post.view_count,
+      like_count: post.like_count,
+      last_reply: latestFloor ? {
+        author: latestFloor.author_display,
+        time: latestFloor.created_at
+      } : null
+    }
+  })
+
+  // 按创建时间倒序排序（新帖子在前）
+  postsWithLastReply.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+
+  posts.value = postsWithLastReply
+  total.value = postsWithLastReply.length
+
+  console.log('[DiscussionList] 加载论坛帖子，静态:', mockForumPosts.length, '动态:', dynamicPosts.length, '总计:', total.value)
 }
 
 const fetchPosts = async () => {
   loading.value = true
   try {
+    // 模拟网络延迟
     await new Promise(resolve => setTimeout(resolve, 300))
-    generateMockPosts()
+    loadForumPosts()
   } catch (error) {
     console.error('获取讨论帖失败:', error)
     ElMessage.error('获取讨论帖失败')
   } finally {
     loading.value = false
   }
-}
-
-const filterPosts = () => {
-  currentPage.value = 1
 }
 
 const sortPosts = () => {
@@ -399,39 +341,79 @@ const handleLoginPrompt = () => {
 }
 
 const submitPost = async () => {
-  if (!newPostForm.value) return
+  console.log('[DiscussionList] submitPost 被调用，newPostForm.value:', newPostForm.value)
+
+  if (!newPostForm.value) {
+    console.error('[DiscussionList] 表单引用不存在，newPostForm:', newPostForm)
+    ElMessage.error('表单未正确加载，请刷新页面重试')
+    return
+  }
 
   try {
-    await newPostForm.value.validate()
+    // 验证表单
+    console.log('[DiscussionList] 开始验证表单，当前数据:', newPost.value)
+    const validationResult = await newPostForm.value.validate()
+    console.log('[DiscussionList] 表单验证通过，结果:', validationResult)
+
     submitting.value = true
 
+    // 模拟网络延迟
     await new Promise(resolve => setTimeout(resolve, 1000))
 
-    const post = {
+    // 创建新帖子对象
+    const newPostData = {
       id: Date.now(),
       title: newPost.value.title,
       content: newPost.value.content,
       category: newPost.value.category,
-      author: {
-        id: authStore.user?.id || 999,
-        username: authStore.user?.username || '匿名用户',
-        avatar: authStore.user?.avatar || ''
-      },
-      created_at: new Date().toISOString(),
-      reply_count: 0,
       view_count: 0,
-      like_count: 0
+      like_count: 0,
+      comment_count: 0,
+      status: 'published',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      author_user_id: authStore.user?.id || 999,
+      author_display: authStore.user?.username || '匿名用户',
+      is_deleted: false
     }
 
-    posts.value.unshift(post)
+    // 保存到 localStorage
+    addForumPost(newPostData)
+    console.log('[DiscussionList] 新帖子已保存到 localStorage:', newPostData)
+
+    // 添加到帖子列表开头
+    posts.value.unshift(newPostData)
     total.value++
+
+    console.log('[DiscussionList] 新帖子已发布，当前帖子总数:', total.value)
 
     ElMessage.success('发帖成功！')
     showNewPostDialog.value = false
     resetForm()
   } catch (error) {
-    console.error('发帖失败:', error)
-    ElMessage.error('发帖失败，请重试')
+    // 表单验证失败时，Element Plus 会拒绝 Promise 并返回错误对象
+    // 格式类似: { title: ['错误信息'], content: ['错误信息'] }
+    console.error('[DiscussionList] 表单验证/发帖失败，错误详情:', error)
+    console.error('[DiscussionList] 错误类型:', typeof error)
+    console.error('[DiscussionList] 错误键:', error ? Object.keys(error) : 'error is null/undefined')
+
+    if (error && typeof error === 'object') {
+      // 提取第一个错误信息显示给用户
+      const firstField = Object.keys(error)[0]
+      console.log('[DiscussionList] 第一个错误字段:', firstField)
+      const firstError = error[firstField]
+      console.log('[DiscussionList] 第一个错误值:', firstError)
+
+      if (Array.isArray(firstError) && firstError.length > 0) {
+        ElMessage.warning(firstError[0])
+      } else if (typeof firstError === 'string') {
+        ElMessage.warning(firstError)
+      } else {
+        ElMessage.warning('请检查表单内容，确保所有必填项都已正确填写')
+      }
+    } else {
+      ElMessage.error('发帖失败，请重试')
+    }
   } finally {
     submitting.value = false
   }
@@ -443,13 +425,17 @@ const handleCloseDialog = () => {
 }
 
 const resetForm = () => {
-  newPost.value = {
-    title: '',
-    category: '',
-    content: ''
-  }
   if (newPostForm.value) {
-    newPostForm.value.clearValidate()
+    // 使用 resetFields() 重置表单，这会将字段值重置为初始值，并清除验证状态
+    // 这样可以避免 clearValidate() 触发的验证警告
+    newPostForm.value.resetFields()
+  } else {
+    // 如果表单引用不存在，直接清空数据
+    newPost.value = {
+      title: '',
+      category: '',
+      content: ''
+    }
   }
 }
 
@@ -459,15 +445,12 @@ const getCategoryLabel = (category) => {
 }
 
 const getCategoryTagType = (category) => {
+  // 根据论坛分类返回对应的标签类型（仅4个分类）
   const typeMap = {
-    experience: 'success',
-    equipment: 'primary',
-    technique: 'warning',
-    bait: 'danger',
-    spot: 'info',
-    catch: 'success',
-    chat: '',
-    other: ''
+    '经验分享': 'success',
+    '求助问答': 'warning',
+    '活动交流': 'primary',
+    '其他讨论': 'info'
   }
   return typeMap[category] || ''
 }

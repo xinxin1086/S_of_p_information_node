@@ -67,11 +67,11 @@
           <el-card class="stat-card">
             <div class="stat-content">
               <div class="stat-icon">
-                <el-icon size="32" color="#E6A23C"><Star /></el-icon>
+                <el-icon size="32" color="#E6A23C"><Select /></el-icon>
               </div>
               <div class="stat-info">
-                <h3>{{ userStats.favorites || 0 }}</h3>
-                <p>收藏内容</p>
+                <h3>{{ userStats.scienceLikes || 0 }}</h3>
+                <p>科普点赞</p>
               </div>
             </div>
           </el-card>
@@ -80,11 +80,11 @@
           <el-card class="stat-card">
             <div class="stat-content">
               <div class="stat-icon">
-                <el-icon size="32" color="#F56C6C"><Trophy /></el-icon>
+                <el-icon size="32" color="#F56C6C"><View /></el-icon>
               </div>
               <div class="stat-info">
-                <h3>{{ userStats.points || 0 }}</h3>
-                <p>积分等级</p>
+                <h3>{{ userStats.scienceViews || 0 }}</h3>
+                <p>科普浏览</p>
               </div>
             </div>
           </el-card>
@@ -154,17 +154,19 @@ import {
   Setting,
   Document,
   ChatLineRound,
-  Star,
-  Trophy
+  Select,
+  View
 } from '@element-plus/icons-vue'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 
-import api from '@/api'
+import api from '@/api/unified'
 import { useAuthStore, usePermissions } from '@/stores'
 
 // Store
 const authStore = useAuthStore()
 const { isAdmin } = usePermissions()
+const route = useRoute()
 
 // 计算属性
 const user = computed(() => authStore.user)
@@ -173,8 +175,8 @@ const user = computed(() => authStore.user)
 const userStats = ref({
   activities: 0,
   comments: 0,
-  favorites: 0,
-  points: 0
+  scienceLikes: 0,
+  scienceViews: 0
 })
 
 // 快捷功能入口
@@ -249,17 +251,133 @@ const getActivityIcon = (type) => {
 
 const fetchUserStats = async () => {
   try {
-    const response = await api.userApi.getUserStats()
-    userStats.value = response.data
+    // 动态导入以支持 Mock 模式
+    const { shouldUseMock, userApi } = await import('@/api/unified')
+    const isMockMode = shouldUseMock()
+
+    console.log('[DEBUG Dashboard] fetchUserStats 开始执行，isMockMode:', isMockMode, '当前用户ID:', user.value?.id)
+
+    if (isMockMode) {
+      console.log('[DEBUG Dashboard] 进入 Mock 模式分支')
+
+      // Mock 模式：从 Mock 数据统计函数获取
+      const { getUserIndividualStats } = await import('@/mock/userMockData')
+      const currentUserId = user.value?.id
+
+      console.log('[DEBUG Dashboard] 准备调用 getUserIndividualStats，currentUserId:', currentUserId, 'type:', typeof currentUserId)
+
+      // 获取科普文章静态 mock 数据
+      const { mockScienceArticleLikes: staticLikes, mockScienceArticleVisits: staticVisits } = await import('@/mock/scienceMockData')
+      // 获取科普文章 localStorage 动态数据
+      const { getScienceArticleLikes, getScienceArticleVisits } = await import('@/mock/scienceMockStorage')
+
+      if (currentUserId) {
+        // getUserIndividualStats 现在是异步函数
+        const stats = await getUserIndividualStats(currentUserId)
+
+        console.log('[DEBUG Dashboard] getUserIndividualStats 返回:', stats)
+
+        // 统计当前用户的科普文章点赞数和浏览数
+        // 确保 currentUserId 是 number 类型进行比较
+        const userIdNum = typeof currentUserId === 'number' ? currentUserId : parseInt(currentUserId, 10)
+
+        // 从 localStorage 读取动态数据
+        const dynamicLikes = getScienceArticleLikes()
+        const dynamicVisits = getScienceArticleVisits()
+
+        // 合并静态和动态数据（去重）
+        const allLikes = [...staticLikes]
+        dynamicLikes.forEach(like => {
+          if (!allLikes.some(l => l.id === like.id)) {
+            allLikes.push(like)
+          }
+        })
+
+        const allVisits = [...staticVisits]
+        dynamicVisits.forEach(visit => {
+          if (!allVisits.some(v => v.id === visit.id)) {
+            allVisits.push(visit)
+          }
+        })
+
+        const scienceLikes = allLikes.filter(like => like.user_id === userIdNum).length
+        const scienceViews = allVisits.filter(visit => visit.user_id === userIdNum).length
+
+        console.log('[DEBUG Dashboard] 当前用户 ID:', userIdNum, '活动数:', stats.activity_count, '评论数:', stats.comment_count, '科普点赞:', scienceLikes, '科普浏览:', scienceViews)
+
+        userStats.value = {
+          activities: stats.activity_count,
+          comments: stats.comment_count,
+          scienceLikes,
+          scienceViews
+        }
+
+        console.log('[DEBUG Dashboard] 最终 userStats.value:', userStats.value)
+      } else {
+        // 默认值
+        userStats.value = {
+          activities: 0,
+          comments: 0,
+          scienceLikes: 0,
+          scienceViews: 0
+        }
+      }
+    } else {
+      // 真实 API 模式：调用后端接口
+      const [activityStatsResult, userStatsResult] = await Promise.allSettled([
+        userApi.getUserActivityStats?.(),
+        userApi.getUserStats?.()
+      ])
+
+      // 处理活动统计
+      let activityCount = 0
+      if (activityStatsResult.status === 'fulfilled' && activityStatsResult.value?.success) {
+        const data = activityStatsResult.value.data
+        activityCount = data?.activity_count || data?.count || data?.total || 0
+      }
+
+      // 处理用户统计
+      let commentCount = 0
+      let scienceLikes = 0
+      let scienceViews = 0
+      if (userStatsResult.status === 'fulfilled' && userStatsResult.value?.success) {
+        const data = userStatsResult.value.data
+        commentCount = data?.comment_count || data?.comments || 0
+        scienceLikes = data?.science_like_count || data?.scienceLikes || 0
+        scienceViews = data?.science_view_count || data?.scienceViews || 0
+      }
+
+      userStats.value = {
+        activities: activityCount,
+        comments: commentCount,
+        scienceLikes,
+        scienceViews
+      }
+    }
   } catch (error) {
     console.error('获取用户统计失败:', error)
+    // 出错时设置为默认值
+    userStats.value = {
+      activities: 0,
+      comments: 0,
+      scienceLikes: 0,
+      scienceViews: 0
+    }
   }
 }
 
 const fetchRecentActivities = async () => {
   try {
-    const response = await api.userApi.getRecentActivities()
-    recentActivities.value = response.data
+    // 使用 activityAdapter 获取最近活动
+    const response = await api.activity.getPublicActivities({ page: 1, size: 5 })
+    // 提取活动数据并转换为最近活动格式
+    const items = response.data?.items || response.data || []
+    recentActivities.value = items.map(activity => ({
+      id: activity.id,
+      title: activity.title,
+      type: activity.type || 'activity',
+      time: activity.start_time || activity.created_at
+    }))
   } catch (error) {
     console.error('获取最近活动失败:', error)
     recentActivities.value = []
@@ -271,6 +389,43 @@ onMounted(() => {
     fetchUserStats()
     fetchRecentActivities()
   }
+
+  // 监听 localStorage 变化（当在其他标签页发布新回复时自动刷新统计）
+  window.addEventListener('storage', handleStorageChange)
+})
+
+// 当从其他页面返回 Dashboard 时，刷新统计数据
+// 这样用户在发布新回复后返回 Dashboard，就能看到更新后的统计
+watch(
+  () => route.path,
+  (newPath) => {
+    if (newPath === '/user/dashboard' && authStore.isAuthenticated) {
+      fetchUserStats()
+      fetchRecentActivities()
+    }
+  }
+)
+
+// 处理 localStorage 变化事件（跨标签页同步）
+const handleStorageChange = (event) => {
+  // 当论坛楼层数据、回复数据、科普点赞或浏览数据发生变化时，刷新统计
+  const watchedKeys = [
+    'mock_data_forum_floors',
+    'mock_data_forum_replies',
+    'mock_data_science_article_likes',
+    'mock_data_science_article_visits'
+  ]
+  if (watchedKeys.includes(event.key)) {
+    console.log('[Dashboard] 检测到数据变化:', event.key, '刷新统计数据')
+    if (authStore.isAuthenticated) {
+      fetchUserStats()
+    }
+  }
+}
+
+// 组件卸载时移除事件监听器
+onUnmounted(() => {
+  window.removeEventListener('storage', handleStorageChange)
 })
 </script>
 

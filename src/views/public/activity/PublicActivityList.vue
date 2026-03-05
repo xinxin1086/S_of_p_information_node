@@ -7,10 +7,10 @@
 
     <div class="filter-bar">
       <el-radio-group v-model="statusFilter" @change="filterActivities">
-        <el-radio-button label="all">{{ STATUS_FILTER_LABELS.all }}</el-radio-button>
-        <el-radio-button label="upcoming">{{ STATUS_FILTER_LABELS.upcoming }}</el-radio-button>
-        <el-radio-button label="ongoing">{{ STATUS_FILTER_LABELS.ongoing }}</el-radio-button>
-        <el-radio-button label="completed">{{ STATUS_FILTER_LABELS.completed }}</el-radio-button>
+        <el-radio-button value="all">{{ STATUS_FILTER_LABELS.all }}</el-radio-button>
+        <el-radio-button value="upcoming">{{ STATUS_FILTER_LABELS.upcoming }}</el-radio-button>
+        <el-radio-button value="ongoing">{{ STATUS_FILTER_LABELS.ongoing }}</el-radio-button>
+        <el-radio-button value="completed">{{ STATUS_FILTER_LABELS.completed }}</el-radio-button>
       </el-radio-group>
     </div>
 
@@ -69,11 +69,14 @@
               </el-tag>
               <el-progress
                 v-if="activity.maxParticipants > 0"
-                :percentage="(activity.participants / activity.maxParticipants) * 100"
+                :percentage="Math.round((activity.participants / activity.maxParticipants) * 100)"
                 :stroke-width="6"
-                text-inside
+                :show-text="false"
                 class="progress-bar"
               />
+              <span class="progress-text">
+                {{ activity.participants }}/{{ activity.maxParticipants }}
+              </span>
             </div>
           </div>
         </el-card>
@@ -358,7 +361,19 @@ onMounted(() => {
 }
 
 .progress-bar {
-  width: 120px;
+  flex: 1;
+  max-width: 120px;
+}
+
+.progress-text {
+  font-size: 12px;
+  color: #909399;
+  white-space: nowrap;
+}
+
+/* 隐藏 el-progress 组件内部的百分比文字 */
+.activity-footer :deep(.el-progress__text) {
+  display: none !important;
 }
 
 @media (max-width: 768px) {

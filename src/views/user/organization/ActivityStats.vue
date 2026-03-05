@@ -83,9 +83,9 @@
             <div class="card-header">
               <span>活动参与趋势</span>
               <el-radio-group v-model="trendPeriod" size="small" @change="loadTrendData">
-                <el-radio-button label="week">周</el-radio-button>
-                <el-radio-button label="month">月</el-radio-button>
-                <el-radio-button label="year">年</el-radio-button>
+                <el-radio-button value="week">周</el-radio-button>
+                <el-radio-button value="month">月</el-radio-button>
+                <el-radio-button value="year">年</el-radio-button>
               </el-radio-group>
             </div>
           </template>
@@ -196,7 +196,7 @@ import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 
-import api from '@/api'
+import api from '@/api/unified'
 
 defineOptions({ name: 'ActivityStats' })
 

@@ -30,7 +30,7 @@ export interface ApiCallOptions<T = unknown> {
   /** 自定义错误处理函数 */
   onError?: (_error: unknown) => void
   /** 自定义成功处理函数 */
-  onSuccess?: (_data: T) => void
+  onSuccess?: (_data: T, _args: unknown[]) => void
   /** 是否需要认证（默认 true，会自动添加 Token） */
   requireAuth?: boolean
   /** 是否在错误时停止（用于批量调用，默认 true） */
@@ -121,7 +121,7 @@ export function useApiCall<T extends unknown = unknown>(
       if (result.success) {
         data.value = result.data || null
         if (result.data !== undefined && result.data !== null) {
-          onSuccess?.(result.data)
+          onSuccess?.(result.data, args)
         }
         return result
       } else {

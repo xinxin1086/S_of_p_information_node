@@ -4,7 +4,7 @@
     <div class="editor-header">
       <div class="header-left">
         <el-button
-          type="text"
+          type="link"
           @click="goBack"
           class="back-button"
           title="返回公告列表"
@@ -23,10 +23,6 @@
         <el-button @click="handlePreview" :disabled="loading">
           <el-icon><View /></el-icon>
           预览
-        </el-button>
-        <el-button @click="handleSaveDraft" :disabled="loading || !isFormValid">
-          <el-icon><Document /></el-icon>
-          保存草稿
         </el-button>
         <el-button
           type="primary"
@@ -255,7 +251,6 @@
 import {
   ArrowLeft,
   View,
-  Document,
   Promotion,
   Plus
 } from '@element-plus/icons-vue'
@@ -405,6 +400,14 @@ const loadNoticeDetail = async (id) => {
           uid: attachment.id
         }))
       }
+
+      // 在数据加载完成后，手动设置编辑器内容
+      await nextTick()
+      if (contentEditor.value) {
+        const content = noticeData.value.release_notice || ''
+        contentEditor.value.innerHTML = content
+        console.log('✅ 编辑器内容已手动设置:', content)
+      }
     } else {
       ElMessage.error('获取公告详情失败：' + (result.error || '未知错误'))
     }
@@ -530,7 +533,7 @@ const handleContentChange = (content) => {
 }
 
 // 插入模板
-const insertTemplate = (type) => {
+const insertTemplate = async (type) => {
   const templates = {
     announcement: `
 <h2>重要公告</h2>
@@ -577,10 +580,13 @@ const insertTemplate = (type) => {
   }
 
   if (templates[type]) {
+    // 先更新数据
     noticeData.value.release_notice = templates[type]
-    // 更新编辑器内容显示
+    // 等待 DOM 更新后设置编辑器内容
+    await nextTick()
     if (contentEditor.value) {
       contentEditor.value.innerHTML = templates[type]
+      console.log('✅ 模板内容已插入编辑器:', type)
     }
   }
 }
@@ -592,48 +598,6 @@ const handlePreview = () => {
     return
   }
   previewVisible.value = true
-}
-
-// 保存草稿
-const handleSaveDraft = async () => {
-  try {
-    await formRef.value.validate()
-    loading.value = true
-
-    // 转换数据格式以匹配后端API
-    const submitData = {
-      title: noticeData.value.release_title.trim(),
-      content: noticeData.value.release_notice,
-      notice_type: noticeTypeMapping[noticeData.value.notice_type] || 'GENERAL',
-      expiration: noticeData.value.expiration ? new Date(noticeData.value.expiration).toISOString() : null,
-      is_top: false,
-      attachments: Array.isArray(noticeData.value.attachments) ? [...noticeData.value.attachments] : []
-    }
-
-    console.log('💾 保存草稿（转换后的数据）:', submitData)
-
-    let result
-    if (isEdit.value) {
-      result = await noticeStore.updateNotice(noticeData.value.id, submitData)
-    } else {
-      result = await noticeStore.createNotice(submitData)
-    }
-
-    if (result.success) {
-      ElMessage.success('草稿保存成功！')
-      if (!isEdit.value && result.data?.id) {
-        noticeData.value.id = result.data.id
-        isEdit.value = true
-      }
-    } else {
-      ElMessage.error('保存失败：' + (result.error || '未知错误'))
-    }
-  } catch (error) {
-    console.error('保存草稿失败:', error)
-    ElMessage.error('保存失败：' + error.message)
-  } finally {
-    loading.value = false
-  }
 }
 
 // 公告类型映射（中文 -> 英文代码）
@@ -731,21 +695,11 @@ const handleRemoveAttachment = (file) => {
 }
 
 // 监听数据变化，仅在特定情况下更新编辑器内容
-watch(() => noticeData.value.release_notice, (newContent, oldContent) => {
-  // 只有在编辑器已存在、内容确实不同、且不是用户输入引起的变化时才更新
-  if (contentEditor.value &&
-      contentEditor.value.innerHTML !== newContent &&
-      oldContent !== undefined) {
-
-    // 延迟执行，避免干扰用户输入
-    setTimeout(() => {
-      if (contentEditor.value && contentEditor.value.innerHTML !== newContent) {
-        // 仅在必要时更新内容（如数据加载时）
-        contentEditor.value.innerHTML = newContent || ''
-      }
-    }, 10)
-  }
-}, { flush: 'post' })
+// 移除此 watch，改为在 loadNoticeDetail 中手动设置编辑器内容
+// 这样可以避免 watch 和用户输入之间的冲突
+// watch(() => noticeData.value.release_notice, (newContent, oldContent) => {
+//   // 此 watch 已禁用，改为手动控制
+// }, { flush: 'post' })
 
 // 监听loading状态，确保编辑器在加载时正确禁用/启用
 watch(() => loading.value, (newLoading) => {
@@ -755,26 +709,32 @@ watch(() => loading.value, (newLoading) => {
 })
 
 // 页面挂载时初始化
-onMounted(() => {
+onMounted(async () => {
   const noticeId = route.params.id
   if (noticeId) {
     isEdit.value = true
-    loadNoticeDetail(noticeId)
+    await loadNoticeDetail(noticeId)
   } else {
     // 新建公告时设置默认过期时间为7天后
     const defaultExpiration = new Date()
     defaultExpiration.setDate(defaultExpiration.getDate() + 7)
     noticeData.value.expiration = defaultExpiration.toISOString().replace('Z', '+00:00')
+
+    // 确保编辑器正确初始化
+    await nextTick()
+    if (contentEditor.value) {
+      contentEditor.value.innerHTML = ''
+      console.log('✅ 新建公告编辑器已初始化')
+    }
   }
 
   // 编辑器挂载后设置属性
-  nextTick(() => {
-    if (contentEditor.value) {
-      // 确保编辑器可编辑
-      contentEditor.value.contentEditable = !loading.value
-      console.log('编辑器初始化完成，contentEditable:', contentEditor.value.contentEditable)
-    }
-  })
+  await nextTick()
+  if (contentEditor.value) {
+    // 确保编辑器可编辑
+    contentEditor.value.contentEditable = !loading.value
+    console.log('✅ 编辑器初始化完成，contentEditable:', contentEditor.value.contentEditable)
+  }
 })
 </script>
 

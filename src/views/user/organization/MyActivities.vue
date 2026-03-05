@@ -39,13 +39,13 @@
       <!-- 状态筛选标签 -->
       <el-card class="filter-card" shadow="hover">
         <el-radio-group v-model="activeStatus" @change="handleStatusFilter">
-          <el-radio-button label="">全部</el-radio-button>
-          <el-radio-button label="draft">草稿</el-radio-button>
-          <el-radio-button label="pending">审核中</el-radio-button>
-          <el-radio-button label="published">已发布</el-radio-button>
-          <el-radio-button label="ongoing">进行中</el-radio-button>
-          <el-radio-button label="completed">已结束</el-radio-button>
-          <el-radio-button label="cancelled">已取消</el-radio-button>
+          <el-radio-button value="">全部</el-radio-button>
+          <el-radio-button value="draft">草稿</el-radio-button>
+          <el-radio-button value="pending">审核中</el-radio-button>
+          <el-radio-button value="published">已发布</el-radio-button>
+          <el-radio-button value="ongoing">进行中</el-radio-button>
+          <el-radio-button value="completed">已结束</el-radio-button>
+          <el-radio-button value="cancelled">已取消</el-radio-button>
         </el-radio-group>
       </el-card>
 

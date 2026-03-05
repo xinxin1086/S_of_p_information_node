@@ -80,7 +80,7 @@ import { ref, onUnmounted, watch } from 'vue'
 import { VueCropper } from 'vue-cropper'
 
 import 'vue-cropper/dist/index.css'
-import type { UnknownResponse } from '@/api'
+import type { UnknownResponse } from '@/api/unified'
 import { formatAvatarUrl } from '@/utils/common/format.js'
 
 interface CropperOption {

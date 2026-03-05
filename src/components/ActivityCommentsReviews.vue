@@ -122,7 +122,7 @@
                   <!-- 操作按钮 -->
                   <div class="action-buttons">
                     <el-button
-                      type="text"
+                      type="link"
                       size="small"
                       class="reply-btn"
                       @click="replyToComment(discussion)"
@@ -131,7 +131,7 @@
                       回复讨论
                     </el-button>
                     <el-button
-                      type="text"
+                      type="link"
                       size="small"
                       class="reply-btn"
                       @click="loadDiscussionReplies(discussion.id)"
@@ -275,7 +275,7 @@
                 <div class="rating-distribution-placeholder" v-else-if="totalRatings > 0">
                   <div class="placeholder-content">
                     <p>详细的评分分布数据需要从服务器获取</p>
-                    <el-button type="text" size="small" @click="loadDetailedRatings">
+                    <el-button type="link" size="small" @click="loadDetailedRatings">
                       查看详细评分分布
                     </el-button>
                   </div>
@@ -557,11 +557,14 @@ const loadDetailedRatings = async () => {
   if (!props.activity?.id) return
 
   try {
-    const { activityApi } = await import('@/api/index.js')
-    const response = await activityApi.getActivityRatingsDetail(props.activity.id)
-    if (response.success && response.data?.ratings) {
+    // 使用 activityAdapter 支持 Mock 切换
+    const { activityAdapter } = await import('@/services/activityAdapter.js')
+    const response = await activityAdapter.getRatings(props.activity.id)
+    if (response.success && response.data) {
       // 通过emit通知父组件更新评分数据
-      emit('update:ratings', response.data.ratings)
+      // Mock API 返回的数据结构是 { items, total, average }
+      const ratingsList = response.data.items || response.data.list || response.data.ratings || response.data || []
+      emit('update:ratings', ratingsList)
     }
   } catch (error) {
     console.error('加载详细评分数据失败:', error)

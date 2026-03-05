@@ -4,14 +4,28 @@
  */
 
 import { BASE_URL } from '@/config'
+import { shouldUseMock } from '@/utils/mockHelper'
+import { userMockApi } from '@/mock/userMockApi'
 
 /**
  * 上传图片到服务器并返回图片URL
+ * Mock 模式下返回模拟的图片 URL
  * @param file 要上传的图片文件
  * @returns 图片的服务器URL
  * @throws 上传失败时抛出错误信息
  */
 export const uploadImage = async (file: File): Promise<string> => {
+  // Mock 模式：直接返回模拟的图片 URL
+  if (shouldUseMock()) {
+    console.log('%c[Mock] uploadImage: 使用 Mock 模式', 'color: #e6a23c; font-weight: bold;')
+    // 模拟延迟
+    await new Promise(resolve => setTimeout(resolve, 300))
+
+    // 返回一个固定的模拟头像 URL
+    return 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
+  }
+
+  // 真实模式：调用后端上传接口
   const formData = new FormData()
   formData.append('image', file)
 

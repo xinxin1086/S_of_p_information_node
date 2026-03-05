@@ -26,12 +26,8 @@ export const useMainStore = defineStore('main', () => {
       title: '内容管理模块',
       children: [
         {
-          title: '内容审核',
-          children: [
-            { title: '公告审核', path: '/admin/content/notice-review' },
-            { title: '科普审核', path: '/admin/content/science-review' },
-            { title: '活动审核', path: '/admin/content/activity-review' }
-          ]
+          title: '活动审核',
+          path: '/admin/content/activity-review'
         },
         {
           title: '内容发布',
@@ -39,14 +35,6 @@ export const useMainStore = defineStore('main', () => {
             { title: '公告管理', path: '/admin/content/notice' },
             { title: '科普管理', path: '/admin/content/science' },
             { title: '活动管理', path: '/admin/content/activity' }
-          ]
-        },
-        {
-          title: '活动互动管理',
-          children: [
-            { title: '活动评分管理', path: '/admin/activity-ratings' },
-            { title: '活动讨论管理', path: '/admin/activity-discussions' },
-            { title: '讨论留言管理', path: '/admin/discuss-comments' }
           ]
         }
       ]
@@ -56,10 +44,7 @@ export const useMainStore = defineStore('main', () => {
       children: [
         {
           title: '管理员管理',
-          children: [
-            { title: '管理员列表', path: '/admin/user/admin' },
-            { title: '添加管理员', path: '/admin/user/admin/add' }
-          ]
+          path: '/admin/user/admin'
         },
         {
           title: '普通用户管理',
@@ -76,7 +61,7 @@ export const useMainStore = defineStore('main', () => {
   const userMenus = ref([
     {
       title: '用户首页',
-      path: '/user/dashboard'
+      path: '/user'
     },
     {
       title: '活动中心',

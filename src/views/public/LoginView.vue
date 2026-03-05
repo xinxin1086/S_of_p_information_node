@@ -11,6 +11,25 @@
           </div>
           <h2>社区交流平台</h2>
           <p>请登录后继续操作</p>
+          <el-alert
+            type="info"
+            :closable="false"
+            show-icon
+            style="margin-top: 15px"
+          >
+            <template #title>
+              <div style="font-size: 12px; line-height: 1.8">
+                <strong>🔓 统一登录 - 所有账号使用相同密码</strong><br>
+                <span style="color: #67c23a">管理员</span>：
+                账号 <code>admin</code> / 密码 <code>123456</code><br>
+                <span style="color: #409eff">普通用户</span>：
+                账号 <code>user001</code> / 密码 <code>123456</code><br>
+                <span style="color: #909399; font-size: 11px">
+                  所有用户（包括管理员）统一使用密码：123456
+                </span>
+              </div>
+            </template>
+          </el-alert>
         </div>
 
         <el-form @submit.prevent="handleLogin" :model="loginForm" :rules="rules" ref="loginFormRef">
@@ -32,13 +51,6 @@
               prefix-icon="Lock"
               show-password
             />
-          </el-form-item>
-
-          <el-form-item prop="role">
-            <el-radio-group v-model="loginForm.role" size="large">
-              <el-radio value="admin">管理员</el-radio>
-              <el-radio value="user">用户</el-radio>
-            </el-radio-group>
           </el-form-item>
 
           <el-form-item>
@@ -83,10 +95,10 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 // 表单数据
+// 表单数据
 const loginForm = reactive({
   account: '',
-  password: '',
-  role: 'user'
+  password: ''
 })
 
 // 表单验证规则
@@ -98,9 +110,6 @@ const rules = {
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码至少6个字符', trigger: 'blur' }
-  ],
-  role: [
-    { required: true, message: '请选择角色', trigger: 'change' }
   ]
 }
 
@@ -114,12 +123,6 @@ const goToHome = () => {
   router.push({ name: 'home' })
 }
 
-// 角色路由映射
-const roleRoutes = {
-  admin: '/admin/dashboard',
-  user: '/user/dashboard'
-}
-
 // 登录处理
 const handleLogin = async () => {
   try {
@@ -129,15 +132,10 @@ const handleLogin = async () => {
     loading.value = true
     errorMessage.value = ''
 
-    // 用户和管理员使用统一的登录接口
-    // 后端根据账号自动识别用户类型，返回 user_type 字段 ('user' | 'admin')
-    // 登录接口: POST /api/user/auth/login
-
-    // 调用登录API
+    // 调用本地登录验证
     await authStore.login({
       account: loginForm.account,
-      password: loginForm.password,
-      role: loginForm.role // UI层保留 role 字段用于界面显示，但后端不使用此参数
+      password: loginForm.password
     })
 
     ElMessage.success('登录成功')
@@ -145,37 +143,23 @@ const handleLogin = async () => {
     // 保存记住的账号信息
     if (rememberMe.value) {
       localStorage.setItem('remembered_account', loginForm.account)
-      localStorage.setItem('remembered_role', loginForm.role)
     } else {
       localStorage.removeItem('remembered_account')
-      localStorage.removeItem('remembered_role')
     }
 
-    // 根据后端返回的实际用户类型跳转
+    // 根据用户角色自动跳转
     const currentRole = authStore.currentRole
-    let targetRoute = '/user/dashboard' // 默认路由
+    let targetRoute = '/user'
 
     if (currentRole === 'SUPER_ADMIN' || currentRole === 'ADMIN') {
       targetRoute = '/admin/dashboard'
-    } else {
-      targetRoute = '/user/dashboard'
     }
 
     router.push(targetRoute)
 
   } catch (error) {
     console.error('登录错误:', error)
-
-    // 根据错误类型显示不同的错误信息
-    if (error.code === 'NETWORK_ERROR') {
-      errorMessage.value = '网络连接失败，请检查网络设置'
-    } else if (error.isPermissionError) {
-      errorMessage.value = '登录失败：权限不足'
-    } else if (error.isValidationError) {
-      errorMessage.value = '登录失败：输入信息有误'
-    } else {
-      errorMessage.value = error.message || '登录失败，请检查账号密码和角色'
-    }
+    errorMessage.value = error.message || '登录失败，请检查账号和密码'
   } finally {
     loading.value = false
   }
@@ -184,15 +168,9 @@ const handleLogin = async () => {
 // 加载记住的账号信息
 onMounted(() => {
   const rememberedAccount = localStorage.getItem('remembered_account')
-  const rememberedRole = localStorage.getItem('remembered_role')
-
   if (rememberedAccount) {
     loginForm.account = rememberedAccount
     rememberMe.value = true
-  }
-
-  if (rememberedRole) {
-    loginForm.role = rememberedRole
   }
 })
 </script>
@@ -209,7 +187,7 @@ onMounted(() => {
 
 .login-container {
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
 }
 
 .login-card {
@@ -307,6 +285,14 @@ onMounted(() => {
   border-radius: 8px;
   height: 48px;
   font-size: 16px;
+}
+
+:deep(code) {
+  background: #f5f7fa;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #e74c3c;
+  font-family: 'Courier New', monospace;
 }
 
 @media (max-width: 480px) {

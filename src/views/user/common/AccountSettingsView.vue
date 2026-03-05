@@ -72,40 +72,25 @@
         <el-tab-pane label="账户安全" name="security">
           <el-card class="security-card">
             <div class="security-section">
-              <h3>双重验证</h3>
-              <el-form label-width="200px">
-                <el-form-item label="邮箱验证">
-                  <div class="verification-status">
-                    <span :class="securitySettings.emailVerified ? 'verified' : 'unverified'">
-                      {{ securitySettings.emailVerified ? '已验证' : '未验证' }}
-                    </span>
-                    <el-button
-                      v-if="!securitySettings.emailVerified"
-                      type="primary"
-                      size="small"
-                      @click="verifyEmail"
-                    >
-                      立即验证
-                    </el-button>
-                  </div>
-                </el-form-item>
+              <h3>安全提示</h3>
+              <el-alert
+                title="保护您的账户安全"
+                type="info"
+                description="请妥善保管您的密码，不要向任何人透露您的登录信息。定期修改密码可以提高账户安全性。"
+                :closable="false"
+                show-icon
+              />
 
-                <el-form-item label="手机验证">
-                  <div class="verification-status">
-                    <span :class="securitySettings.phoneVerified ? 'verified' : 'unverified'">
-                      {{ securitySettings.phoneVerified ? '已验证' : '未验证' }}
-                    </span>
-                    <el-button
-                      v-if="!securitySettings.phoneVerified"
-                      type="primary"
-                      size="small"
-                      @click="verifyPhone"
-                    >
-                      立即验证
-                    </el-button>
-                  </div>
-                </el-form-item>
-              </el-form>
+              <div class="security-tips">
+                <h4>安全建议：</h4>
+                <ul>
+                  <li>使用强密码，包含字母、数字和特殊字符</li>
+                  <li>定期更换密码</li>
+                  <li>不要在多个网站使用相同密码</li>
+                  <li>不要在公共设备上保存密码</li>
+                  <li>注意防范钓鱼网站和虚假链接</li>
+                </ul>
+              </div>
             </div>
           </el-card>
         </el-tab-pane>
@@ -128,7 +113,6 @@
                 <li>您的所有数据将被永久删除</li>
                 <li>无法接收任何通知或消息</li>
                 <li>无法恢复已发布的内容</li>
-                <li>手机号和邮箱可以重新注册使用</li>
               </ul>
 
               <el-form
@@ -204,7 +188,7 @@ import {
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive, onMounted } from 'vue'
 
-import { userApi } from '@/api'
+import { userApi } from '@/api/unified'
 
 defineOptions({ name: "AccountSettingsView" })
 
@@ -253,12 +237,6 @@ const passwordRules = reactive({
       trigger: 'blur'
     }
   ]
-})
-
-// 账户安全设置
-const securitySettings = reactive({
-  emailVerified: true,
-  phoneVerified: false
 })
 
 // 账户注销表单
@@ -339,28 +317,6 @@ const resetPasswordForm = () => {
   passwordFormRef.value?.clearValidate()
 }
 
-// 验证邮箱
-const verifyEmail = async () => {
-  try {
-    await userApi.sendEmailVerification()
-    ElMessage.success('验证邮件已发送，请检查您的邮箱')
-    securitySettings.emailVerified = true
-  } catch (error) {
-    ElMessage.error('发送验证邮件失败：' + (error.message || '未知错误'))
-  }
-}
-
-// 验证手机
-const verifyPhone = async () => {
-  try {
-    await userApi.sendPhoneVerification()
-    ElMessage.success('验证短信已发送，请检查您的手机')
-    securitySettings.phoneVerified = true
-  } catch (error) {
-    ElMessage.error('发送验证短信失败：' + (error.message || '未知错误'))
-  }
-}
-
 // 注销账户
 const deactivateAccount = async () => {
   try {
@@ -399,23 +355,8 @@ const deactivateAccount = async () => {
   }
 }
 
-// 获取账户设置信息
-const fetchAccountSettings = async () => {
-  try {
-    // 获取账户安全设置(验证状态等)
-    const userInfo = await userApi.getUserInfo()
-    if (userInfo.data) {
-      securitySettings.emailVerified = userInfo.data.email_verified ?? true
-      securitySettings.phoneVerified = userInfo.data.phone_verified ?? false
-    }
-  } catch (error) {
-    console.error('获取账户设置失败:', error)
-    // 不显示错误消息，使用默认值
-  }
-}
-
 onMounted(() => {
-  fetchAccountSettings()
+  // 初始化时不需要加载额外数据
 })
 </script>
 
@@ -485,20 +426,31 @@ onMounted(() => {
   font-weight: 500;
 }
 
-.verification-status {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.security-tips {
+  margin-top: 20px;
+  padding: 16px;
+  background: #f5f7fa;
+  border-radius: 4px;
 }
 
-.verified {
-  color: #00b42a;
+.security-tips h4 {
+  margin: 0 0 12px 0;
+  color: #333;
+  font-size: 14px;
   font-weight: 500;
 }
 
-.unverified {
-  color: #e6a23c;
-  font-weight: 500;
+.security-tips ul {
+  margin: 0;
+  padding-left: 20px;
+  list-style-type: disc;
+}
+
+.security-tips li {
+  margin-bottom: 8px;
+  color: #606266;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .deactivate-content {

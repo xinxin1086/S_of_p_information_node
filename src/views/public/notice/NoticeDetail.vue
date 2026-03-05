@@ -1,10 +1,6 @@
 <template>
-  <div class="notice-detail">
-    <div v-if="loading" class="loading">
-      <el-loading />
-    </div>
-
-    <div v-else-if="!notice" class="not-found">
+  <div class="notice-detail" v-loading="loading" element-loading-text="加载中...">
+    <div v-if="!loading && !notice" class="not-found">
       <el-result
         icon="warning"
         title="公告不存在"
@@ -26,17 +22,17 @@
 
       <el-card class="notice-card">
         <div class="notice-meta">
-          <h1 class="notice-title">{{ notice.title }}</h1>
+          <h1 class="notice-title">{{ getNoticeTitle() }}</h1>
           <div class="notice-info">
-            <el-tag :type="getNoticeTypeTag(notice.type)" size="small">
-              {{ getNoticeTypeText(notice.type) }}
+            <el-tag :type="getNoticeTypeTag(getNoticeType())" size="small">
+              {{ getNoticeTypeText(getNoticeType()) }}
             </el-tag>
-            <span class="notice-date">{{ formatDate(notice.createdAt) }}</span>
-            <span v-if="notice.expireTime" class="notice-expire-time">
-              <el-icon v-if="isExpired(notice.expireTime)" color="#f56c6c"><Clock /></el-icon>
+            <span class="notice-date">{{ formatDate(notice.release_time || notice.createdAt) }}</span>
+            <span v-if="notice.expiration || notice.expireTime" class="notice-expire-time">
+              <el-icon v-if="isExpired(notice.expiration || notice.expireTime)" color="#f56c6c"><Clock /></el-icon>
               <el-icon v-else color="#e6a23c"><Clock /></el-icon>
-              过期时间：{{ formatDate(notice.expireTime) }}
-              <el-tag v-if="isExpired(notice.expireTime)" type="danger" size="small" style="margin-left: 8px;">已过期</el-tag>
+              过期时间：{{ formatDate(notice.expiration || notice.expireTime) }}
+              <el-tag v-if="isExpired(notice.expiration || notice.expireTime)" type="danger" size="small" style="margin-left: 8px;">已过期</el-tag>
             </span>
           </div>
         </div>
@@ -87,7 +83,7 @@
 
 <script setup>
 import { ArrowLeft, Document, Clock } from '@element-plus/icons-vue'
-import { ElMessage, ElLoading, ElResult, ElButton, ElCard, ElTag, ElIcon } from 'element-plus'
+import { ElMessage, ElResult, ElButton, ElCard, ElTag, ElIcon } from 'element-plus'
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -115,7 +111,21 @@ const notice = computed(() => noticeStore.currentNotice)
 
 // 净化后的公告内容
 const sanitizedContent = computed(() => {
-  return sanitizeRichText(notice.value?.content)
+  if (!notice.value) return ''
+
+  // 尝试多个字段名来获取公告内容
+  const content = notice.value.release_notice ||
+                  notice.value.content ||
+                  notice.value.notice ||
+                  ''
+
+  console.log('🔍 访客公告内容字段映射:', {
+    release_notice: notice.value.release_notice,
+    content: notice.value.content,
+    finalContent: content
+  })
+
+  return sanitizeRichText(content)
 })
 
 const fetchNoticeDetail = async () => {
@@ -176,6 +186,22 @@ const isExpired = (expireTime) => {
   return new Date(expireTime) < new Date()
 }
 
+// 获取公告标题（兼容多种字段名）
+const getNoticeTitle = () => {
+  if (!notice.value) return ''
+  return notice.value.release_title ||
+         notice.value.title ||
+         '未命名公告'
+}
+
+// 获取公告类型（兼容多种字段名）
+const getNoticeType = () => {
+  if (!notice.value) return 'SYSTEM'
+  return notice.value.notice_type ||
+         notice.value.type ||
+         'SYSTEM'
+}
+
 onMounted(() => {
   fetchNoticeDetail()
 })
@@ -186,13 +212,7 @@ onMounted(() => {
   max-width: 900px;
   margin: 0 auto;
   padding: 20px;
-}
-
-.loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 200px;
+  min-height: 400px;
 }
 
 .not-found {

@@ -67,7 +67,7 @@
         </div>
 
         <!-- 主讨论回复按钮 -->
-        <div class="post-reply-actions" v-if="authStore.isAuthenticated && !showFixedReplyInput && authStore.user?.role !== 'ADMIN' && authStore.user?.role !== 'SUPER_ADMIN'">
+        <div class="post-reply-actions" v-if="authStore.isAuthenticated && !showFixedReplyInput">
           <el-button
             size="small"
             text
@@ -75,6 +75,17 @@
             class="reply-link"
           >
             回复讨论
+          </el-button>
+          <!-- 管理员删除主帖按钮 -->
+          <el-button
+            v-if="canDeletePost"
+            size="small"
+            type="danger"
+            text
+            @click="handleDeletePost"
+            class="delete-link"
+          >
+            删除讨论
           </el-button>
         </div>
       </div>
@@ -86,18 +97,9 @@
         <!-- 权限提示 -->
         <div v-if="!canReply" class="auth-prompt">
           <el-alert
-            v-if="!authStore.isAuthenticated"
             title="请先登录"
             description="登录后才能参与讨论回复"
             type="info"
-            show-icon
-            :closable="false"
-          />
-          <el-alert
-            v-else-if="authStore.user?.role === 'ADMIN' || authStore.user?.role === 'SUPER_ADMIN'"
-            title="管理员账号"
-            description="管理员账号不能参与讨论回复"
-            type="warning"
             show-icon
             :closable="false"
           />
@@ -106,10 +108,13 @@
         <!-- 回复列表 -->
         <div class="replies-list">
           <div
-            v-for="reply in sortedReplies"
+            v-for="(reply, index) in topLevelReplies"
             :key="reply.id"
             class="reply-item"
           >
+            <div class="reply-floor">
+              <span class="floor-number">#{{ getFloorNumber(reply.id) }}</span>
+            </div>
             <div class="reply-avatar">
               <el-avatar :src="reply.author?.avatar" :size="40">
                 {{ reply.author?.username?.charAt(0)?.toUpperCase() || '?' }}
@@ -131,13 +136,24 @@
                     {{ isReplyLiked(reply.id) ? '已赞' : '赞' }} ({{ reply.like_count }})
                   </el-button>
                   <el-button
-                    v-if="!showFixedReplyInput && authStore.user?.role !== 'ADMIN' && authStore.user?.role !== 'SUPER_ADMIN'"
+                    v-if="!showFixedReplyInput"
                     size="small"
                     text
                     @click="openReplyInput(reply.id)"
                     class="reply-link"
                   >
                     回复
+                  </el-button>
+                  <!-- 删除回复按钮（管理员或创建者可见） -->
+                  <el-button
+                    v-if="canDeleteReply(reply)"
+                    size="small"
+                    type="danger"
+                    text
+                    @click="handleDeleteReply(reply.id)"
+                    class="delete-link"
+                  >
+                    删除
                   </el-button>
                 </div>
               </div>
@@ -158,6 +174,17 @@
                     <div class="sub-reply-header">
                       <span class="author">{{ subReply.author?.username || '未知用户' }}</span>
                       <span class="time">{{ formatDateTime(subReply.created_at) }}</span>
+                      <!-- 删除二级回复按钮（管理员或创建者可见） -->
+                      <el-button
+                        v-if="canDeleteSubReply(subReply)"
+                        size="small"
+                        type="danger"
+                        text
+                        @click="handleDeleteReply(subReply.id)"
+                        class="delete-link"
+                      >
+                        删除
+                      </el-button>
                     </div>
                     <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized with DOMPurify -->
 <div class="sub-reply-body" v-html="formatContent(subReply.content)"></div>
@@ -202,7 +229,7 @@
     </div>
 
     <!-- 底部固定回复输入框 -->
-    <div v-if="showFixedReplyInput && authStore.isAuthenticated && authStore.user?.role !== 'ADMIN' && authStore.user?.role !== 'SUPER_ADMIN'" class="fixed-reply-input">
+    <div v-if="showFixedReplyInput && authStore.isAuthenticated" class="fixed-reply-input">
       <div class="reply-input-wrapper">
         <div class="reply-input-header">
           <span class="reply-target">回复 @{{ replyTargetUser }}...</span>
@@ -229,12 +256,20 @@
 
 <script setup>
 import { Star, Share, View, ChatDotRound } from '@element-plus/icons-vue'
-import { ElMessage, ElLoading } from 'element-plus'
+import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores'
 import { sanitizeRichText } from '@/utils/sanitizeHtml'
+import { mockForumPosts, mockForumFloors, mockForumReplies } from '@/mock/forumMockData'
+import {
+  getForumPosts,
+  getForumFloors,
+  getForumReplies,
+  addForumFloor,
+  addForumReply
+} from '@/mock/forumMockStorage'
 
 const route = useRoute()
 const router = useRouter()
@@ -258,19 +293,67 @@ const likedReplies = ref(new Set())
 
 // 权限控制计算属性
 const canReply = computed(() => {
-  return authStore.isAuthenticated && authStore.user?.role !== 'ADMIN' && authStore.user?.role !== 'SUPER_ADMIN'
+  return authStore.isAuthenticated
 })
 
+const isAdmin = computed(() => {
+  return authStore.user?.role === 'ADMIN' || authStore.user?.role === 'SUPER_ADMIN'
+})
+
+const canDeletePost = computed(() => {
+  return isAdmin.value
+})
+
+// 判断用户是否可以删除指定回复（管理员或回复创建者）
+const canDeleteReply = (reply) => {
+  if (isAdmin.value) return true
+  if (!authStore.user) return false
+  // 检查是否是回复的创建者
+  return reply.author?.id === authStore.user.id
+}
+
+// 判断用户是否可以删除二级回复
+const canDeleteSubReply = (subReply) => {
+  if (isAdmin.value) return true
+  if (!authStore.user) return false
+  return subReply.author?.id === authStore.user.id
+}
+
+// 论坛分类配置（精简为4个主要分类）
 const categories = [
-  { label: '经验分享', value: 'experience' },
-  { label: '装备讨论', value: 'equipment' },
-  { label: '钓技交流', value: 'technique' },
-  { label: '饵料配方', value: 'bait' },
-  { label: '钓点推荐', value: 'spot' },
-  { label: '渔获展示', value: 'catch' },
-  { label: '闲聊灌水', value: 'chat' },
-  { label: '其他', value: 'other' }
+  { label: '经验分享', value: '经验分享' },
+  { label: '求助问答', value: '求助问答' },
+  { label: '活动交流', value: '活动交流' },
+  { label: '其他讨论', value: '其他讨论' }
 ]
+
+// 顶层回复（直接回复主帖的），按时间升序排序，支持分页
+const topLevelReplies = computed(() => {
+  const mainReplies = replies.value.filter(r => !r.parent_id && !r.parentReplyId)
+  const sorted = mainReplies.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+
+  // 分页逻辑
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return sorted.slice(start, end)
+})
+
+// 获取楼层号
+const floorMap = computed(() => {
+  const map = new Map()
+  let floorNumber = 1
+  const mainReplies = replies.value.filter(r => !r.parent_id)
+    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+
+  for (const reply of mainReplies) {
+    map.set(reply.id, floorNumber++)
+  }
+  return map
+})
+
+const getFloorNumber = (replyId) => {
+  return floorMap.value.get(replyId) || 0
+}
 
 const sortedReplies = computed(() => {
   return [...replies.value].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
@@ -280,108 +363,127 @@ const totalPages = computed(() => {
   return Math.ceil(totalReplies.value / pageSize.value)
 })
 
-const generateMockData = () => {
+/**
+ * 从论坛 mock 数据加载帖子详情
+ * 优先从 localStorage 读取动态数据
+ */
+const loadForumPost = () => {
   const postId = parseInt(route.params.id)
 
-  const mockPost = {
-    id: postId,
-    title: '分享一个超有效的鲫鱼饵料配方',
-    content: `最近研究出一个特别适合钓鲫鱼的饵料配方，经过多次试验，效果非常好，今天分享给大家。
+  // 获取 localStorage 中的动态帖子
+  const dynamicPosts = getForumPosts()
 
-**配方比例：**
-- 玉米面：40%
-- 豆粕：30%
-- 鱼粉：15%
-- 麦麸：10%
-- 白糖：5%
+  // 合并静态帖子和动态帖子（去重）
+  const allPosts = [...mockForumPosts]
+  dynamicPosts.forEach(post => {
+    if (!allPosts.some(p => p.id === post.id)) {
+      allPosts.push(post)
+    }
+  })
 
-**制作方法：**
-1. 先将玉米面用开水烫熟，半熟状态即可
-2. 豆粕炒香后磨成粉
-3. 将所有材料混合均匀
-4. 加水调节到合适的湿度，能捏成团但不散开
-5. 静置发酵30分钟即可使用
+  // 查找对应的帖子
+  const forumPost = allPosts.find(p => p.id === postId)
 
-**使用技巧：**
-- 钓鲫鱼时搓成黄豆大小的颗粒
-- 打窝时可以撒一些干粉料
-- 夏天发酵时间可以短一些
-- 冬天可以加一点白酒增加香味
-
-这个配方在水库、池塘测试效果都不错，大家可以试试看！`,
-    category: 'bait',
-    author: {
-      id: 1,
-      username: '户外爱好者',
-      avatar: ''
-    },
-    created_at: '2024-01-15T10:30:00',
-    view_count: 156,
-    reply_count: 23,
-    like_count: 45
+  if (!forumPost) {
+    post.value = null
+    replies.value = []
+    totalReplies.value = 0
+    ElMessage.warning('帖子不存在')
+    return
   }
 
-  const mockReplies = [
-    {
-      id: 1,
-      content: '感谢分享！我明天就试试这个配方，希望能够有好的收获。',
-      author: {
-        id: 2,
-        username: '新手小白',
-        avatar: ''
-      },
-      created_at: '2024-01-15T14:20:00',
-      like_count: 5,
-      replies: [
-        {
-          id: 101,
-          content: '记得要控制好发酵时间，夏天30分钟就差不多了。',
+  // 转换为主帖格式
+  post.value = {
+    id: forumPost.id,
+    title: forumPost.title,
+    content: forumPost.content,
+    category: forumPost.category,
+    author: {
+      id: forumPost.author_user_id,
+      username: forumPost.author_display,
+      avatar: ''
+    },
+    created_at: forumPost.created_at,
+    view_count: forumPost.view_count,
+    reply_count: forumPost.comment_count,
+    like_count: forumPost.like_count
+  }
+
+  // 获取该帖子的所有楼层（优先从 localStorage）
+  const allFloors = getForumFloors()
+  const postFloors = allFloors.length > 0
+    ? allFloors.filter(floor => floor.post_id === postId && floor.status === 'published' && !floor.is_deleted)
+    : mockForumFloors.filter(floor => floor.post_id === postId && floor.status === 'published' && !floor.is_deleted)
+
+  // 按时间升序排序
+  postFloors.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+
+  // 获取所有回复（优先从 localStorage）
+  const allReplies = getForumReplies()
+  const useStoredReplies = allReplies.length > 0
+
+  // 转换楼层为回复格式，并包含二级回复
+  const formattedReplies = postFloors.map(floor => {
+    // 获取该楼层的所有回复
+    let floorReplies
+    if (useStoredReplies) {
+      floorReplies = allReplies
+        .filter(reply => reply.floor_id === floor.id && reply.status === 'published' && !reply.is_deleted)
+        .map(reply => ({
+          id: reply.id,
+          content: reply.content,
           author: {
-            id: 1,
-            username: '户外爱好者',
+            id: reply.author_user_id,
+            username: reply.author_display,
             avatar: ''
           },
-          created_at: '2024-01-15T15:30:00',
-          like_count: 3
-        }
-      ]
-    },
-    {
-      id: 2,
-      content: '豆粕一定要炒出香味吗？有什么特别的要求吗？',
-      author: {
-        id: 3,
-        username: '学习中的鱼友',
-        avatar: ''
-      },
-      created_at: '2024-01-15T16:45:00',
-      like_count: 2,
-      replies: []
-    },
-    {
-      id: 3,
-      content: '试过了，效果确实不错！昨天用这个配方钓了2斤多的鲫鱼，比原来的饵料效果好多了。',
-      author: {
-        id: 4,
-        username: '实践出真知',
-        avatar: ''
-      },
-      created_at: '2024-01-16T09:15:00',
-      like_count: 8,
-      replies: []
+          created_at: reply.created_at,
+          like_count: reply.like_count,
+          parentReplyId: floor.id // 标记为二级回复
+        }))
+    } else {
+      floorReplies = mockForumReplies
+        .filter(reply => reply.floor_id === floor.id && reply.status === 'published' && !reply.is_deleted)
+        .map(reply => ({
+          id: reply.id,
+          content: reply.content,
+          author: {
+            id: reply.author_user_id,
+            username: reply.author_display,
+            avatar: ''
+          },
+          created_at: reply.created_at,
+          like_count: reply.like_count,
+          parentReplyId: floor.id
+        }))
     }
-  ]
 
-  post.value = mockPost
-  replies.value = mockReplies
-  totalReplies.value = mockReplies.length
+    return {
+      id: floor.id,
+      content: floor.content,
+      author: {
+        id: floor.author_user_id,
+        username: floor.author_display,
+        avatar: ''
+      },
+      created_at: floor.created_at,
+      like_count: floor.like_count,
+      replies: floorReplies
+    }
+  })
+
+  replies.value = formattedReplies
+  totalReplies.value = formattedReplies.length
+
+  console.log('[DiscussionDetail] 加载帖子详情，帖子ID:', postId, '回复数:', totalReplies.value)
 }
 
 const fetchPost = async () => {
   loading.value = true
   try {
+    // 模拟网络延迟
     await new Promise(resolve => setTimeout(resolve, 500))
-    generateMockData()
+    loadForumPost()
   } catch (error) {
     console.error('获取帖子详情失败:', error)
     ElMessage.error('获取帖子详情失败')
@@ -421,6 +523,85 @@ const toggleReplyLike = (replyId) => {
       likedReplies.value.add(replyId)
       reply.like_count++
       ElMessage.success('点赞成功')
+    }
+  }
+}
+
+// 删除主帖
+const handleDeletePost = async () => {
+  try {
+    await ElMessageBox.confirm(
+      '确定要删除这个讨论吗？删除后将无法恢复。',
+      '删除确认',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+
+    // TODO: 调用API删除主帖
+    // await api.discussionApi.deletePost(post.value.id)
+
+    ElMessage.success('删除成功')
+    router.push('/discussion')
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('删除失败：' + (error.message || '未知错误'))
+    }
+  }
+}
+
+// 删除回复
+const handleDeleteReply = async (replyId) => {
+  try {
+    await ElMessageBox.confirm(
+      '确定要删除这条回复吗？删除后将无法恢复。',
+      '删除确认',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+
+    // TODO: 调用API删除回复
+    // await api.discussionApi.deleteReply(replyId)
+
+    // 从列表中移除 - 需要检查顶层回复和二级回复
+    let deleted = false
+
+    // 先检查是否是顶层回复
+    const topLevelIndex = replies.value.findIndex(r => r.id === replyId)
+    if (topLevelIndex > -1) {
+      replies.value.splice(topLevelIndex, 1)
+      deleted = true
+    } else {
+      // 检查是否是二级回复
+      for (const reply of replies.value) {
+        if (reply.replies && reply.replies.length > 0) {
+          const subIndex = reply.replies.findIndex(r => r.id === replyId)
+          if (subIndex > -1) {
+            reply.replies.splice(subIndex, 1)
+            deleted = true
+            break
+          }
+        }
+      }
+    }
+
+    if (deleted) {
+      totalReplies.value--
+      if (post.value && post.value.reply_count > 0) {
+        post.value.reply_count--
+      }
+      ElMessage.success('删除成功')
+    } else {
+      ElMessage.warning('未找到要删除的回复')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('删除失败：' + (error.message || '未知错误'))
     }
   }
 }
@@ -484,47 +665,94 @@ const submitFixedReply = async () => {
   try {
     await new Promise(resolve => setTimeout(resolve, 500))
 
+    const currentUserId = authStore.user?.id || 999
+    const currentUserDisplayName = authStore.user?.username || authStore.user?.nickname || '匿名用户'
+
     if (showReplyId.value) {
-      // 回复某条评论
+      // 回复某条评论（创建二级回复）
       const parentReply = replies.value.find(r => r.id === showReplyId.value)
       if (parentReply) {
         if (!parentReply.replies) {
           parentReply.replies = []
         }
 
-        const subReply = {
+        const newReply = {
           id: Date.now(),
+          floor_id: showReplyId.value,
           content: replyContent.value,
-          author: {
-            id: authStore.user?.id || 999,
-            username: authStore.user?.username || '匿名用户',
-            avatar: authStore.user?.avatar || ''
-          },
+          like_count: 0,
+          status: 'published',
           created_at: new Date().toISOString(),
-          like_count: 0
+          updated_at: new Date().toISOString(),
+          author_user_id: currentUserId,
+          author_display: currentUserDisplayName,
+          quote_content: null,
+          quote_author: null,
+          is_deleted: false
+        }
+
+        // 保存到 localStorage
+        addForumReply(newReply)
+
+        // 添加到界面显示
+        const subReply = {
+          id: newReply.id,
+          content: newReply.content,
+          author: {
+            id: newReply.author_user_id,
+            username: newReply.author_display,
+            avatar: ''
+          },
+          created_at: newReply.created_at,
+          like_count: newReply.like_count,
+          parentReplyId: parentReply.id
         }
 
         parentReply.replies.push(subReply)
         post.value.reply_count++
       }
     } else {
-      // 快速回复主帖
-      const reply = {
-        id: Date.now(),
+      // 快速回复主帖（创建新楼层）
+      const postId = parseInt(route.params.id)
+      const maxFloorId = Math.max(...getForumFloors().map(f => f.id), ...mockForumFloors.map(f => f.id), 0)
+
+      const newFloor = {
+        id: maxFloorId + 1,
+        post_id: postId,
         content: replyContent.value,
-        author: {
-          id: authStore.user?.id || 999,
-          username: authStore.user?.username || '匿名用户',
-          avatar: authStore.user?.avatar || ''
-        },
-        created_at: new Date().toISOString(),
+        floor_number: 0, // 楼层号会在显示时计算
         like_count: 0,
+        reply_count: 0,
+        status: 'published',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        author_user_id: currentUserId,
+        author_display: currentUserDisplayName,
+        is_deleted: false
+      }
+
+      // 保存到 localStorage
+      addForumFloor(newFloor)
+
+      // 添加到界面显示
+      const reply = {
+        id: newFloor.id,
+        content: newFloor.content,
+        author: {
+          id: newFloor.author_user_id,
+          username: newFloor.author_display,
+          avatar: ''
+        },
+        created_at: newFloor.created_at,
+        like_count: newFloor.like_count,
         replies: []
       }
 
       replies.value.unshift(reply)
       totalReplies.value++
       post.value.reply_count++
+
+      console.log('[DiscussionDetail] 新楼层已创建并保存到 localStorage:', newFloor)
     }
 
     cancelFixedReply()
@@ -566,15 +794,12 @@ const getCategoryLabel = (category) => {
 }
 
 const getCategoryTagType = (category) => {
+  // 根据论坛分类返回对应的标签类型（仅4个分类）
   const typeMap = {
-    experience: 'success',
-    equipment: 'primary',
-    technique: 'warning',
-    bait: 'danger',
-    spot: 'info',
-    catch: 'success',
-    chat: '',
-    other: ''
+    '经验分享': 'success',
+    '求助问答': 'warning',
+    '活动交流': 'primary',
+    '其他讨论': 'info'
   }
   return typeMap[category] || ''
 }
@@ -766,10 +991,28 @@ onMounted(() => {
   padding: 20px;
   background: #f8f9fa;
   border-radius: 8px;
+  position: relative;
+}
+
+.reply-floor {
+  position: absolute;
+  top: 20px;
+  left: 10px;
+}
+
+.floor-number {
+  font-size: 16px;
+  font-weight: 600;
+  color: #909399;
+  background: #e4e7ed;
+  padding: 4px 10px;
+  border-radius: 4px;
+  user-select: none;
 }
 
 .reply-avatar {
   flex-shrink: 0;
+  margin-left: 60px; /* 为楼层号留出空间 */
 }
 
 .reply-content {

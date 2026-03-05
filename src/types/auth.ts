@@ -1,6 +1,25 @@
 // API响应和用户相关类型定义
 export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'USER'
 
+/**
+ * Admin 模型（精简版 - 附属表）
+ * Admin 模型仅包含管理信息，登录凭证通过关联的 User 对象获取
+ * 后端通过 @property 装饰器从 user 对象获取 role、account 等字段
+ */
+export interface AdminInfo {
+  id: number
+  user_id: number  // 关联的用户ID（外键，指向 User 表）
+  created_at: string
+  updated_at: string
+  // 通过属性方法从 User 对象获取的字段（不在 Admin 表中存储）
+  role?: 'SUPER_ADMIN' | 'ADMIN'  // 从 user.role 获取
+  account?: string   // 从 user.account 获取
+  username?: string  // 从 user.username 获取
+  phone?: string     // 从 user.phone 获取
+  email?: string     // 从 user.email 获取
+  avatar?: string    // 从 user.avatar 获取
+}
+
 export interface UserInfo {
   id: number
   account: string
@@ -16,11 +35,9 @@ export interface UserInfo {
   permissions?: Permissions
   role_info?: RoleInfo
   all_roles?: UserRole[]
-  name?: string
-  head_pic?: string
-  profile_image?: string
-  createdAt?: string
-  updatedAt?: string
+  // 管理员特有字段
+  admin_id?: number  // Admin 记录 ID（仅在用户是管理员时有值）
+  user_id?: number   // 关联的用户 ID（外键，仅在用户是管理员时有值）
 }
 
 export interface RoleInfo {

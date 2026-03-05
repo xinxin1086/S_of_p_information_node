@@ -34,7 +34,7 @@ const MyBookings = UserComponents.MyBookings
 const BookingHistory = () => import('@/views/user/activity/BookingHistory.vue')
 
 // 公告详情、科学详情等 (使用异步组件)
-const NoticeDetail = AdminComponents.NoticeDetail
+const NoticeDetail = PublicComponents.NoticeDetail
 const ScienceDetail = PublicComponents.ScienceDetail
 const ActivityDetail = PublicComponents.ActivityDetail
 const DiscussionList = PublicComponents.DiscussionList
@@ -61,6 +61,7 @@ const ActivityRatingManage = AdminComponents.ActivityRatingManage
 const ActivityDiscussionManage = AdminComponents.ActivityDiscussionManage
 const DiscussCommentManage = AdminComponents.ActivityDiscussionManageView
 const AdminNoticeEditor = AdminComponents.AdminNoticeEditor
+const AdminScienceEditor = AdminComponents.AdminScienceEditor
 
 // 用户管理组件 (使用异步组件)
 const AdminUserAdmin = AdminComponents.AdminUserAdmin
@@ -173,10 +174,14 @@ const routes = [
     children: [
       // 普通用户功能
       {
-        path: 'dashboard',
+        path: '',
         name: 'userDashboard',
         meta: { title: '用户首页' },
         component: UserDashboard
+      },
+      {
+        path: 'dashboard',
+        redirect: ''
       },
       {
         path: 'profile',
@@ -299,6 +304,16 @@ const routes = [
         path: 'content/science',
         name: 'scienceManage',
         component: ScienceManage
+      },
+      {
+        path: 'science/editor',
+        name: 'scienceEditor',
+        component: AdminScienceEditor
+      },
+      {
+        path: 'science/editor/:id',
+        name: 'scienceEditorEdit',
+        component: AdminScienceEditor
       },
       {
         path: 'content/science-review',

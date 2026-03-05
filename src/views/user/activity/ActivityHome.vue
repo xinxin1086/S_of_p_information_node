@@ -9,94 +9,91 @@
     <!-- 活动筛选 -->
     <div class="filter-section">
       <el-radio-group v-model="currentFilter" @change="handleFilterChange" size="large">
-        <el-radio-button label="all">全部活动</el-radio-button>
-        <el-radio-button label="upcoming">即将开始</el-radio-button>
-        <el-radio-button label="ongoing">进行中</el-radio-button>
-        <el-radio-button label="completed">已结束</el-radio-button>
+        <el-radio-button value="all">全部活动</el-radio-button>
+        <el-radio-button value="upcoming">即将开始</el-radio-button>
+        <el-radio-button value="ongoing">进行中</el-radio-button>
+        <el-radio-button value="completed">已结束</el-radio-button>
       </el-radio-group>
     </div>
 
-    <!-- 加载状态 -->
-    <div v-if="loading" class="loading-container">
-      <el-loading :active="loading" text="加载活动中..." />
+    <!-- 加载状态和活动列表 -->
+    <div v-loading="loading" element-loading-text="加载活动中..." class="loading-container">
+      <div v-if="!loading && !errorMessage" class="activity-grid">
+        <div
+          v-for="activity in filteredActivities"
+          :key="activity.id"
+          class="activity-card"
+          @click="goToDetail(activity.id)"
+        >
+          <!-- 活动封面 -->
+          <div class="activity-cover" v-if="activity.cover_image">
+            <img :src="activity.cover_image" :alt="activity.title" />
+            <div class="activity-status" :class="getStatusClass(activity.status)">
+              {{ getStatusText(activity.status) }}
+            </div>
+          </div>
+
+          <div class="activity-cover placeholder" v-else>
+            <div class="activity-status" :class="getStatusClass(activity.status)">
+              {{ getStatusText(activity.status) }}
+            </div>
+          </div>
+
+          <!-- 活动内容 -->
+          <div class="activity-content">
+            <h3 class="activity-title">{{ activity.title }}</h3>
+
+            <p class="activity-description">{{ activity.description }}</p>
+
+            <div class="activity-info">
+              <div class="info-item">
+                <el-icon><Location /></el-icon>
+                <span>{{ activity.location }}</span>
+              </div>
+
+              <div class="info-item">
+                <el-icon><Calendar /></el-icon>
+                <span>{{ formatDate(activity.start_time) }}</span>
+              </div>
+
+              <div class="info-item">
+                <el-icon><User /></el-icon>
+                <span>{{ activity.current_participants || 0 }}/{{ activity.max_participants }}人</span>
+              </div>
+            </div>
+
+            <div class="activity-footer">
+              <el-tag
+                :type="getStatusTagType(activity.status)"
+                size="small"
+              >
+                {{ getStatusText(activity.status) }}
+              </el-tag>
+
+              <div class="progress-info" v-if="activity.max_participants > 0">
+                <el-progress
+                  :percentage="getParticipantPercentage(activity)"
+                  :stroke-width="6"
+                  :show-text="false"
+                />
+                <span class="progress-text">
+                  {{ activity.current_participants || 0 }}/{{ activity.max_participants }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 错误状态 -->
-    <div v-else-if="errorMessage" class="error-container">
+    <div v-if="errorMessage" class="error-container">
       <el-empty
         :image-size="120"
         :description="errorMessage"
       >
         <el-button type="primary" @click="retryLoad">重新加载</el-button>
       </el-empty>
-    </div>
-
-    <!-- 活动列表 -->
-    <div v-else class="activity-grid">
-      <div
-        v-for="activity in filteredActivities"
-        :key="activity.id"
-        class="activity-card"
-        @click="goToDetail(activity.id)"
-      >
-        <!-- 活动封面 -->
-        <div class="activity-cover" v-if="activity.cover_image">
-          <img :src="activity.cover_image" :alt="activity.title" />
-          <div class="activity-status" :class="getStatusClass(activity.status)">
-            {{ getStatusText(activity.status) }}
-          </div>
-        </div>
-
-        <div class="activity-cover placeholder" v-else>
-          <div class="activity-status" :class="getStatusClass(activity.status)">
-            {{ getStatusText(activity.status) }}
-          </div>
-        </div>
-
-        <!-- 活动内容 -->
-        <div class="activity-content">
-          <h3 class="activity-title">{{ activity.title }}</h3>
-
-          <p class="activity-description">{{ activity.description }}</p>
-
-          <div class="activity-info">
-            <div class="info-item">
-              <el-icon><Location /></el-icon>
-              <span>{{ activity.location }}</span>
-            </div>
-
-            <div class="info-item">
-              <el-icon><Calendar /></el-icon>
-              <span>{{ formatDate(activity.start_time) }}</span>
-            </div>
-
-            <div class="info-item">
-              <el-icon><User /></el-icon>
-              <span>{{ activity.current_participants || 0 }}/{{ activity.max_participants }}人</span>
-            </div>
-          </div>
-
-          <div class="activity-footer">
-            <el-tag
-              :type="getStatusTagType(activity.status)"
-              size="small"
-            >
-              {{ getStatusText(activity.status) }}
-            </el-tag>
-
-            <div class="progress-info" v-if="activity.max_participants > 0">
-              <el-progress
-                :percentage="getParticipantPercentage(activity)"
-                :stroke-width="6"
-                :show-text="false"
-              />
-              <span class="progress-text">
-                {{ activity.current_participants || 0 }}/{{ activity.max_participants }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- 空状态 -->
@@ -170,7 +167,9 @@ const loadActivities = async () => {
     })
 
     if (result.success) {
-      activities.value = result.data || []
+      // 适配数据格式：result.data 可能是 { items: [...], total: ... } 或直接是数组
+      const items = result.data?.items || result.data || []
+      activities.value = Array.isArray(items) ? items : []
     } else {
       errorMessage.value = result.error || '加载活动失败'
     }
@@ -386,6 +385,11 @@ onMounted(() => {
   font-size: 12px;
   color: #909399;
   white-space: nowrap;
+}
+
+/* 隐藏 el-progress 组件内部的百分比文字 */
+.progress-info :deep(.el-progress__text) {
+  display: none !important;
 }
 
 @media (max-width: 768px) {

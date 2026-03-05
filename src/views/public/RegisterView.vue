@@ -11,6 +11,19 @@
           </div>
           <h2>社区交流平台</h2>
           <p>创建新账号</p>
+          <el-alert
+            type="info"
+            :closable="false"
+            show-icon
+            style="margin-top: 15px"
+          >
+            <template #title>
+              <div style="font-size: 12px; line-height: 1.6">
+                <strong>纯前端模式 - 数据存储在本地</strong><br>
+                注册的账号仅保存在浏览器 localStorage 中
+              </div>
+            </template>
+          </el-alert>
         </div>
 
         <el-form @submit.prevent="handleRegister" :model="registerForm" :rules="rules" ref="registerFormRef">
@@ -180,14 +193,14 @@ const handleRegister = async () => {
     loading.value = true
     errorMessage.value = ''
 
-    // 调用注册API
-    const success = await authStore.register(registerForm)
+    // 调用本地注册
+    const result = await authStore.register(registerForm)
 
-    if (success) {
+    if (result.success) {
       ElMessage.success('注册成功，请登录')
       router.push('/login')
     } else {
-      errorMessage.value = '注册失败，请检查信息后重试'
+      errorMessage.value = result.message || '注册失败，请检查信息后重试'
     }
   } catch (error) {
     console.error('注册错误:', error)

@@ -144,16 +144,22 @@ const fetchComments = async () => {
     const result = await activityStore.fetchDiscussions(activityId.value)
 
     if (result.success) {
-      comments.value = result.data.map(comment => ({
-        id: comment.id,
-        content: comment.content,
-        create_time: comment.create_time,
-        author_display: comment.author_display || '匿名用户',
-        author_user_id: comment.author_user_id,
-        author_avatar: comment.author_avatar, // 新增头像字段
-        discuss_id: comment.discuss_id,
-        parent_comment_id: comment.parent_comment_id,
-        replies: comment.replies || [] // 使用API返回的回复数据
+      // 适配数据格式：result.data 可能是 { items: [...] } 或直接是数组
+      const commentsData = result.data?.items || result.data || []
+      const commentsArray = Array.isArray(commentsData) ? commentsData : []
+
+      comments.value = commentsArray.filter(Boolean).map(comment => ({
+        id: comment?.id,
+        content: comment?.content,
+        create_time: comment?.create_time,
+        // 兼容 Mock 数据和真实 API 字段
+        author_display: comment?.author_display || comment?.user_display_name || '匿名用户',
+        author_user_id: comment?.author_user_id || comment?.user_id,
+        author_avatar: comment?.author_avatar || comment?.user_avatar,
+        // 对于讨论列表，discuss_id 就是讨论本身的 id
+        discuss_id: comment?.discuss_id || comment?.id,
+        parent_comment_id: comment?.parent_comment_id,
+        replies: comment?.replies || [] // 使用API返回的回复数据
       }))
     } else {
       comments.value = []
@@ -235,12 +241,18 @@ const handleLoadReplies = async (discussionId) => {
       // 将回复数据合并到对应的讨论中
       const discussion = comments.value.find(c => c.id === discussionId)
       if (discussion) {
-        // 确保回复数据包含头像字段
-        discussion.replies = result.data.map(reply => ({
+        // 适配数据格式：result.data 可能是 { items: [...] } 或直接是数组
+        const repliesData = result.data?.items || result.data || []
+        const repliesArray = Array.isArray(repliesData) ? repliesData : []
+
+        // 确保回复数据包含正确的字段映射
+        discussion.replies = repliesArray.filter(Boolean).map(reply => ({
           ...reply,
-          author_avatar: reply.author_avatar // 确保包含头像字段
+          // 兼容 Mock 数据和真实 API 字段
+          author_display: reply.author_display || reply.user_display_name || '匿名用户',
+          author_avatar: reply.author_avatar || reply.user_avatar
         }))
-        discussion.hasMoreReplies = result.data.length >= 10 // 假设每页10条，如果满了就可能有更多
+        discussion.hasMoreReplies = repliesArray.length >= 10 // 假设每页10条，如果满了就可能有更多
       }
     } else {
       console.error('加载回复失败:', result.error)
@@ -314,12 +326,13 @@ const fetchRatings = async () => {
       if (apiData.ratings && Array.isArray(apiData.ratings)) {
         ratings.value = apiData.ratings.map(rating => ({
           id: rating.id,
-          rating: rating.score, // 注意API返回的是score字段
+          // 兼容 Mock 数据和真实 API 字段
+          rating: rating.score || rating.rating,
           comment: rating.comment,
           created_at: rating.created_at,
-          user_display_name: rating.rater_display || rating.user_info?.username || '匿名用户',
-          user_avatar: rating.user_info?.avatar,
-          rater_avatar: rating.rater_avatar // 新增评分者头像字段
+          user_display_name: rating.rater_display || rating.user_display_name || rating.user_info?.username || '匿名用户',
+          user_avatar: rating.user_info?.avatar || rating.user_avatar,
+          rater_avatar: rating.rater_avatar || rating.user_avatar
         }))
       }
 

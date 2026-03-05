@@ -51,8 +51,8 @@
 
       <el-form-item label="角色" required prop="role" class="info-form-item">
         <el-select v-model="form.role" placeholder="请选择角色" :disabled="isLoading" class="info-form-select">
-          <el-option label="管理员" value="admin"></el-option>
-          <el-option label="普通管理员" value="normal_admin"></el-option>
+          <el-option label="超级管理员" value="SUPER_ADMIN"></el-option>
+          <el-option label="管理员" value="ADMIN"></el-option>
         </el-select>
       </el-form-item>
 
@@ -84,12 +84,9 @@ import { useRouter, useRoute } from 'vue-router';
 import { getCommonFormRules, useSubmitCommonLogic, fetchEditData } from '@/utils/admin/admin_info_edit.js';
 import '@/styles/admin/admin_info_edit.css';
 import { formatAvatarUrl } from "@/utils/common/format.js";
-// 导入 ImageCropper 组件（与新增页一致）
 import ImageCropper from '@/components/ImageCropper.vue';
-
-import axios from 'axios';
-
-import { BASE_URL } from '@/config.js';
+import { userAdapter } from '@/services/userAdapter';
+import { uploadImage } from '@/utils/upload.js';
 
 const router = useRouter();
 const route = useRoute();
@@ -118,8 +115,8 @@ const tempPreviewUrl = ref('');
 
 // 表单验证规则
 const formRules = getCommonFormRules([
-  { label: '管理员', value: 'admin' },
-  { label: '普通管理员', value: 'normal_admin' }
+  { label: '超级管理员', value: 'SUPER_ADMIN' },
+  { label: '管理员', value: 'ADMIN' }
 ]);
 
 // 接收裁剪后的文件（与新增页逻辑完全一致）
@@ -135,6 +132,7 @@ const onCroppedFileReady = (file) => {
 };
 
 // 提交逻辑：适配裁剪组件，有新裁剪文件则上传，否则保持原有头像
+// 提交逻辑：使用 userAdapter（支持 Mock 模式）
 const handleSubmit = async () => {
   if (isLoading.value) return;
   try {
@@ -145,57 +143,33 @@ const handleSubmit = async () => {
     isLoading.value = true;
     errorMessage.value = '';
 
-    // 2. 组装提交参数（基础信息）
-    const submitData = {
-      table_name: 'admin_info',
-      operate_type: 'edit',
-      id: adminId,
-      kwargs: {
-        username: form.value.username,
-        phone: form.value.phone,
-        email: form.value.email || '',
-        role: form.value.role
-      }
+    // 2. 若有新裁剪的头像，先上传头像
+    if (croppedFile.value) {
+      const avatarUrl = await uploadImage(croppedFile.value);
+      form.value.avatar = avatarUrl;
+    }
+
+    // 3. 组装更新数据
+    const updateData = {
+      username: form.value.username,
+      phone: form.value.phone,
+      email: form.value.email || '',
+      avatar: form.value.avatar
     };
 
-    // 3. 若输入了新密码，添加密码字段
-    if (form.value.password) {
-      submitData.kwargs.password = form.value.password;
+    // 4. 使用 userAdapter 更新管理员（支持 Mock 模式自动切换）
+    const editResponse = await userAdapter.updateUser(parseInt(adminId), updateData);
+
+    if (!editResponse.success) {
+      throw new Error(editResponse.message || '编辑管理员失败');
     }
 
-    // 4. 调用后端"编辑管理员"接口（使用专用更新接口）
-    const editResponse = await axios.put(`${BASE_URL}/api/admin/update/${adminId}`, submitData.kwargs);
+    errorMessage.value = '管理员信息更新成功！';
 
-    if (!editResponse.data.success) {
-      throw new Error(editResponse.data.message || '编辑管理员失败');
-    }
-
-    errorMessage.value = '管理员信息更新成功，正在处理头像...';
-
-    // 5. 若有新裁剪的头像，上传头像（单独调用上传接口）
-    if (croppedFile.value) {
-      const formData = new FormData();
-      formData.append('table_name', 'admin_info');
-      formData.append('record_id', adminId);
-      formData.append('avatar', croppedFile.value);
-
-      const uploadResponse = await axios.post(`${BASE_URL}/api/common/upload/avatar`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-
-      if (uploadResponse.data.success) {
-        errorMessage.value = '管理员信息更新成功，头像上传完成！';
-      } else {
-        errorMessage.value = '管理员信息更新成功，头像上传失败：' + uploadResponse.data.message;
-      }
-    } else {
-      errorMessage.value = '管理员信息更新成功（保持原头像）';
-    }
-
-    // 6. 跳转管理员列表页
+    // 5. 跳转管理员列表页
     setTimeout(() => {
       router.push('/admin/user/admin');
-    }, 3000);
+    }, 1500);
   } catch (error) {
     errorMessage.value = error.response?.data?.message || error.message || '提交失败';
   } finally {

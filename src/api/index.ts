@@ -74,6 +74,29 @@ interface AdminData {
   // 其他管理员字段...
 }
 
+// 批量审核数据类型
+interface BatchReviewData {
+  content_ids: number[]
+  action: 'approve' | 'reject'
+  reason?: string
+}
+
+// 用户管理操作数据类型
+interface UserOperationData {
+  action: 'ban' | 'unban' | 'reset_password'
+  reason?: string
+  new_password?: string
+}
+
+// 公告相关类型
+interface NoticeData {
+  title: string
+  content: string
+  type: 'normal' | 'urgent' | 'system'
+  status: 'draft' | 'published'
+  is_pinned: boolean
+  // 其他公告字段...
+}
 
 // 科普文章API接口
 export const scienceApi = {
@@ -150,7 +173,7 @@ export const activityApi = {
 
   // 获取活动评分（公开接口）
   getActivityRatings(activityId: number, params: QueryParams = {}): Promise<ApiResponse<UnknownResponse>> {
-    return request.get(`/api/public/activities/activities/${activityId}`, { params })
+    return request.get(`/api/public/activities/activities/${activityId}/ratings`, { params })
   },
 
   // ========== 认证接口（需要JWT Token） ==========
@@ -269,7 +292,7 @@ export const userApi = {
 
   // 获取最近活动
   getRecentActivities(params: QueryParams = {}): Promise<ApiResponse<Activity[]>> {
-    return request.get('/api/user/user/recent-activities', { params })
+    return request.get('/api/user/recent-activities', { params })
   },
 
   // 更新用户个人信息
@@ -424,7 +447,7 @@ export const userApi = {
    * 获取未读通知数量
    */
   getUnreadCount(): Promise<ApiResponse<{ count: number }>> {
-    return request.get('/api/user/user/notifications/unread-count')
+    return request.get('/api/user/notifications/unread-count')
   },
 
   /**
@@ -463,13 +486,7 @@ export const userApi = {
   }
 }
 
-interface UserOperationData {
-}
-
-interface BatchReviewData {
-}
-
-// 管理员API接口
+// 管理员API接口（重构版 - 使用规范的RESTful API）
 export const adminApi = {
   // ========== 管理员认证相关 ==========
 
@@ -558,24 +575,74 @@ export const adminApi = {
   // ========== 科普文章管理（专用接口） ==========
 
   science: {
-    // 创建科普文章（专用接口）
+    // 获取所有文章列表（分页、筛选）
+    list(params: {
+      page?: number
+      size?: number
+      category?: string
+      status?: 'published' | 'draft' | 'archived'
+      keyword?: string
+    } = {}): Promise<ApiResponse<{
+      items: ScienceArticle[]
+      total: number
+      page: number
+      size: number
+    }>> {
+      return request.get('/api/science/admin/articles', { params })
+    },
+
+    // 获取文章详情
+    detail(id: number): Promise<ApiResponse<ScienceArticle>> {
+      return request.get(`/api/science/admin/articles/${id}`)
+    },
+
+    // 创建科普文章
     create(data: Partial<ScienceArticle>): Promise<ApiResponse<ScienceArticle>> {
-      return request.post('/api/admin/science/articles', data)
+      return request.post('/api/science/admin/articles', data)
     },
 
-    // 更新科普文章（专用接口）
+    // 更新科普文章
     update(id: number, data: Partial<ScienceArticle>): Promise<ApiResponse<ScienceArticle>> {
-      return request.put(`/api/admin/science/articles/${id}`, data)
+      return request.put(`/api/science/admin/articles/${id}`, data)
     },
 
-    // 删除科普文章（专用接口）
+    // 删除科普文章
     delete(id: number): Promise<ApiResponse<UnknownResponse>> {
-      return request.delete(`/api/admin/science/articles/${id}`)
+      return request.delete(`/api/science/admin/articles/${id}`)
     },
 
-    // 获取科普文章列表（专用接口）
-    list(params: QueryParams = {}): Promise<ApiResponse<ScienceArticle[]>> {
-      return request.get('/api/admin/science/articles', { params })
+    // 批量删除文章
+    batchDelete(ids: number[]): Promise<ApiResponse<UnknownResponse>> {
+      return request.post('/api/science/admin/articles/batch-delete', { article_ids: ids })
+    },
+
+    // 审核通过
+    approve(id: number): Promise<ApiResponse<UnknownResponse>> {
+      return request.post(`/api/science/admin/articles/${id}/approve`)
+    },
+
+    // 审核驳回
+    reject(id: number, reason?: string): Promise<ApiResponse<UnknownResponse>> {
+      return request.post(`/api/science/admin/articles/${id}/reject`, { reason })
+    },
+
+    // 批量更新状态（发布、下架等）
+    batchStatus(data: {
+      article_ids: number[]
+      action: 'publish' | 'archive' | 'draft'
+    }): Promise<ApiResponse<UnknownResponse>> {
+      return request.post('/api/science/admin/articles/batch-status', data)
+    },
+
+    // 获取管理员统计数据
+    statistics(): Promise<ApiResponse<{
+      total: number
+      published: number
+      draft: number
+      archived: number
+      pending_review: number
+    }>> {
+      return request.get('/api/science/admin/articles/statistics')
     }
   },
 
@@ -606,7 +673,7 @@ export const adminApi = {
       });
     },
 
-    // 获取活动列表  ：GET /api/activities/admin/activities
+    // 获取活动列表  替换为管理员专用接口：GET /api/activities/admin/activities
     list(params: QueryParams = {}): Promise<ApiResponse<{
       total: number;
       page: number;
@@ -616,6 +683,7 @@ export const adminApi = {
       return request.get('/api/activities/admin/activities', { params });
     },
 
+    // ========== 新增：后端已实现的管理员专属接口（前端必加，完整覆盖业务） ==========
     // 获取单活动详情  匹配后端：GET /api/activities/admin/activities/{id}
     detail(id: number): Promise<ApiResponse<Activity>> {
       return request.get(`/api/activities/admin/activities/${id}`);
@@ -743,6 +811,90 @@ export const authApi = {
   }
 }
 
+// 公告API接口
+export const noticeApi = {
+  // ========== 公开接口（无需认证） ==========
+
+  // 获取公告列表（专用公开接口）
+  getPublicNotices(params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
+    return request.get('/api/public/notice/list', { params })
+  },
+
+  // 获取公告详情（专用公开接口）
+  getPublicNoticeDetail(noticeId: number): Promise<ApiResponse<UnknownResponse>> {
+    return request.get(`/api/public/notice/detail/${noticeId}`)
+  },
+
+  // 获取最新公告（公开接口）
+  getLatestNotices(params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
+    return request.get('/api/public/notice/list', { params: { ...params, size: 5 } })
+  },
+
+  // 获取置顶公告（公开接口）
+  get pinnedNotices(): Promise<ApiResponse<UnknownResponse[]>> {
+    return request.get('/api/public/notice/list', { params: { is_pinned: true } })
+  },
+
+  // 获取公告类型（公开接口）
+  getNoticeTypes(): Promise<ApiResponse<UnknownResponse[]>> {
+    return request.get('/api/public/notice/types')
+  },
+
+  // 获取公告统计（公开接口）
+  getNoticeStatistics(): Promise<ApiResponse<UnknownResponse>> {
+    return request.get('/api/public/notice/statistics')
+  },
+
+  // ========== 管理员接口（需要认证） ==========
+  // 蓝图路由前缀: /api/notice/admin
+
+  // 获取管理员公告列表（GET/POST /api/notice/admin/list）
+  getAdminNotices(params: QueryParams = {}): Promise<ApiResponse<UnknownResponse[]>> {
+    return request.get('/api/notice/admin/list', { params })
+  },
+
+  // 获取管理员公告详情
+  getAdminNoticeDetail(noticeId: number): Promise<ApiResponse<UnknownResponse>> {
+    return request.get(`/api/notice/admin/detail/${noticeId}`)
+  },
+
+  // 创建公告（POST /api/notice/admin/create）
+  createNotice(noticeData: NoticeData): Promise<ApiResponse<NoticeData>> {
+    return request.post('/api/notice/admin/create', noticeData)
+  },
+
+  // 更新公告（PUT /api/notice/admin/update/<notice_id>）
+  updateNotice(noticeId: number, noticeData: Partial<NoticeData>): Promise<ApiResponse<NoticeData>> {
+    return request.put(`/api/notice/admin/update/${noticeId}`, noticeData)
+  },
+
+  // 删除公告（DELETE /api/notice/admin/delete/<notice_id>）
+  deleteNotice(noticeId: number): Promise<ApiResponse<UnknownResponse>> {
+    return request.delete(`/api/notice/admin/delete/${noticeId}`)
+  },
+
+  // 置顶切换（POST /api/notice/admin/top/<notice_id>）
+  // 需要传递 is_top 参数指定目标状态
+  togglePinNotice(noticeId: number, currentPinnedState: boolean): Promise<ApiResponse<UnknownResponse>> {
+    // 切换状态：如果当前是置顶，则取消置顶；如果当前未置顶，则置顶
+    return request.post(`/api/notice/admin/top/${noticeId}`, { is_top: !currentPinnedState })
+  },
+
+  // 置顶公告（POST /api/notice/admin/top/<notice_id>）
+  pinNotice(noticeId: number): Promise<ApiResponse<UnknownResponse>> {
+    return request.post(`/api/notice/admin/top/${noticeId}`, { is_top: true })
+  },
+
+  // 取消置顶公告（POST /api/notice/admin/top/<notice_id>）
+  unpinNotice(noticeId: number): Promise<ApiResponse<UnknownResponse>> {
+    return request.post(`/api/notice/admin/top/${noticeId}`, { is_top: false })
+  },
+
+  // 获取公告统计信息（GET /api/notice/admin/statistics）
+  getNoticeStats(): Promise<ApiResponse<UnknownResponse>> {
+    return request.get('/api/notice/admin/statistics')
+  }
+}
 
 export default {
   scienceApi,
@@ -750,4 +902,5 @@ export default {
   adminApi,
   userApi,
   authApi,
+  noticeApi
 }

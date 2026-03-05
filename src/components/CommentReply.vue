@@ -23,7 +23,7 @@
         <!-- 回复操作按钮 -->
         <div class="reply-action-buttons">
           <el-button
-            type="text"
+            type="link"
             size="small"
             class="reply-btn"
             @click="$emit('reply-to-comment', reply)"
@@ -34,7 +34,7 @@
 
           <!-- 删除按钮 - 只对当前用户自己的回复显示 -->
           <el-button
-            type="text"
+            type="link"
             size="small"
             class="delete-btn"
             @click="handleDeleteReply"

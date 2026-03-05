@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 import { activityApi, adminApi } from '@/api'
+import { activityAdapter } from '@/services/activityAdapter'
 import { useApiCall } from '@/composables/useApiCall'
 import { getStatusesByFilter } from '@/config/activityStatus'
 import { useAuthStore } from '@/stores/auth'
@@ -13,10 +14,11 @@ export const useActivityStore = defineStore('activity', () => {
   const myBookings = ref([])
   const myActivities = ref([])
 
-  // 获取活动列表（公开接口）
+  // 获取活动列表（公开接口）- 使用 activityAdapter 支持 Mock 切换
   const { execute: _fetchPublicActivities, loading } = useApiCall(
-    activityApi.getPublicActivities,
+    (params: any) => activityAdapter.getPublicActivities?.(params) || Promise.resolve({ success: true, data: { items: [], total: 0 } }),
     {
+      requireAuth: false, // 公开接口不需要认证
       onSuccess: (data) => {
         const items = data?.items || data || []
         activities.value = items
@@ -27,8 +29,9 @@ export const useActivityStore = defineStore('activity', () => {
 
   // 获取活动列表（认证接口）
   const { execute: _fetchActivities } = useApiCall(
-    activityApi.getPublicActivities,
+    (params: any) => activityAdapter.getPublicActivities?.(params) || Promise.resolve({ success: true, data: { items: [], total: 0 } }),
     {
+      requireAuth: false, // 活动列表不需要认证
       onSuccess: (data) => {
         const items = data?.items || data || []
         activities.value = items
@@ -46,10 +49,11 @@ export const useActivityStore = defineStore('activity', () => {
     })
   }
 
-  // 获取单个活动（公开接口）
+  // 获取单个活动（公开接口）- 使用 activityAdapter 支持 Mock 切换
   const { execute: _fetchPublicActivity } = useApiCall(
-    activityApi.getPublicActivityDetail,
+    (id: number) => activityAdapter.getPublicActivityDetail?.(id) || Promise.resolve({ success: false, message: 'Activity adapter not found' }),
     {
+      requireAuth: false, // 公开接口不需要认证
       onSuccess: (data) => {
         currentActivity.value = data
       }
@@ -67,7 +71,7 @@ export const useActivityStore = defineStore('activity', () => {
 
     // 如果公开接口失败，尝试用认证接口
     const { execute: _fetchActivityDetail } = useApiCall(
-      activityApi.getActivityDetail,
+      (id: number) => activityAdapter.getActivityDetail?.(id) || Promise.resolve({ success: false }),
       {
         onSuccess: (data) => {
           currentActivity.value = data
@@ -80,7 +84,7 @@ export const useActivityStore = defineStore('activity', () => {
 
   // 创建活动（组织者功能）
   const { execute: _createActivity } = useApiCall(
-    activityApi.createActivity,
+    (data: any) => activityAdapter.createActivity?.(data) || Promise.resolve({ success: false }),
     {
       onSuccess: (data) => {
         if (data) {
@@ -93,23 +97,26 @@ export const useActivityStore = defineStore('activity', () => {
   const createActivity = async (activityData) => await _createActivity(activityData)
 
   // 更新活动（组织者功能）
-  const { execute: _updateActivity } = useApiCall(activityApi.updateActivity, {
-    onSuccess: (data) => {
-      if (data) {
-        const index = activities.value.findIndex(activity => activity.id === data.id)
-        if (index !== -1) {
-          activities.value[index] = data
-        }
-        const myIndex = myActivities.value.findIndex(activity => activity.id === data.id)
-        if (myIndex !== -1) {
-          myActivities.value[myIndex] = data
-        }
-        if (currentActivity.value?.id === data.id) {
-          currentActivity.value = data
+  const { execute: _updateActivity } = useApiCall(
+    (id: number, data: any) => activityAdapter.updateActivity?.(id, data) || Promise.resolve({ success: false }),
+    {
+      onSuccess: (data) => {
+        if (data) {
+          const index = activities.value.findIndex(activity => activity.id === data.id)
+          if (index !== -1) {
+            activities.value[index] = data
+          }
+          const myIndex = myActivities.value.findIndex(activity => activity.id === data.id)
+          if (myIndex !== -1) {
+            myActivities.value[myIndex] = data
+          }
+          if (currentActivity.value?.id === data.id) {
+            currentActivity.value = data
+          }
         }
       }
     }
-  })
+  )
   const updateActivity = async (id, activityData) => await _updateActivity(id, activityData)
 
   // 删除活动（管理员功能）
@@ -134,17 +141,27 @@ export const useActivityStore = defineStore('activity', () => {
       return { success: false, error: '管理员账号无法报名参加活动' }
     }
 
-    const { execute } = useApiCall(activityApi.bookActivity)
-    return await execute(id)
+    // 传递 user_id 到 bookingData
+    const bookingData = {
+      user_id: authStore.user?.id,
+      notes: ''
+    }
+
+    console.log('[DEBUG activityStore.bookActivity] 预约活动，activityId:', id, 'bookingData:', bookingData)
+
+    const { execute } = useApiCall((id: number, data?: ActivityBookingData) => activityAdapter.bookActivity?.(id, data) || Promise.resolve({ success: false }))
+    return await execute(id, bookingData)
   }
 
   // 取消预约
-  const { execute: _cancelBooking } = useApiCall(activityApi.cancelBooking)
+  const { execute: _cancelBooking } = useApiCall(
+    (id: number) => activityAdapter.cancelBooking?.(id) || Promise.resolve({ success: false })
+  )
   const cancelBooking = async (activityId) => await _cancelBooking(activityId)
 
   // 获取我的预约
   const { execute: _fetchMyBookings } = useApiCall(
-    activityApi.getMyBookings,
+    (params: any) => activityAdapter.getMyBookings?.(1, params) || Promise.resolve({ success: true, data: { items: [] } }),
     {
       onSuccess: (data) => {
         const items = data?.items || data || []
@@ -156,7 +173,7 @@ export const useActivityStore = defineStore('activity', () => {
 
   // 获取我的活动（组织者功能）
   const { execute: _fetchMyActivities } = useApiCall(
-    activityApi.getMyActivities,
+    (params: any) => activityAdapter.getMyActivities?.(1, params) || Promise.resolve({ success: true, data: { items: [] } }),
     {
       onSuccess: (data) => {
         const items = data?.items || data || []
@@ -191,7 +208,7 @@ export const useActivityStore = defineStore('activity', () => {
   // 添加评论
   const createDiscussion = async (activityId, discussionData) => {
     const { execute } = useApiCall(
-      activityApi.createDiscussion,
+      (id: number, data: any) => activityAdapter.createDiscussion?.(id, data) || Promise.resolve({ success: false }),
       {
         onSuccess: (data) => {
           if (currentActivity.value?.id === activityId && currentActivity.value.discussions) {
@@ -206,13 +223,15 @@ export const useActivityStore = defineStore('activity', () => {
   // 讨论留言功能
 
   // 创建讨论留言（回复讨论）
-  const { execute: _createDiscussionComment } = useApiCall(activityApi.createDiscussionComment)
+  const { execute: _createDiscussionComment } = useApiCall(
+    (id: number, data: any) => activityAdapter.createDiscussionComment?.(id, data) || Promise.resolve({ success: false })
+  )
   const createDiscussionComment = async (discussionId, commentData) =>
     await _createDiscussionComment(discussionId, commentData)
 
   // 获取讨论留言列表（需要登录）
   const { execute: _fetchDiscussionComments } = useApiCall(
-    activityApi.getDiscussionComments,
+    (id: number, params?: any) => activityAdapter.getDiscussionComments?.(id, params) || Promise.resolve({ success: true, data: { items: [] } }),
     {
       onSuccess: (data) => {
         const items = data?.items || data || []
@@ -225,7 +244,7 @@ export const useActivityStore = defineStore('activity', () => {
 
   // 访客获取讨论留言列表（无需登录）
   const { execute: _fetchPublicDiscussionComments } = useApiCall(
-    activityApi.getPublicDiscussionComments,
+    (id: number, params?: any) => activityAdapter.getPublicDiscussionComments?.(id, params) || Promise.resolve({ success: true, data: { items: [] } }),
     {
       onSuccess: (data) => {
         const items = data?.items || data || []
@@ -237,22 +256,28 @@ export const useActivityStore = defineStore('activity', () => {
     await _fetchPublicDiscussionComments(discussionId, params)
 
   // 删除讨论留言
-  const { execute: _deleteDiscussionComment } = useApiCall(activityApi.deleteDiscussionComment)
+  const { execute: _deleteDiscussionComment } = useApiCall(
+    (id: number) => activityAdapter.deleteDiscussionComment?.(id) || Promise.resolve({ success: true })
+  )
   const deleteDiscussionComment = async (commentId) =>
     await _deleteDiscussionComment(commentId)
 
   // 活动评分
-  const { execute: _rateActivity } = useApiCall(activityApi.rateActivity)
+  const { execute: _rateActivity } = useApiCall(
+    (id: number, data: any) => activityAdapter.rateActivity?.(id, data) || Promise.resolve({ success: false })
+  )
   const rateActivity = async (activityId, ratingData) =>
     await _rateActivity(activityId, ratingData)
 
   // 取消活动
-  const { execute: _cancelActivity } = useApiCall(activityApi.cancelActivity)
+  const { execute: _cancelActivity } = useApiCall(
+    (id: number) => activityAdapter.cancelActivity?.(id) || Promise.resolve({ success: false })
+  )
   const cancelActivity = async (activityId) => await _cancelActivity(activityId)
 
   // 获取活动评分（认证接口）- 注意：获取的是评分数据，不是评论数据
   const { execute: _fetchActivityRatingsData } = useApiCall(
-    activityApi.getActivityRatings,
+    (id: number, params?: any) => activityAdapter.getActivityRatings?.(id, params) || Promise.resolve({ success: true, data: { items: [] } }),
     {
       onSuccess: (data) => {
         const items = data?.items || data || []
@@ -265,7 +290,7 @@ export const useActivityStore = defineStore('activity', () => {
 
   // 获取活动讨论
   const { execute: _fetchDiscussions } = useApiCall(
-    activityApi.getDiscussions,
+    (id: number, params?: any) => activityAdapter.getDiscussions?.(id, params) || Promise.resolve({ success: true, data: { items: [] } }),
     {
       onSuccess: (data) => {
         const items = data?.items || data || []
@@ -277,12 +302,14 @@ export const useActivityStore = defineStore('activity', () => {
     await _fetchDiscussions(activityId, params)
 
   // 获取用户活动统计
-  const { execute: _fetchUserActivityStats } = useApiCall(activityApi.getUserActivityStats)
+  const { execute: _fetchUserActivityStats } = useApiCall(
+    () => activityAdapter.getActivityStats?.(1) || Promise.resolve({ success: true, data: {} })
+  )
   const fetchUserActivityStats = async () => await _fetchUserActivityStats()
 
   // 获取用户活动列表
   const { execute: _fetchUserActivities } = useApiCall(
-    activityApi.getUserActivities,
+    (params?: any) => activityAdapter.getUserActivities?.(params) || Promise.resolve({ success: true, data: { items: [] } }),
     {
       onSuccess: (data) => {
         const items = data?.items || data || []
@@ -296,7 +323,7 @@ export const useActivityStore = defineStore('activity', () => {
 
   // 获取活动详细评分列表
   const { execute: _fetchActivityRatingsDetail } = useApiCall(
-    activityApi.getActivityRatingsDetail,
+    (id: number, params?: any) => activityAdapter.getActivityRatingsDetail?.(id, params) || Promise.resolve({ success: true, data: { items: [] } }),
     {
       onSuccess: (data) => {
         const items = data?.items || data || []

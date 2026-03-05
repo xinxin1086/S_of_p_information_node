@@ -1,7 +1,7 @@
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { ref, reactive, computed } from 'vue';
 
-import apiClient from '@/utils/request.js';
+import { userAdapter } from '@/services/userAdapter';
 import { uploadImage } from '@/utils/upload.js';
 
 /**
@@ -98,7 +98,6 @@ export const useListCommonLogic = (tableName, listApi = '') => {
     const fetchData = async () => {
         showTable.value = false;
         try {
-            let response;
             // 核心：过滤空字符串、null、undefined的查询条件
             const filteredKwargs = Object.fromEntries(
                 Object.entries(queryParams.value).filter(([, value]) =>
@@ -106,66 +105,31 @@ export const useListCommonLogic = (tableName, listApi = '') => {
                 )
             );
 
-            if (listApi) {
-                // 修正1：独立列表接口也使用过滤后的参数（而非原始account）
-                response = await apiClient.get(listApi, {
-                    params: {
-                        page: currentPage.value,
-                        size: pageSize.value,
-                        ...filteredKwargs // 合并过滤后的所有有效参数
-                    }
-                });
-            } else {
-                // 修正2：根据不同的表名使用不同的专用接口
-                if (tableName === 'user_info') {
-                    // 用户列表使用管理员接口
-                    response = await apiClient.get('/api/user/admin/users', {
-                        params: {
-                            page: currentPage.value,
-                            size: pageSize.value,
-                            ...filteredKwargs
-                        }
-                    });
-                } else if (tableName === 'admin_info') {
-                    // 管理员列表使用用户管理员接口（与管理员用户管理一致）
-                    response = await apiClient.get('/api/user/admin/users', {
-                        params: {
-                            page: currentPage.value,
-                            size: pageSize.value,
-                            ...filteredKwargs
-                        }
-                    });
-                } else {
-                    throw new Error(`不支持的表名: ${tableName}`);
-                }
-            }
+            // 使用 userAdapter 适配器，支持 Mock 模式自动切换
+            const result = await userAdapter.getUserList({
+                page: currentPage.value,
+                size: pageSize.value,
+                keyword: filteredKwargs.account || '',
+                role: filteredKwargs.role
+            });
 
-            // 响应拦截器返回的是完整的 Axios response 对象
-            // response.data 的结构: { success: true, data: { list: [...], total: 10 }, message: '...' }
-
-            // 调试日志：查看实际响应结构
-            console.log(`🔍 [${tableName}] API响应原始response:`, response);
-            console.log(`🔍 [${tableName}] response.data:`, response?.data);
-            console.log(`🔍 [${tableName}] response.data.data:`, response?.data?.data);
+            console.log(`🔍 [${tableName}] 适配器响应:`, result);
 
             // 检查响应是否成功
-            if (response?.data?.success) {
-                // 获取实际的数据对象
-                const resData = response.data.data || {};
+            if (result?.success && result?.data) {
+                const resData = result.data;
                 console.log(`✅ [${tableName}] 解析后的resData:`, resData);
-                console.log(`✅ [${tableName}] resData.list:`, resData?.list);
-                console.log(`✅ [${tableName}] resData.items:`, resData?.items);
 
                 tableFields.value = resData.fields || defaultFields.value;
-                tableData.value = resData.list || resData.items || [];
+                tableData.value = resData.items || [];
                 total.value = resData.total || tableData.value.length;
                 showTable.value = true;
                 errorMessage.value = '';
 
                 console.log(`✅ [${tableName}] 最终数据 - tableData:`, tableData.value.length, '条, total:', total.value);
             } else {
-                console.error(`❌ [${tableName}] 响应失败 - response.data.success:`, response?.data?.success);
-                throw new Error(response?.data?.message || '查询失败');
+                console.error(`❌ [${tableName}] 响应失败 - result.success:`, result?.success);
+                throw new Error(result?.message || '查询失败');
             }
         } catch (error) {
             errorMessage.value = error.response?.data?.message || error.message || '网络错误';
@@ -201,16 +165,14 @@ export const useListCommonLogic = (tableName, listApi = '') => {
         }
 
         try {
-            // user_info 和 admin_info 都使用相同的删除接口
-            const deleteUrl = `/api/user/admin/users/${id}`;
+            // 使用 userAdapter 适配器，支持 Mock 模式自动切换
+            const result = await userAdapter.deleteUser(id);
 
-            const response = await apiClient.delete(deleteUrl);
-            // 响应拦截器返回完整的 response 对象，需要访问 response.data
-            if (response?.data?.success) {
+            if (result?.success) {
                 ElMessage.success('删除成功');
                 fetchData();
             } else {
-                errorMessage.value = response?.data?.message || '删除失败';
+                errorMessage.value = result?.message || '删除失败';
             }
         } catch (error) {
             let errorMsg = '删除失败';
@@ -249,46 +211,29 @@ export const useListCommonLogic = (tableName, listApi = '') => {
             return;
         }
 
-        let successCount = 0;
-        let foreignKeyErrors = 0;
-        let otherErrors = 0;
+        try {
+            // 使用 userAdapter 适配器，支持 Mock 模式自动切换
+            const result = await userAdapter.batchDeleteUsers(selectedIds.value);
 
-        for (const id of selectedIds.value) {
-            try {
-                // user_info 和 admin_info 都使用相同的删除接口
-                const deleteUrl = `/api/user/admin/users/${id}`;
-
-                const response = await apiClient.delete(deleteUrl);
-                // 响应拦截器返回完整的 response 对象，需要访问 response.data
-                if (response?.data?.success) successCount++;
-            } catch (error) {
-                console.error(`删除ID=${id}失败：`, error);
-                if (error.response?.data?.message && error.response.data.message.includes('foreign key constraint')) {
-                    foreignKeyErrors++;
-                } else {
-                    otherErrors++;
-                }
+            if (result?.success) {
+                ElMessage.success(result.message || '批量删除成功');
+                selectedIds.value = [];
+                fetchData();
+            } else {
+                errorMessage.value = result?.message || '批量删除失败';
             }
-        }
+        } catch (error) {
+            let errorMsg = '批量删除失败';
 
-        let resultMsg = `批量删除完成：成功 ${successCount} 条`;
-        if (foreignKeyErrors > 0) {
-            resultMsg += `，因关联数据删除失败 ${foreignKeyErrors} 条`;
-        }
-        if (otherErrors > 0) {
-            resultMsg += `，其他错误 ${otherErrors} 条`;
-        }
+            if (error.response?.data?.message) {
+                errorMsg = error.response.data.message;
+            } else if (error.message) {
+                errorMsg = `批量删除失败：${error.message}`;
+            }
 
-        if (foreignKeyErrors > 0) {
-            ElMessage.warning(resultMsg + `。有关联数据的${tableName === 'admin_info' ? '管理员' : '用户'}无法直接删除，请先处理其关联数据。`);
-        } else if (successCount > 0) {
-            ElMessage.success(resultMsg);
-        } else {
-            ElMessage.error(resultMsg);
+            errorMessage.value = errorMsg;
+            console.error('批量删除失败：', error);
         }
-
-        selectedIds.value = [];
-        fetchData();
     };
 
     const handlePageChange = (page) => {
@@ -329,38 +274,48 @@ export const useSubmitCommonLogic = (tableName, form, formRef, isLoading, errorM
             }
 
             if (!id) {
-                // 新增操作
-                // user_info 和 admin_info 都使用相同的创建接口
-                const createUrl = '/api/user/admin/create-admin';
-                const createData = { ...form.value };
+                // 新增操作 - 使用 userAdapter 适配器
+                const createData = {
+                    account: form.value.account,
+                    username: form.value.username,
+                    phone: form.value.phone,
+                    email: form.value.email,
+                    role: form.value.role,
+                    avatar: form.value.avatar
+                };
 
-                const result = await apiClient.post(createUrl, createData);
-                // 响应拦截器返回完整的 response 对象，需要访问 result.data
-                if (result?.data?.success) {
+                // 根据表名选择适配器方法
+                const result = tableName === 'admin_info'
+                    ? await userAdapter.createAdmin(createData)
+                    : await userAdapter.createUser(createData);
+
+                if (result?.success) {
                     ElMessage.success(`新增${tableName === 'admin_info' ? '管理员' : '用户'}成功！`);
                     routerPush();
                 } else {
-                    throw new Error(result?.data?.message || '新增失败');
+                    throw new Error(result?.message || '新增失败');
                 }
             } else {
-                // 编辑操作
-                // user_info 和 admin_info 都使用相同的更新接口
-                const updateUrl = `/api/user/admin/users/${id}`;
-                const updateData = { ...form.value };
+                // 编辑操作 - 使用 userAdapter 适配器
+                const updateData = {
+                    username: form.value.username,
+                    email: form.value.email,
+                    phone: form.value.phone,
+                    avatar: form.value.avatar
+                };
 
-                // 移除不需要更新的字段
-                if (!updateData.password) delete updateData.password;
-                delete updateData.id;
-                delete updateData.account;
-                delete updateData.avatarFile;
+                // 如果修改了角色，也更新角色
+                if (form.value.role) {
+                    updateData.role = form.value.role;
+                }
 
-                const result = await apiClient.put(updateUrl, updateData);
-                // 响应拦截器返回完整的 response 对象，需要访问 result.data
-                if (result?.data?.success) {
+                const result = await userAdapter.updateUser(parseInt(id), updateData);
+
+                if (result?.success) {
                     ElMessage.success(`修改${tableName === 'admin_info' ? '管理员' : '用户'}成功！`);
                     routerPush();
                 } else {
-                    throw new Error(result?.data?.message || '修改失败');
+                    throw new Error(result?.message || '修改失败');
                 }
             }
         } catch (error) {
@@ -390,19 +345,16 @@ export const fetchEditData = async (tableName, id, form, isLoading, errorMessage
 
     isLoading.value = true;
     try {
-        // user_info 和 admin_info 都使用相同的详情接口
-        const detailUrl = `/api/user/admin/users/${id}`;
+        // 使用 userAdapter 适配器，支持 Mock 模式自动切换
+        const result = await userAdapter.getUserDetail(parseInt(id));
 
-        const result = await apiClient.get(detailUrl);
-
-        // 响应拦截器返回完整的 response 对象，需要访问 result.data
-        if (result?.data?.success && result?.data?.data) {
-            const data = result.data.data;
+        if (result?.success && result?.data) {
+            const data = result.data;
             form.value = { ...data, password: '' };
             isLoaded.value = true;
             errorMessage.value = '';
         } else {
-            throw new Error(`未查询到该${tableName === 'admin_info' ? '管理员' : '用户'}信息`);
+            throw new Error(result?.message || `未查询到该${tableName === 'admin_info' ? '管理员' : '用户'}信息`);
         }
     } catch (error) {
         errorMessage.value = error.response?.data?.message || error.message || '数据加载失败';

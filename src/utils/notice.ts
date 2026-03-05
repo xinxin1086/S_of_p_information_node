@@ -197,9 +197,31 @@ export const fetchNoticeDetail = async (noticeId: number | string): Promise<Noti
     console.log('📥 公告详情API响应:', response)
 
     // 处理响应数据结构：{data: {...}, message: '获取成功', success: true}
+    // 或直接返回 {...}
     if (response && response.data) {
       console.log('📄 解析后的公告数据:', response.data)
-      return response.data
+
+      // 确保返回的数据包含必要的字段映射
+      const detail = response.data
+      return {
+        ...detail,
+        // 确保 release_notice 字段存在（优先使用 release_notice，其次使用 content）
+        release_notice: detail.release_notice || detail.content || '',
+        // 确保标题字段存在
+        title: detail.release_title || detail.title || '未命名公告',
+        // 确保类型字段存在
+        type: detail.notice_type || detail.type || 'SYSTEM'
+      }
+    }
+
+    // 如果直接返回数据结构
+    if (response && (response.title || response.release_title || response.content)) {
+      console.log('📄 直接使用响应数据作为公告详情')
+      return {
+        ...response,
+        release_notice: response.release_notice || response.content || '',
+        title: response.release_title || response.title || '未命名公告'
+      }
     }
 
     return response

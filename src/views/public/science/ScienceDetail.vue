@@ -193,15 +193,17 @@ const likeArticle = async () => {
     // 调用 store 中的点赞方法
     const result = await scienceStore.likeScience(articleId.value)
 
-    if (result.success) {
+    if (result.success && result.data) {
       // 更新本地状态，使用后端返回的数据
-      article.value.like_count = result.data.like_count
-      article.value.is_liked = result.data.is_liked
-      article.value.isLiked = result.data.is_liked // 兼容性字段
+      article.value.like_count = result.data.like_count ?? article.value.like_count
+      article.value.is_liked = result.data.is_liked ?? false
+      article.value.isLiked = result.data.is_liked ?? false // 兼容性字段
+    } else if (!result.success) {
+      ElMessage.error(result.message || '点赞操作失败')
     }
   } catch (error) {
     console.error('点赞操作失败:', error)
-    // 如果是网络错误，可以恢复本地状态
+    ElMessage.error('点赞操作失败，请稍后重试')
   }
 }
 

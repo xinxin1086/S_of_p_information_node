@@ -13,6 +13,11 @@ import '@/styles/common/global.css'
 import '@/styles/admin/admin_info_edit.css'
 import { tokenManager } from '@/utils/tokenManager'
 
+// ========== 初始化 Mock 数据系统（开发环境） ==========
+if (import.meta.env.DEV) {
+  import('@/mock')
+}
+
 const app = createApp(App)
 
 // 清理旧的localStorage键（已弃用，现在使用tokenManager）

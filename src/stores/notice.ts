@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
-import { noticeApi } from '@/api'
+import { noticeAdapter } from '@/services/noticeAdapter'
 import { useApiCall } from '@/composables/useApiCall'
 import { formatDate } from '@/utils/notice'
 
@@ -31,12 +31,14 @@ export const useNoticeStore = defineStore('notice', () => {
   const hasNotices = computed(() => publicNotices.value.length > 0)
   const hasAdminNotices = computed(() => adminNotices.value.length > 0)
 
-  // 访客端：获取公告列表
+  // 访客端：获取公告列表（公开接口，无需认证）
   const { execute: _fetchPublicNotices, loading } = useApiCall(
-    noticeApi.getPublicNotices,
+    (params?: any) => noticeAdapter.getPublicNotices?.(params) || Promise.resolve({ success: true, data: [] }),
     {
+      requireAuth: false,
       onSuccess: (data, args) => {
-        const [params] = args
+        // 确保 args 是数组
+        const params = Array.isArray(args) && args.length > 0 ? args[0] : {}
         const { page = 1, size = 10 } = params
 
         // 处理响应数据
@@ -53,6 +55,12 @@ export const useNoticeStore = defineStore('notice', () => {
           items = data.data
           total = data.total || data.data.length
         }
+
+        // 字段映射：将后端的 is_top 映射为前端的 is_pinned
+        items = items.map(item => ({
+          ...item,
+          is_pinned: item.is_top ?? item.is_pinned ?? false
+        }))
 
         // 添加空数据日志，便于调试
         if (items.length === 0 && total === 0) {
@@ -84,12 +92,17 @@ export const useNoticeStore = defineStore('notice', () => {
     return await _fetchPublicNotices(apiParams)
   }
 
-  // 访客端：获取单个公告详情
+  // 访客端：获取单个公告详情（公开接口，无需认证）
   const { execute: _fetchPublicNotice } = useApiCall(
-    noticeApi.getPublicNoticeDetail,
+    (id: number) => noticeAdapter.getPublicNoticeDetail?.(id) || Promise.resolve({ success: false }),
     {
+      requireAuth: false,
       onSuccess: (data) => {
-        currentNotice.value = data
+        // 字段映射：将后端的 is_top 映射为前端的 is_pinned
+        currentNotice.value = {
+          ...data,
+          is_pinned: data.is_top ?? data.is_pinned ?? false
+        }
       }
     }
   )
@@ -100,10 +113,11 @@ export const useNoticeStore = defineStore('notice', () => {
 
   // 管理员端：获取公告列表
   const { execute: _fetchAdminNoticesList, loading: adminLoading } = useApiCall(
-    noticeApi.getAdminNotices,
+    (params?: any) => noticeAdapter.getAdminNotices?.(params) || Promise.resolve({ success: true, data: { items: [], total: 0 } }),
     {
       onSuccess: (data, args) => {
-        const [params] = args
+        // 确保 args 是数组
+        const params = Array.isArray(args) && args.length > 0 ? args[0] : {}
         const { page = 1, size = 10 } = params
 
         // 处理响应数据
@@ -120,6 +134,12 @@ export const useNoticeStore = defineStore('notice', () => {
           items = data.data
           total = data.total || data.data.length
         }
+
+        // 字段映射：将后端的 is_top 映射为前端的 is_pinned
+        items = items.map(item => ({
+          ...item,
+          is_pinned: item.is_top ?? item.is_pinned ?? false
+        }))
 
         // 添加空数据日志，便于调试
         if (items.length === 0 && total === 0) {
@@ -151,7 +171,7 @@ export const useNoticeStore = defineStore('notice', () => {
 
   // 管理员端：创建公告
   const { execute: _createNotice } = useApiCall(
-    noticeApi.createNotice,
+    (data: any) => noticeAdapter.createNotice?.(data) || Promise.resolve({ success: false }),
     {
       onSuccess: async () => {
         // 刷新管理员公告列表
@@ -171,7 +191,7 @@ export const useNoticeStore = defineStore('notice', () => {
 
   // 管理员端：更新公告
   const { execute: _updateNotice } = useApiCall(
-    noticeApi.updateNotice,
+    (id: number, data: any) => noticeAdapter.updateNotice?.(id, data) || Promise.resolve({ success: false }),
     {
       onSuccess: (data, args) => {
         const [id, noticeData] = args
@@ -198,7 +218,7 @@ export const useNoticeStore = defineStore('notice', () => {
 
   // 管理员端：删除公告
   const { execute: _deleteNotice } = useApiCall(
-    noticeApi.deleteNotice,
+    (id: number) => noticeAdapter.deleteNotice?.(id) || Promise.resolve({ success: true }),
     {
       onSuccess: (data, args) => {
         const [id] = args
@@ -220,18 +240,17 @@ export const useNoticeStore = defineStore('notice', () => {
 
   // 管理员端：置顶/取消置顶公告
   const { execute: _togglePinNotice } = useApiCall(
-    noticeApi.togglePinNotice,
+    (id: number, newPinnedState: boolean) => noticeAdapter.togglePinNotice?.(id, newPinnedState) || Promise.resolve({ success: true }),
     {
       onSuccess: (data, args) => {
-        const [id] = args
+        const [id, newPinnedState] = args
 
         // 更新列表中对应项的置顶状态
         const index = adminNotices.value.findIndex(notice => notice.id === id)
         if (index !== -1) {
-          const currentState = adminNotices.value[index].is_pinned || false
           adminNotices.value[index] = {
             ...adminNotices.value[index],
-            is_pinned: !currentState
+            is_pinned: newPinnedState  // 直接设置为传递过来的新状态
           }
         }
 
@@ -239,15 +258,15 @@ export const useNoticeStore = defineStore('notice', () => {
         if (currentNotice.value?.id === id) {
           currentNotice.value = {
             ...currentNotice.value,
-            is_pinned: !currentNotice.value.is_pinned
+            is_pinned: newPinnedState  // 直接设置为传递过来的新状态
           }
         }
       }
     }
   )
 
-  const togglePinNotice = async (id: number | string) => {
-    return await _togglePinNotice(id)
+  const togglePinNotice = async (id: number | string, newPinnedState: boolean) => {
+    return await _togglePinNotice(id, newPinnedState)
   }
 
   // 工具函数：清空当前公告

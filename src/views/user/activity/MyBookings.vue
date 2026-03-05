@@ -8,20 +8,16 @@
     <!-- 筛选条件 -->
     <div class="filter-section">
       <el-radio-group v-model="statusFilter" @change="filterBookings">
-        <el-radio-button label="all">全部</el-radio-button>
-        <el-radio-button label="confirmed">已确认</el-radio-button>
-        <el-radio-button label="attended">已参加</el-radio-button>
-        <el-radio-button label="cancelled">已取消</el-radio-button>
+        <el-radio-button value="all">全部</el-radio-button>
+        <el-radio-button value="confirmed">已确认</el-radio-button>
+        <el-radio-button value="attended">已参加</el-radio-button>
+        <el-radio-button value="cancelled">已取消</el-radio-button>
       </el-radio-group>
     </div>
 
     <!-- 预约列表 -->
-    <div class="bookings-container">
-      <div v-if="loading" class="loading">
-        <el-loading :active="loading" />
-      </div>
-
-      <div v-else-if="filteredBookings.length === 0" class="empty-state">
+    <div class="bookings-container" v-loading="loading" element-loading-text="加载中...">
+      <div v-if="!loading && filteredBookings.length === 0" class="empty-state">
         <el-empty description="暂无预约记录" />
       </div>
 

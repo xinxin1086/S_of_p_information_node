@@ -19,7 +19,7 @@
           <div class="average-rating">
             <div class="average-score">{{ averageRating || '0.0' }}</div>
             <el-rate
-              v-model="averageRating"
+              :model-value="Number(averageRating) || 0"
               disabled
               show-score
               text-color="#ff9900"
@@ -98,7 +98,7 @@
       <el-table-column prop="rating" label="评分" width="100">
         <template #default="scope">
           <el-rate
-              v-model="scope.row.rating"
+              :model-value="Number(scope.row.rating) || 0"
               disabled
               show-score
               text-color="#ff9900"
@@ -139,10 +139,10 @@
 <script setup>
 import { ArrowLeft } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
-import { adminApi, activityApi } from '@/api/index.js';
+import { adminApi, activityApi } from '@/api/unified';
 import { formatErrorMessage } from '@/utils/apiHelper.js';
 
 const router = useRouter();
@@ -151,6 +151,20 @@ const route = useRoute();
 // 从路由参数获取活动信息
 const activityId = ref(route.query.activityId || '');
 const activityTitle = ref(route.query.activityTitle || '');
+
+// 监听路由参数变化
+watch(
+  () => route.query,
+  (newQuery) => {
+    if (newQuery.activityId) {
+      activityId.value = newQuery.activityId;
+      activityTitle.value = newQuery.activityTitle || '';
+      // 当活动 ID 变化时重新获取数据
+      fetchRatings();
+    }
+  },
+  { immediate: false }
+);
 
 // 查询参数
 const queryParams = ref({
@@ -254,22 +268,28 @@ const fetchRatings = async () => {
       showTable.value = true;
       errorMessage.value = '';
 
-      // 获取所有评分数据来计算平均分（使用公开接口）
-      if (activityId.value) {
+      // 使用管理员接口返回的数据来计算评分统计
+      // 如果有筛选条件，只显示当前页的统计；否则需要获取全部数据
+      if (activityId.value && !queryParams.value.user_display && !queryParams.value.rating) {
+        // 无筛选条件时，获取所有评分数据来计算准确的统计
         try {
-          const allRatingsResponse = await activityApi.getActivityRatings(activityId.value);
-          if (allRatingsResponse?.success) {
-            const allRatings = allRatingsResponse.data?.items || allRatingsResponse.data || [];
-            calculateRatingStats(allRatings);
+          const allRatingsResponse = await adminApi.activityRating.list({
+            page: 1,
+            size: 9999, // 获取所有数据
+            kwargs: { activity_id: activityId.value }
+          });
+          if (allRatingsResponse?.success && allRatingsResponse.data?.list) {
+            calculateRatingStats(allRatingsResponse.data.list);
           } else {
-            // 如果公开接口失败，使用当前页的数据计算
             calculateRatingStats(resData.list || []);
           }
         } catch (error) {
           console.warn('获取全部评分数据失败，使用当前页数据计算平均分：', error);
-          // 使用当前页的数据计算平均分
           calculateRatingStats(resData.list || []);
         }
+      } else {
+        // 有筛选条件时，只统计当前页数据
+        calculateRatingStats(resData.list || []);
       }
     } else {
       errorMessage.value = '查询评分失败：' + (response?.message || '未知错误');
@@ -374,12 +394,18 @@ const handleBatchDelete = async () => {
 
 // 返回活动管理
 const goBack = () => {
-  router.push('/admin/activity-manage');
+  router.push('/admin/content/activity');
 };
 
 // 页面挂载时查询数据
 onMounted(() => {
-  fetchRatings();
+  // 如果没有活动ID，显示提示信息
+  if (!activityId.value) {
+    errorMessage.value = '未指定活动ID，请从活动管理页面进入';
+    showTable.value = false;
+  } else {
+    fetchRatings();
+  }
 });
 </script>
 

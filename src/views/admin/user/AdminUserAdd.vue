@@ -26,8 +26,8 @@
 
       <el-form-item label="角色" required prop="role" class="info-form-item">
         <el-select v-model="form.role" placeholder="请选择角色" :disabled="isLoading" class="info-form-select">
-          <el-option label="管理员" value="admin"></el-option>
-          <el-option label="普通管理员" value="normal_admin"></el-option>
+          <el-option label="超级管理员" value="SUPER_ADMIN"></el-option>
+          <el-option label="管理员" value="ADMIN"></el-option>
         </el-select>
       </el-form-item>
 
@@ -60,10 +60,8 @@ import { useRouter } from 'vue-router';
 import { getCommonFormRules } from '@/utils/admin/admin_info_edit.js';
 import '@/styles/admin/admin_info_edit.css';
 import ImageCropper from '@/components/ImageCropper.vue';
-
-import axios from 'axios';
-
-import { BASE_URL } from '@/config.js';
+import { userAdapter } from '@/services/userAdapter';
+import { uploadImage } from '@/utils/upload.js';
 
 const router = useRouter();
 const formRef = ref(null);
@@ -89,8 +87,8 @@ const tempPreviewUrl = ref(''); // 存储临时预览URL，用于卸载时释放
 
 // 表单验证规则
 const formRules = getCommonFormRules([
-  { label: '管理员', value: 'admin' },
-  { label: '普通管理员', value: 'normal_admin' }
+  { label: '超级管理员', value: 'SUPER_ADMIN' },
+  { label: '管理员', value: 'ADMIN' }
 ]);
 
 // 接收裁剪后的文件，生成临时预览URL
@@ -113,7 +111,7 @@ onUnmounted(() => {
   }
 });
 
-// 提交逻辑：分两步（创建用户→上传头像）
+// 提交逻辑：使用 userAdapter（支持 Mock 模式）
 const handleSubmit = async () => {
   if (isLoading.value) return;
   try {
@@ -124,49 +122,32 @@ const handleSubmit = async () => {
     isLoading.value = true;
     errorMessage.value = '';
 
-    // 2. 调用后端"创建管理员"接口（使用专用创建接口）
-    const createResponse = await axios.post(`${BASE_URL}/api/admin/create`, {
+    // 2. 若有裁剪图片，先上传头像
+    let avatarUrl = '';
+    if (croppedFile.value) {
+      avatarUrl = await uploadImage(croppedFile.value);
+    }
+
+    // 3. 使用 userAdapter 创建管理员（支持 Mock 模式自动切换）
+    const createResponse = await userAdapter.createAdmin({
       account: form.value.account,
-      password: form.value.password,
       username: form.value.username,
       phone: form.value.phone,
       email: form.value.email || '',
-      role: form.value.role
+      role: form.value.role,
+      avatar: avatarUrl || 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png'
     });
 
-    if (!createResponse.data.success) {
-      throw new Error(createResponse.data.message || '创建管理员失败');
+    if (!createResponse.success) {
+      throw new Error(createResponse.message || '创建管理员失败');
     }
 
-    newAdminId.value = createResponse.data.data.id;
-    errorMessage.value = '管理员创建成功，正在上传头像...';
-
-    // 3. 若有裁剪图片，调用后端“上传头像”接口
-    if (croppedFile.value) {
-      const formData = new FormData();
-      formData.append('table_name', 'admin_info');
-      formData.append('record_id', newAdminId.value);
-      formData.append('avatar', croppedFile.value);
-
-      const uploadResponse = await axios.post(`${BASE_URL}/api/common/upload/avatar`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-
-      if (uploadResponse.data.success) {
-        const officialAvatarUrl = uploadResponse.data.data.avatar_url;
-        form.value.avatar = officialAvatarUrl; // 替换为正式URL
-        errorMessage.value = '管理员创建成功，头像上传完成！';
-      } else {
-        errorMessage.value = '管理员创建成功，头像上传失败：' + uploadResponse.data.message;
-      }
-    } else {
-      errorMessage.value = '管理员创建成功（无头像）';
-    }
+    errorMessage.value = '管理员创建成功！';
 
     // 4. 跳转管理员列表页
     setTimeout(() => {
       router.push('/admin/user/admin');
-    }, 3000);
+    }, 1500);
   } catch (error) {
     errorMessage.value = error.response?.data?.message || error.message || '提交失败';
   } finally {

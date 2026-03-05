@@ -250,7 +250,7 @@ const menuItems = computed(() => [
   },
   {
     title: '用户首页',
-    path: '/user/dashboard',
+    path: '/user',
     icon: 'DataAnalysis'
   },
   {
@@ -301,7 +301,6 @@ const subMenuItems = computed(() => {
       children: [
         { title: '控制台', path: '/user/weave/dashboard' },
         { title: '创建活动', path: '/user/weave/create-activity' },
-        { title: '编辑活动', path: '/user/weave/edit-activity' },
         { title: '我的活动', path: '/user/weave/my-activities' }
       ]
     })

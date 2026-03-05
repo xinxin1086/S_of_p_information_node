@@ -176,7 +176,8 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { useActivityStore } from '@/stores/activity'
-import { fetchNoticeList, getNoticeTypeTag, getNoticeTypeText } from '@/utils/notice'
+import { noticeAdapter } from '@/services/noticeAdapter'
+import { getNoticeTypeTag, getNoticeTypeText } from '@/utils/notice'
 
 const router = useRouter()
 const activityStore = useActivityStore()
@@ -209,11 +210,17 @@ const activitiesLoading = ref(false)
 const fetchLatestNotices = async () => {
   noticeLoading.value = true
   try {
-    const result = await fetchNoticeList(1, 5) // 只取前5条最新公告
-    latestNotices.value = result.items.slice(0, 5)
+    const result = await noticeAdapter.getNoticeList({ page: 1, size: 5 })
+    // noticeAdapter 现在返回 { success: true, data: { items, total } }
+    if (result.success && result.data?.items) {
+      latestNotices.value = result.data.items.slice(0, 5)
+    } else {
+      latestNotices.value = []
+    }
   } catch (error) {
     console.error('获取最新公告失败:', error)
     ElMessage.error('获取最新公告失败')
+    latestNotices.value = []
   } finally {
     noticeLoading.value = false
   }
@@ -230,7 +237,10 @@ const fetchHotActivities = async () => {
     })
 
     if (result.success) {
-      const items = result.data || []
+      // 兼容 Mock API 和真实 API 的返回格式
+      // Mock API 返回 { items: [...], total: ... }
+      // 真实 API 可能直接返回数组
+      const items = result.data?.items || result.data || []
       const processedActivities = items.map(activity => {
         return {
           id: activity.id,

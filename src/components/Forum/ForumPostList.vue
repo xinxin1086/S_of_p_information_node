@@ -97,7 +97,7 @@
             <!-- 操作按钮 -->
             <el-button
               v-if="canEditPost(post.author_id)"
-              type="text"
+              type="link"
               size="small"
               @click="handleEditPost(post)"
             >
@@ -105,14 +105,14 @@
             </el-button>
             <el-button
               v-if="canDeletePost(post.author_id)"
-              type="text"
+              type="link"
               size="small"
               @click="handleDeletePost(post)"
             >
               删除
             </el-button>
             <el-dropdown v-if="hasAdminRights">
-              <el-button type="text" size="small">
+              <el-button type="link" size="small">
                 管理
                 <el-icon class="ml-1"><arrow-down /></el-icon>
               </el-button>

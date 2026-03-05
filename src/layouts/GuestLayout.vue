@@ -199,7 +199,7 @@ const userAvatarSrc = computed(() => {
 const handleUserAction = (command) => {
   switch (command) {
     case 'dashboard':
-      router.push('/user/dashboard')
+      router.push('/user')
       break
     case 'logout':
       authStore.logout()

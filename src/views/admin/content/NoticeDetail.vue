@@ -1,8 +1,8 @@
 <template>
-  <div class="notice-detail">
+  <div class="notice-detail" v-loading="loading" element-loading-text="加载公告详情中...">
     <!-- 页面头部 -->
-    <div class="detail-header">
-      <el-button @click="goBack" type="text" class="back-button">
+    <div class="detail-header" v-if="!loading">
+      <el-button @click="goBack" type="link" class="back-button">
         <el-icon><ArrowLeft /></el-icon>
         返回公告列表
       </el-button>
@@ -14,13 +14,8 @@
       </div>
     </div>
 
-    <!-- 加载状态 -->
-    <div v-if="loading" class="loading-container">
-      <el-loading :active="loading" text="加载公告详情中..." />
-    </div>
-
     <!-- 错误状态 -->
-    <div v-else-if="errorMessage" class="error-container">
+    <div v-if="!loading && errorMessage" class="error-container">
       <el-empty :description="errorMessage">
         <el-button type="primary" @click="retryLoad">重新加载</el-button>
       </el-empty>
@@ -30,26 +25,26 @@
     <div v-else-if="noticeData" class="notice-content">
       <!-- 公告基本信息 -->
       <div class="notice-info-section">
-        <h1 class="notice-title">{{ noticeData.release_title }}</h1>
+        <h1 class="notice-title">{{ getNoticeTitle() }}</h1>
 
         <div class="notice-meta">
-          <el-tag :type="getNoticeTypeTag(noticeData.notice_type)" size="large">
-            {{ noticeData.notice_type }}
+          <el-tag :type="getNoticeTypeTag(getNoticeType())" size="large">
+            {{ getNoticeTypeText(getNoticeType()) }}
           </el-tag>
 
           <div class="meta-item">
             <el-icon><Calendar /></el-icon>
-            <span>发布时间：{{ formatDate(noticeData.release_time) }}</span>
+            <span>发布时间：{{ formatDate(noticeData.release_time || noticeData.createdAt) }}</span>
           </div>
 
           <div class="meta-item">
             <el-icon><Clock /></el-icon>
-            <span>过期时间：{{ formatDate(noticeData.expiration) }}</span>
+            <span>过期时间：{{ formatDate(noticeData.expiration || noticeData.expireTime) }}</span>
           </div>
 
-          <div v-if="noticeData.update_time" class="meta-item">
+          <div v-if="noticeData.update_time || noticeData.updateTime" class="meta-item">
             <el-icon><Refresh /></el-icon>
-            <span>最后更新：{{ formatDate(noticeData.update_time) }}</span>
+            <span>最后更新：{{ formatDate(noticeData.update_time || noticeData.updateTime) }}</span>
           </div>
         </div>
       </div>
@@ -73,7 +68,7 @@
             <a :href="attachment.url" target="_blank" class="attachment-link">
               {{ attachment.name }}
             </a>
-            <el-button size="small" type="text" @click="downloadAttachment(attachment)">
+            <el-button size="small" type="link" @click="downloadAttachment(attachment)">
               下载
             </el-button>
           </div>
@@ -111,7 +106,21 @@ const attachments = ref([])
 
 // 净化后的公告内容
 const sanitizedNoticeContent = computed(() => {
-  return sanitizeRichText(noticeData.value?.release_notice)
+  if (!noticeData.value) return ''
+
+  // 尝试多个字段名来获取公告内容
+  const content = noticeData.value.release_notice ||
+                  noticeData.value.content ||
+                  noticeData.value.notice ||
+                  ''
+
+  console.log('🔍 公告内容字段映射:', {
+    release_notice: noticeData.value.release_notice,
+    content: noticeData.value.content,
+    finalContent: content
+  })
+
+  return sanitizeRichText(content)
 })
 
 // 方法
@@ -138,9 +147,41 @@ const getNoticeTypeTag = (type) => {
   const typeMap = {
     '系统通知': 'danger',
     '活动公告': 'warning',
-    '其他公告': 'info'
+    '其他公告': 'info',
+    'SYSTEM': 'danger',
+    'ACTIVITY': 'warning',
+    'GENERAL': 'info'
   }
   return typeMap[type] || 'info'
+}
+
+const getNoticeTypeText = (type) => {
+  const typeMap = {
+    'SYSTEM': '系统通知',
+    'ACTIVITY': '活动公告',
+    'GENERAL': '其他公告'
+  }
+  // 如果已经是中文，直接返回；否则转换
+  if (['系统通知', '活动公告', '其他公告'].includes(type)) {
+    return type
+  }
+  return typeMap[type] || '系统通知'
+}
+
+// 获取公告标题（兼容多种字段名）
+const getNoticeTitle = () => {
+  if (!noticeData.value) return ''
+  return noticeData.value.release_title ||
+         noticeData.value.title ||
+         '未命名公告'
+}
+
+// 获取公告类型（兼容多种字段名）
+const getNoticeType = () => {
+  if (!noticeData.value) return 'SYSTEM'
+  return noticeData.value.notice_type ||
+         noticeData.value.type ||
+         'SYSTEM'
 }
 
 const downloadAttachment = (attachment) => {

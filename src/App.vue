@@ -1,6 +1,8 @@
 <!-- ./src/App.vue -->
 <template>
   <router-view />
+  <!-- Mock 开发工具面板（仅开发环境显示） -->
+  <MockControlPanel v-if="isDev" />
 </template>
 
 <script setup>
@@ -9,8 +11,10 @@ import { onMounted } from 'vue'
 
 import { useAuthStore } from '@/stores/auth'
 import { preloadCriticalComponents } from '@/utils/asyncComponents'
+import MockControlPanel from '@/components/devtools/MockControlPanel.vue'
 
 const authStore = useAuthStore()
+const isDev = import.meta.env.DEV
 
 // 应用启动时检查认证状态并预加载关键组件
 onMounted(async () => {

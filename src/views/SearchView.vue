@@ -20,10 +20,10 @@
         </div>
         <div class="search-filters">
           <el-radio-group v-model="searchType" @change="performSearch">
-            <el-radio-button label="all">全部</el-radio-button>
-            <el-radio-button label="notice">公告</el-radio-button>
-            <el-radio-button label="activity">活动</el-radio-button>
-            <el-radio-button label="science">科普</el-radio-button>
+            <el-radio-button value="all">全部</el-radio-button>
+            <el-radio-button value="notice">公告</el-radio-button>
+            <el-radio-button value="activity">活动</el-radio-button>
+            <el-radio-button value="science">科普</el-radio-button>
           </el-radio-group>
         </div>
       </div>
@@ -116,7 +116,7 @@ import { ElMessage } from 'element-plus'
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
-import api from '@/api'
+import api from '@/api/unified'
 import { sanitizeHighlight } from '@/utils/sanitizeHtml'
 
 defineOptions({ name: "SearchView" })

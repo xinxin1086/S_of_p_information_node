@@ -2,28 +2,44 @@ import { ElMessage } from 'element-plus'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { scienceApi, adminApi } from '@/api'
+import { adminApi } from '@/api'
+import { scienceAdapter } from '@/services/scienceAdapter'
 import { useApiCall } from '@/composables/useApiCall'
 
 export const useScienceStore = defineStore('science', () => {
   const sciences = ref([])
   const currentScience = ref(null)
+  const pagination = ref({
+    page: 1,
+    size: 9,
+    total: 0
+  })
 
-  // 获取科普列表 - 使用 useApiCall
+  // 获取科普列表 - 使用 useApiCall（公开接口，无需认证）
   const { execute: fetchSciences, loading: listLoading } = useApiCall(
-    scienceApi.getScienceList,
+    (params?: any) => scienceAdapter.getScienceList?.(params) || Promise.resolve({ success: true, data: [], total: 0 }),
     {
-      onSuccess: (data) => {
-        const items = data?.items || []
-        sciences.value = items
+      requireAuth: false,
+      onSuccess: (data, args) => {
+        // data 是直接数组（ScienceArticle[]）
+        sciences.value = Array.isArray(data) ? data : []
+
+        // 更新分页信息，从传入的参数中获取分页信息
+        const params = Array.isArray(args) && args.length > 0 ? args[0] : {}
+        pagination.value = {
+          page: params.page || 1,
+          size: params.size || 9,
+          total: params.total || sciences.value.length
+        }
       }
     }
   )
 
-  // 获取单个科普 - 使用 useApiCall
+  // 获取单个科普 - 使用 useApiCall（公开接口，无需认证）
   const { execute: fetchScience } = useApiCall(
-    scienceApi.getScienceDetail,
+    (id: number) => scienceAdapter.getScienceDetail?.(id) || Promise.resolve({ success: false }),
     {
+      requireAuth: false,
       onSuccess: (data) => {
         currentScience.value = data
       }
@@ -85,7 +101,7 @@ export const useScienceStore = defineStore('science', () => {
 
   // 点赞科普内容 - 使用 useApiCall
   const { execute: _likeScience } = useApiCall(
-    scienceApi.likeScience,
+    (id: number) => scienceAdapter.likeScience?.(id) || Promise.resolve({ success: false }),
     {
       onSuccess: (data, args) => {
         const [id] = args
@@ -109,7 +125,7 @@ export const useScienceStore = defineStore('science', () => {
 
   // 获取科普文章详情（认证版本）
   const { execute: fetchScienceAuthenticated } = useApiCall(
-    scienceApi.getScienceDetailAuthenticated,
+    (id: number) => scienceAdapter.getScienceDetailAuthenticated?.(id) || Promise.resolve({ success: false }),
     {
       onSuccess: (data) => {
         currentScience.value = data
@@ -119,18 +135,18 @@ export const useScienceStore = defineStore('science', () => {
 
   // 记录浏览 - 使用 useApiCall
   const { execute: recordVisit } = useApiCall(
-    scienceApi.recordScienceVisit,
+    (id: number) => scienceAdapter.recordScienceVisit?.(id) || Promise.resolve({ success: true }),
     { showError: false }
   )
 
   // 获取点赞状态 - 使用 useApiCall
   const { execute: _getLikeStatus } = useApiCall(
-    scienceApi.getScienceLikeStatus,
+    (ids: number[]) => scienceAdapter.getScienceLikeStatus?.(ids) || Promise.resolve({ success: true, data: [] }),
     { showError: false }
   )
 
   const getLikeStatus = async (articleIds) => {
-    return await _getLikeStatus(articleIds.join(','))
+    return await _getLikeStatus(articleIds)
   }
 
   // 搜索科普内容（保留原实现，因为没有对应的 API 方法）
@@ -208,6 +224,7 @@ export const useScienceStore = defineStore('science', () => {
   return {
     sciences,
     currentScience,
+    pagination,
     loading: listLoading,
     fetchSciences,
     fetchScience,

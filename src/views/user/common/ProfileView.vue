@@ -16,7 +16,6 @@
                 <el-icon size="50"><User /></el-icon>
               </el-avatar>
               <h3 class="profile-name">{{ userInfo?.nickname || userInfo?.username || '用户' }}</h3>
-              <p class="profile-bio">{{ userInfo?.bio || '这个人很懒，什么都没有留下...' }}</p>
             </div>
 
             <el-divider />
@@ -35,10 +34,7 @@
                   <el-icon><Message /></el-icon>
                   邮箱
                 </span>
-                <span class="info-value">
-                  {{ userInfo?.email || '未设置' }}
-                  <el-tag v-if="userInfo?.email_verified" type="success" size="small">已验证</el-tag>
-                </span>
+                <span class="info-value">{{ userInfo?.email || '未设置' }}</span>
               </div>
 
               <div class="info-item">
@@ -48,40 +44,7 @@
                 </span>
                 <span class="info-value">
                   {{ userInfo?.phone ? maskPhone(userInfo.phone) : '未设置' }}
-                  <el-tag v-if="userInfo?.phone_verified" type="success" size="small">已验证</el-tag>
                 </span>
-              </div>
-
-              <div class="info-item" v-if="userInfo?.gender">
-                <span class="info-label">
-                  <el-icon><UserFilled /></el-icon>
-                  性别
-                </span>
-                <span class="info-value">{{ getGenderText(userInfo.gender) }}</span>
-              </div>
-
-              <div class="info-item" v-if="userInfo?.birthday">
-                <span class="info-label">
-                  <el-icon><Calendar /></el-icon>
-                  生日
-                </span>
-                <span class="info-value">{{ userInfo.birthday }}</span>
-              </div>
-
-              <div class="info-item" v-if="userInfo?.region && userInfo.region.length">
-                <span class="info-label">
-                  <el-icon><Location /></el-icon>
-                  所在地
-                </span>
-                <span class="info-value">{{ userInfo.region.join(' ') }}</span>
-              </div>
-
-              <div class="info-item" v-if="userInfo?.occupation">
-                <span class="info-label">
-                  <el-icon><Briefcase /></el-icon>
-                  职业
-                </span>
-                <span class="info-value">{{ userInfo.occupation }}</span>
               </div>
 
               <div class="info-item">
@@ -119,29 +82,13 @@
                   <div class="stat-label">评论数量</div>
                 </div>
                 <div class="stat-item">
-                  <div class="stat-number">{{ userStats.bookingCount || 0 }}</div>
-                  <div class="stat-label">活动预约</div>
+                  <div class="stat-number">{{ userStats.scienceLikeCount || 0 }}</div>
+                  <div class="stat-label">科普点赞</div>
                 </div>
                 <div class="stat-item">
-                  <div class="stat-number">{{ userStats.favoriteCount || 0 }}</div>
-                  <div class="stat-label">收藏数量</div>
+                  <div class="stat-number">{{ userStats.scienceViewCount || 0 }}</div>
+                  <div class="stat-label">科普浏览</div>
                 </div>
-              </div>
-            </el-card>
-
-            <el-card class="interests-card" v-if="userInfo.interests && userInfo.interests.length">
-              <template #header>
-                <span>兴趣爱好</span>
-              </template>
-              <div class="interests-list">
-                <el-tag
-                  v-for="interest in getUserInterests()"
-                  :key="interest.value"
-                  class="interest-tag"
-                  type="info"
-                >
-                  {{ interest.label }}
-                </el-tag>
               </div>
             </el-card>
 
@@ -192,53 +139,35 @@ import {
   Star
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 
-import { userApi } from '@/api'
+import { userApi } from '@/api/unified'
 
+const route = useRoute()
 
 defineOptions({ name: "ProfileView" })
 
-// 用户信息
+// 用户信息（只包含后端 UserInfo 类型中定义的字段）
 const userInfo = reactive({
   username: '',
   nickname: '',
   avatar: '',
-  bio: '',
   email: '',
-  email_verified: false,
   phone: '',
-  phone_verified: false,
-  gender: '',
-  birthday: '',
-  region: [],
-  occupation: '',
-  created_at: '',
-  interests: []
+  created_at: ''
 })
 
 // 用户统计信息
 const userStats = reactive({
   postCount: 0,
   commentCount: 0,
-  bookingCount: 0,
-  favoriteCount: 0
+  scienceLikeCount: 0,
+  scienceViewCount: 0
 })
 
 // 最近活动
 const recentActivities = ref([])
-
-// 兴趣选项映射
-const interestOptions = {
-  fishing: '垂钓',
-  outdoor: '户外活动',
-  photography: '摄影',
-  cooking: '烹饪',
-  reading: '阅读',
-  travel: '旅行',
-  sports: '运动',
-  music: '音乐'
-}
 
 // 格式化日期
 const formatDate = (dateString) => {
@@ -270,24 +199,6 @@ const maskPhone = (phone) => {
   return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
 }
 
-// 获取性别文本
-const getGenderText = (gender) => {
-  const genderMap = {
-    male: '男',
-    female: '女',
-    other: '其他'
-  }
-  return genderMap[gender] || '未知'
-}
-
-// 获取用户兴趣标签
-const getUserInterests = () => {
-  return (userInfo.interests || []).map(interest => ({
-    value: interest,
-    label: interestOptions[interest] || interest
-  }))
-}
-
 // 获取活动图标
 const getActivityIcon = (type) => {
   const iconMap = {
@@ -304,7 +215,13 @@ const fetchUserInfo = async () => {
   try {
     const response = await userApi.getUserInfo()
     if (response.data) {
-      Object.assign(userInfo, response.data)
+      // 只使用后端 UserInfo 类型中定义的字段
+      userInfo.username = response.data.username || ''
+      userInfo.nickname = response.data.nickname || ''
+      userInfo.avatar = response.data.avatar || ''
+      userInfo.email = response.data.email || ''
+      userInfo.phone = response.data.phone || ''
+      userInfo.created_at = response.data.created_at || ''
     }
   } catch (error) {
     ElMessage.error('获取用户信息失败')
@@ -314,20 +231,133 @@ const fetchUserInfo = async () => {
 
 // 获取用户统计信息
 const fetchUserStats = async () => {
+  console.log('[DEBUG Profile] fetchUserStats 被调用')
   try {
-    const response = await userApi.getUserStats()
-    if (response.data) {
-      Object.assign(userStats, response.data)
+    // 先检查是否是 mock 模式
+    const { shouldUseMock } = await import('@/api/unified')
+    const isMockMode = shouldUseMock()
+
+    // 只有在非 mock 模式下才使用 API 返回的统计数据
+    if (!isMockMode) {
+      const response = await userApi.getUserStats()
+      if (response.data) {
+        Object.assign(userStats, response.data)
+      }
+    }
+
+    // 动态导入科普文章和论坛数据以获取统计
+    try {
+      if (isMockMode) {
+        // Mock 模式：直接从 mock 数据统计
+        const { useAuthStore } = await import('@/stores')
+        const currentUserId = useAuthStore().user?.id
+
+        if (currentUserId) {
+          // 确保 currentUserId 是 number 类型进行比较
+          const userIdNum = typeof currentUserId === 'number' ? currentUserId : parseInt(currentUserId, 10)
+
+          // 科普文章统计 - 合并静态和动态数据
+          const { mockScienceArticleLikes: staticLikes, mockScienceArticleVisits: staticVisits } = await import('@/mock/scienceMockData')
+          const { getScienceArticleLikes, getScienceArticleVisits } = await import('@/mock/scienceMockStorage')
+
+          // 从 localStorage 读取动态数据
+          const dynamicLikes = getScienceArticleLikes()
+          const dynamicVisits = getScienceArticleVisits()
+
+          // 合并静态和动态数据（去重）
+          const allLikes = [...staticLikes]
+          dynamicLikes.forEach(like => {
+            if (!allLikes.some(l => l.id === like.id)) {
+              allLikes.push(like)
+            }
+          })
+
+          const allVisits = [...staticVisits]
+          dynamicVisits.forEach(visit => {
+            if (!allVisits.some(v => v.id === visit.id)) {
+              allVisits.push(visit)
+            }
+          })
+
+          userStats.scienceLikeCount = allLikes.filter(like => like.user_id === userIdNum).length
+          userStats.scienceViewCount = allVisits.filter(visit => visit.user_id === userIdNum).length
+
+          // 论坛统计 - 合并静态和动态数据
+          const { mockForumPosts: staticPosts, mockForumFloors: staticFloors, mockForumReplies: staticReplies } = await import('@/mock/forumMockData')
+          const { getForumPosts, getForumFloors, getForumReplies } = await import('@/mock/forumMockStorage')
+
+          // 从 localStorage 读取动态数据
+          const dynamicPosts = getForumPosts()
+          const dynamicFloors = getForumFloors()
+          const dynamicReplies = getForumReplies()
+
+          console.log('[DEBUG Profile] 静态帖子数:', staticPosts.length, '动态帖子数:', dynamicPosts.length)
+          console.log('[DEBUG Profile] 动态帖子详情:', dynamicPosts)
+          console.log('[DEBUG Profile] 动态帖子作者:', dynamicPosts.map(p => ({ id: p.id, author: p.author_user_id, title: p.title })))
+
+          // 合并静态和动态数据（去重）
+          const allPosts = [...staticPosts]
+          dynamicPosts.forEach(post => {
+            if (!allPosts.some(p => p.id === post.id)) {
+              allPosts.push(post)
+            }
+          })
+
+          const allFloors = [...staticFloors]
+          dynamicFloors.forEach(floor => {
+            if (!allFloors.some(f => f.id === floor.id)) {
+              allFloors.push(floor)
+            }
+          })
+
+          const allReplies = [...staticReplies]
+          dynamicReplies.forEach(reply => {
+            if (!allReplies.some(r => r.id === reply.id)) {
+              allReplies.push(reply)
+            }
+          })
+
+          // 过滤当前用户的帖子（支持类型安全比较）
+          const userPosts = allPosts.filter(post => {
+            const authorId = post.author_user_id
+            const match = authorId === userIdNum || authorId === String(userIdNum) || (typeof authorId === 'string' && parseInt(authorId, 10) === userIdNum)
+            if (match && dynamicPosts.some(dp => dp.id === post.id)) {
+              console.log('[DEBUG Profile] 匹配的动态帖子:', post.id, post.title, 'author_id:', authorId)
+            }
+            return match
+          })
+
+          userStats.postCount = userPosts.length
+          console.log('[DEBUG Profile] 用户帖子数:', userPosts.length, '帖子列表:', userPosts.map(p => ({ id: p.id, title: p.title, author: p.author_user_id })))
+
+          // 楼层和回复都算作评论，支持类型安全比较
+          const floorCount = allFloors.filter(floor => {
+            const authorId = floor.author_user_id
+            return authorId === userIdNum || authorId === String(userIdNum) || (typeof authorId === 'string' && parseInt(authorId, 10) === userIdNum)
+          }).length
+          const replyCount = allReplies.filter(reply => {
+            const authorId = reply.author_user_id
+            return authorId === userIdNum || authorId === String(userIdNum) || (typeof authorId === 'string' && parseInt(authorId, 10) === userIdNum)
+          }).length
+          userStats.commentCount = floorCount + replyCount
+
+          console.log('[DEBUG Profile] 用户 ID:', userIdNum)
+          console.log('[DEBUG Profile] 发帖数:', userStats.postCount, '评论数:', userStats.commentCount)
+          console.log('[DEBUG Profile] 科普点赞:', userStats.scienceLikeCount, '科普浏览:', userStats.scienceViewCount)
+        }
+      }
+    } catch (mockError) {
+      console.warn('统计获取失败:', mockError.message)
     }
   } catch (error) {
     // 静默处理统计信息获取失败，因为这些接口可能还未实现
     console.warn('统计信息接口可能未实现:', error.message)
     // 使用默认统计数据
     Object.assign(userStats, {
-      activities: 0,
-      comments: 0,
-      favorites: 0,
-      points: 0
+      postCount: 0,
+      commentCount: 0,
+      scienceLikeCount: 0,
+      scienceViewCount: 0
     })
   }
 }
@@ -350,6 +380,43 @@ onMounted(() => {
   fetchUserInfo()
   fetchUserStats()
   fetchRecentActivities()
+
+  // 监听 localStorage 变化（当在其他标签页发布新帖/回复时自动刷新统计）
+  window.addEventListener('storage', handleStorageChange)
+})
+
+// 当从其他页面返回 Profile 时，刷新统计数据
+watch(
+  () => route.path,
+  (newPath) => {
+    console.log('[DEBUG Profile] 路由变化:', newPath)
+    if (newPath === '/user/profile' || newPath.endsWith('/profile')) {
+      console.log('[DEBUG Profile] 检测到进入个人资料页，刷新统计数据')
+      fetchUserStats()
+    }
+  },
+  { immediate: false } // 组件挂载时不会立即执行，因为 onMounted 已经调用了一次
+)
+
+// 处理 localStorage 变化事件（跨标签页同步）
+const handleStorageChange = (event) => {
+  // 当论坛帖子、楼层、回复数据或科普数据发生变化时，刷新统计
+  const watchedKeys = [
+    'mock_data_forum_posts',
+    'mock_data_forum_floors',
+    'mock_data_forum_replies',
+    'mock_data_science_article_likes',
+    'mock_data_science_article_visits'
+  ]
+  if (watchedKeys.includes(event.key)) {
+    console.log('[Profile] 检测到数据变化:', event.key, '刷新统计数据')
+    fetchUserStats()
+  }
+}
+
+// 组件卸载时移除事件监听器
+onUnmounted(() => {
+  window.removeEventListener('storage', handleStorageChange)
 })
 </script>
 

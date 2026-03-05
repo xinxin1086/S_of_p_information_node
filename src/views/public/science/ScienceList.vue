@@ -42,7 +42,7 @@
                 </span>
                 <el-button
                   @click.stop="quickLike(article)"
-                  :type="article.is_liked ? 'primary' : 'text'"
+                  :type="article.is_liked ? 'primary' : 'link'"
                   size="small"
                   :loading="article.liking"
                   class="like-button"
@@ -54,6 +54,17 @@
             </div>
           </div>
         </el-card>
+      </div>
+
+      <!-- 分页组件 -->
+      <div v-if="!loading && total > 0" class="pagination-container">
+        <el-pagination
+          v-model:current-page="currentPage"
+          :page-size="9"
+          :total="total"
+          layout="total, prev, pager, next"
+          @current-change="handleCurrentChange"
+        />
       </div>
     </div>
   </div>
@@ -73,12 +84,17 @@ const scienceStore = useScienceStore()
 const loading = ref(false)
 const articles = ref([])
 
+// 分页状态
+const currentPage = ref(1)
+const pageSize = ref(9)  // 每页显示9条
+const total = ref(0)
+
 const fetchArticles = async () => {
   loading.value = true
   try {
     const result = await scienceStore.fetchSciences({
-      page: 1,
-      size: 20,
+      page: currentPage.value,
+      size: pageSize.value,
       status: 'published' // 只显示已发布的文章
     })
 
@@ -103,6 +119,9 @@ const fetchArticles = async () => {
         is_liked: false // 默认未点赞
       }))
 
+      // 更新总数
+      total.value = result.total || articles.value.length
+
       // 获取点赞状态
       await fetchLikeStatus()
     } else {
@@ -113,6 +132,12 @@ const fetchArticles = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// 分页处理方法
+const handleCurrentChange = (page) => {
+  currentPage.value = page
+  fetchArticles()
 }
 
 // 获取用户对这些文章的点赞状态
@@ -165,13 +190,13 @@ const quickLike = async (article) => {
 
 const getArticleTypeTag = (category) => {
   const categoryMap = {
-    basic: '',
+    basic: 'info',
     technique: 'success',
     environment: 'warning',
-    equipment: 'info',
+    equipment: 'primary',
     safety: 'danger'
   }
-  return categoryMap[category] || ''
+  return categoryMap[category] || 'info'
 }
 
 const getArticleTypeText = (category) => {
@@ -351,6 +376,14 @@ onMounted(() => {
 
 .stat-item .el-icon {
   font-size: 14px;
+}
+
+/* 分页容器 */
+.pagination-container {
+  margin-top: 40px;
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
 }
 
 @media (max-width: 768px) {

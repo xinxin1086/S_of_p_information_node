@@ -46,8 +46,10 @@
       <el-table-column type="selection" width="55" />
       <el-table-column type="index" label="序号" width="60" />
       <!-- 公告字段列（对应管理员组件的tableFields结构） -->
-      <el-table-column prop="release_title" label="公告标题" width="200">
-        <template #default="scope">{{ scope.row.release_title ?? '-' }}</template>
+      <el-table-column prop="title" label="公告标题" width="200">
+        <template #default="scope">
+          <span v-html="extractTitleFromContent(scope.row)"></span>
+        </template>
       </el-table-column>
       <el-table-column prop="notice_type" label="公告类型" width="120">
         <template #default="scope">{{ scope.row.notice_type ?? '-' }}</template>
@@ -220,6 +222,29 @@ const formatDate = (dateStr) => {
   });
 };
 
+// 从 content 中提取标题（支持 release_title 或从 HTML 提取）
+const extractTitleFromContent = (row) => {
+  // 优先使用 release_title 字段
+  if (row.release_title) {
+    return row.release_title;
+  }
+  // 其次使用 title 字段
+  if (row.title) {
+    return row.title;
+  }
+  // 最后从 content HTML 中提取标题
+  if (row.content) {
+    const match = row.content.match(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/i);
+    if (match && match[1]) {
+      return match[1];
+    }
+    // 如果没有找到标题标签，截取前30个字符
+    const text = row.content.replace(/<[^>]+>/g, '').trim();
+    return text.length > 30 ? text.substring(0, 30) + '...' : text;
+  }
+  return '-';
+};
+
 // 查询公告（适配分页参数）
 const fetchNotices = async () => {
   try {
@@ -356,18 +381,21 @@ const handleDelete = async (notice) => {
 const handleTogglePin = async (notice) => {
   try {
     isLoading.value = true;
-    console.log('📌 切换置顶状态:', notice.id, '当前状态:', notice.is_pinned);
 
-    const response = await noticeStore.togglePinNotice(notice.id);
+    // el-switch 的 v-model 已经更新了 notice.is_pinned
+    // 这里的 notice.is_pinned 就是新的状态（用户想要设置的状态）
+    const newPinnedState = notice.is_pinned;
+    console.log('📌 切换置顶状态:', notice.id, '新状态:', newPinnedState);
+
+    // 传递新状态给 store
+    const response = await noticeStore.togglePinNotice(notice.id, newPinnedState);
 
     if (response.success) {
-      // 置顶状态已经在 store 中自动更新
-      const newStatus = notice.is_pinned;
-      ElMessage.success(newStatus ? '置顶成功！' : '取消置顶成功！');
+      ElMessage.success(newPinnedState ? '置顶成功！' : '取消置顶成功！');
       await fetchNotices(); // 刷新列表以确保排序正确
     } else {
       // 失败时恢复原状态
-      notice.is_pinned = !notice.is_pinned;
+      notice.is_pinned = !newPinnedState;
       ElMessage.error('操作失败：' + (response.error || '未知错误'));
     }
   } catch (error) {

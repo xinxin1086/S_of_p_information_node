@@ -14,6 +14,12 @@ import type {
   TokenVerifyResponse,
   TokenRefreshRequest,
   TokenRefreshResponse,
+  PasswordResetRequest,
+  PasswordResetConfirmRequest,
+  EmailVerifyRequest,
+  EmailVerifyConfirmRequest,
+  PhoneVerifyRequest,
+  PhoneVerifyConfirmRequest
 } from '@/types/auth'
 import type {
   ForumPost,
@@ -87,9 +93,92 @@ export const authExtendedApi = {
       console.error('Token刷新失败:', error)
       throw error
     }
+  },
+
+  /**
+   * 发送密码重置验证码
+   * 接口路径: POST /api/user/auth/password/reset
+   */
+  async sendPasswordReset(data: PasswordResetRequest): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await request.post<{ success: boolean; message: string }>(USER_AUTH_API.PASSWORD_RESET, data)
+      return response
+    } catch (error) {
+      console.error('发送密码重置验证码失败:', error)
+      throw error
+    }
+  },
+
+  /**
+   * 确认密码重置
+   * 接口路径: POST /api/user/auth/password/reset/confirm
+   */
+  async confirmPasswordReset(data: PasswordResetConfirmRequest): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await request.post<{ success: boolean; message: string }>(USER_AUTH_API.PASSWORD_RESET_CONFIRM, data)
+      return response
+    } catch (error) {
+      console.error('密码重置失败:', error)
+      throw error
+    }
+  },
+
+  /**
+   * 发送邮箱验证码
+   * 接口路径: POST /api/user/auth/email/verify
+   */
+  async sendEmailVerification(data: EmailVerifyRequest): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await request.post<{ success: boolean; message: string }>(USER_AUTH_API.EMAIL_VERIFY, data)
+      return response
+    } catch (error) {
+      console.error('发送邮箱验证码失败:', error)
+      throw error
+    }
+  },
+
+  /**
+   * 确认邮箱验证
+   * 接口路径: POST /api/user/auth/email/verify/confirm
+   */
+  async confirmEmailVerification(data: EmailVerifyConfirmRequest): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await request.post<{ success: boolean; message: string }>(USER_AUTH_API.EMAIL_VERIFY_CONFIRM, data)
+      return response
+    } catch (error) {
+      console.error('邮箱验证失败:', error)
+      throw error
+    }
+  },
+
+  /**
+   * 发送手机验证码
+   * 接口路径: POST /api/user/auth/phone/verify
+   */
+  async sendPhoneVerification(data: PhoneVerifyRequest): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await request.post<{ success: boolean; message: string }>(USER_AUTH_API.PHONE_VERIFY, data)
+      return response
+    } catch (error) {
+      console.error('发送手机验证码失败:', error)
+      throw error
+    }
+  },
+
+  /**
+   * 确认手机验证
+   * 接口路径: POST /api/user/auth/phone/verify/confirm
+   */
+  async confirmPhoneVerification(data: PhoneVerifyConfirmRequest): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await request.post<{ success: boolean; message: string }>(USER_AUTH_API.PHONE_VERIFY_CONFIRM, data)
+      return response
+    } catch (error) {
+      console.error('手机验证失败:', error)
+      throw error
+    }
   }
 }
-
 
 // ========== 论坛API接口 ==========
 

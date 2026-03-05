@@ -4,7 +4,7 @@
     <!-- 查询栏 -->
     <div class="info-list-query-bar">
       <input
-          type="text"
+          type="link"
           placeholder="请输入账号查询"
           v-model="queryParams.account"
           class="info-form-input"

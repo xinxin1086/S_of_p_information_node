@@ -123,7 +123,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
-import { adminApi } from '@/api/index.js';
+import { adminApi } from '@/api/unified';
 import { formatErrorMessage } from '@/utils/apiHelper.js';
 
 const router = useRouter();

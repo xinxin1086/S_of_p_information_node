@@ -126,51 +126,10 @@
                   v-model="form.max_participants"
                   :min="1"
                   :max="1000"
-                  placeholder="不限"
+                  placeholder="请设置参与人数"
                   style="width: 100%"
                 />
-                <div class="form-tip">设置活动最大参与人数，留空表示不限制</div>
-              </el-form-item>
-
-              <el-form-item label="活动标签">
-                <el-select
-                  v-model="form.tags"
-                  multiple
-                  filterable
-                  allow-create
-                  placeholder="选择或创建标签"
-                  style="width: 100%"
-                  :max-limit="5"
-                >
-                  <el-option
-                    v-for="tag in tagOptions"
-                    :key="tag"
-                    :label="tag"
-                    :value="tag"
-                  />
-                </el-select>
-                <div class="form-tip">最多添加5个标签，回车确认</div>
-              </el-form-item>
-
-              <el-form-item label="活动图片">
-                <el-upload
-                  v-model:file-list="fileList"
-                  :action="uploadUrl"
-                  :headers="uploadHeaders"
-                  :before-upload="beforeUpload"
-                  :on-success="handleUploadSuccess"
-                  :on-remove="handleRemove"
-                  :limit="5"
-                  list-type="picture-card"
-                  accept="image/*"
-                >
-                  <el-icon><Plus /></el-icon>
-                  <template #tip>
-                    <div class="upload-tip">
-                      最多上传5张图片，每张不超过2MB
-                    </div>
-                  </template>
-                </el-upload>
+                <div class="form-tip">请设置参与人数</div>
               </el-form-item>
             </el-col>
           </el-row>
@@ -200,7 +159,6 @@
 </template>
 
 <script setup>
-import { Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -215,7 +173,6 @@ const activityStore = useActivityStore()
 const formRef = ref()
 const loading = ref(true)
 const submitting = ref(false)
-const fileList = ref([])
 const activityId = route.params.id
 
 // 表单数据
@@ -229,9 +186,7 @@ const form = reactive({
   location: '',
   start_time: '',
   end_time: '',
-  max_participants: null,
-  tags: [],
-  images: []
+  max_participants: null
 })
 
 // 表单验证规则
@@ -265,28 +220,6 @@ const rules = {
   ]
 }
 
-// 标签选项
-const tagOptions = [
-  '新手友好',
-  '亲子活动',
-  '专业赛事',
-  '休闲娱乐',
-  '技术培训',
-  '环保活动',
-  '文化交流',
-  '美食分享'
-]
-
-// 上传相关配置
-const uploadUrl = computed(() => {
-  return '/api/upload/images'
-})
-
-const uploadHeaders = computed(() => {
-  const token = tokenManager.getAccessToken()
-  return token ? { Authorization: `Bearer ${token}` } : {}
-})
-
 // 日期限制
 const disabledDate = (time) => {
   return time.getTime() < Date.now() - 8.64e7
@@ -297,36 +230,6 @@ const disabledEndDate = (time) => {
     return time.getTime() < Date.now() - 8.64e7
   }
   return time.getTime() < new Date(form.start_time).getTime()
-}
-
-// 上传前验证
-const beforeUpload = (file) => {
-  const isImage = file.type.startsWith('image/')
-  const isLt2M = file.size / 1024 / 1024 < 2
-
-  if (!isImage) {
-    ElMessage.error('只能上传图片文件!')
-    return false
-  }
-  if (!isLt2M) {
-    ElMessage.error('图片大小不能超过2MB!')
-    return false
-  }
-  return true
-}
-
-// 上传成功
-const handleUploadSuccess = (response, file) => {
-  if (response.success) {
-    form.images.push(response.data.url)
-  } else {
-    ElMessage.error('图片上传失败')
-  }
-}
-
-// 移除图片
-const handleRemove = (file, fileList) => {
-  form.images = fileList.map(item => item.url || item.response?.data?.url).filter(Boolean)
 }
 
 // 加载活动数据
@@ -349,25 +252,6 @@ const loadActivityData = async () => {
       form.start_time = data.start_time || ''
       form.end_time = data.end_time || ''
       form.max_participants = data.max_participants || null
-
-      // 处理标签 - 可能是字符串或数组
-      if (typeof data.tags === 'string') {
-        form.tags = data.tags ? data.tags.split(',').filter(Boolean) : []
-      } else if (Array.isArray(data.tags)) {
-        form.tags = data.tags
-      } else {
-        form.tags = []
-      }
-
-      // 处理图片
-      form.images = data.images || []
-      if (form.images.length > 0) {
-        fileList.value = form.images.map((url, index) => ({
-          name: `image-${index}`,
-          url: url,
-          uid: Date.now() + index
-        }))
-      }
     } else {
       ElMessage.error('加载活动数据失败')
       router.go(-1)
@@ -408,8 +292,7 @@ const submitForm = async (status) => {
 
     const activityData = {
       ...form,
-      status,
-      tags: form.tags.join(',')
+      status
     }
 
     const result = await activityStore.updateActivity(activityId, activityData)

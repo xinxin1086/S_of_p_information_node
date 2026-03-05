@@ -143,15 +143,3 @@ docs/
 tests/
 .docs/
 .tests/
-
-
-# # .gitignore 新增
-# __pycache__/
-# .env
-# .env.*
-# *.pyc
-# venv/
-# logs/
-# .idea
-# .claude
-# server.err

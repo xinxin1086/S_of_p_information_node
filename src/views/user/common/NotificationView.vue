@@ -114,7 +114,7 @@ import { ElMessage } from 'element-plus'
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { userApi } from '@/api'
+import { userApi } from '@/api/unified'
 
 import 'dayjs/locale/zh-cn'
 

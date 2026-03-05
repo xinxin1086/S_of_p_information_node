@@ -40,6 +40,7 @@ export const AdminComponents = {
 
   // 内容管理组件
   AdminNotice: () => import('@/views/admin/content/AdminNotice.vue'),
+  AdminNoticeDetail: () => import('@/views/admin/content/NoticeDetail.vue'),
   NoticeDetail: () => import('@/views/admin/content/NoticeDetail.vue'),
   NoticeReview: () => import('@/views/admin/content/NoticeReview.vue'),
   ScienceManage: () => import('@/views/admin/content/ScienceManage.vue'),
@@ -49,6 +50,7 @@ export const AdminComponents = {
   ActivityDiscussionManage: () => import('@/views/admin/content/ActivityDiscussionManage.vue'),
   ActivityRatingManage: () => import('@/views/admin/content/ActivityRatingManage.vue'),
   AdminNoticeEditor: () => import('@/views/admin/content/AdminNoticeEditor.vue'),
+  AdminScienceEditor: () => import('@/views/admin/content/AdminScienceEditor.vue'),
 
   // 用户管理组件
   AdminUserAdmin: () => import('@/views/admin/user/AdminUserAdmin.vue'),
@@ -87,6 +89,7 @@ export const PublicComponents = {
   ScienceDetail: () => import('@/views/public/science/ScienceDetail.vue'),
   // 新增公共组件异步加载
   NoticeList: () => import('@/views/public/notice/NoticeList.vue'),
+  NoticeDetail: () => import('@/views/public/notice/NoticeDetail.vue'),
   ScienceList: () => import('@/views/public/science/ScienceList.vue'),
   ActivityList: () => import('@/views/public/activity/PublicActivityList.vue'),
   AboutView: () => import('@/views/public/AboutView.vue')

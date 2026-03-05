@@ -23,7 +23,7 @@
             <el-icon><Document /></el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-number">{{ latestNotices.length }}</div>
+            <div class="stat-number">{{ totalNotices }}</div>
             <div class="stat-label">最新公告</div>
           </div>
         </div>
@@ -180,7 +180,9 @@ import { useRouter } from 'vue-router'
 
 import { useAuthStore, usePermissions } from '@/stores'
 import {
-  fetchNoticeList,
+  noticeAdapter
+} from '@/services/noticeAdapter'
+import {
   getNoticeTypeFromText,
   getNoticeTypeTag,
   getNoticeTypeText,
@@ -207,6 +209,7 @@ const currentTime = ref('')
 const totalUsers = ref(0)
 const totalContent = ref(0)
 const totalActivities = ref(0)
+const totalNotices = ref(0)  // 添加公告总数统计
 
 // 计算属性
 const adminUsername = computed(() => {
@@ -232,22 +235,84 @@ const updateCurrentTime = () => {
 const fetchLatestNotices = async () => {
   loading.value = true
   try {
-    const result = await fetchNoticeList(1, 10)
-    latestNotices.value = result.items.slice(0, 10) // 只取前10条
+    const result = await noticeAdapter.getNoticeList({ page: 1, size: 5 })
+    // noticeAdapter 现在返回 { success: true, data: { items, total } }
+    if (result.success && result.data?.items) {
+      latestNotices.value = result.data.items.slice(0, 5) // 只取前5条
+    } else {
+      latestNotices.value = []
+    }
   } catch (error) {
     console.error('获取最新公告失败:', error)
     ElMessage.error('获取最新公告失败')
+    latestNotices.value = []
   } finally {
     loading.value = false
   }
 }
 
-// 模拟获取统计数据
-const fetchStats = () => {
-  // 这里应该调用真实的API
-  totalUsers.value = 156
-  totalContent.value = 89
-  totalActivities.value = 42
+// 获取统计数据
+const fetchStats = async () => {
+  try {
+    // 动态导入 unified API 以支持 Mock 模式
+    const { adminApi, shouldUseMock } = await import('@/api/unified')
+    const isMockMode = shouldUseMock()
+
+    if (isMockMode) {
+      // Mock 模式：直接使用 Mock 数据统计函数
+      const [{ getUserStats }, { getNoticeStats }, { getScienceArticleStats }, { getMockDataStats }] = await Promise.all([
+        import('@/mock/userMockData'),
+        import('@/mock/noticeMockData'),
+        import('@/mock/scienceMockData'),
+        import('@/mock/mockStorage')
+      ])
+
+      // 用户统计
+      const userStats = getUserStats()
+      totalUsers.value = userStats.total_users || 0
+
+      // 内容统计 = 公告 + 科普文章
+      const noticeStats = getNoticeStats()
+      const scienceStats = getScienceArticleStats()
+      totalNotices.value = noticeStats.total_notices || 0  // 设置公告总数
+      totalContent.value = (noticeStats.total_notices || 0) + (scienceStats.total_articles || 0)
+
+      // 活动统计
+      const activityStats = getMockDataStats()
+      totalActivities.value = activityStats.activities || activityStats.total_activities || activityStats.total || 0
+    } else {
+      // 真实 API 模式：调用后端接口
+      const [userStatsResult, contentStatsResult, activitySummaryResult] = await Promise.allSettled([
+        adminApi.getAdminStatistics?.(),
+        adminApi.getContentStatistics?.(),
+        adminApi.activity?.getSummary?.()
+      ])
+
+      // 处理用户统计
+      if (userStatsResult.status === 'fulfilled' && userStatsResult.value?.success) {
+        const data = userStatsResult.value.data
+        totalUsers.value = data?.total_users || data?.count || data?.total || 0
+      }
+
+      // 处理内容统计
+      if (contentStatsResult.status === 'fulfilled' && contentStatsResult.value?.success) {
+        const data = contentStatsResult.value.data
+        const noticeCount = data?.notice_count || data?.notices || 0
+        const scienceCount = data?.science_count || data?.articles || 0
+        totalNotices.value = noticeCount  // 设置公告总数
+        totalContent.value = noticeCount + scienceCount
+      }
+
+      // 处理活动汇总
+      if (activitySummaryResult.status === 'fulfilled' && activitySummaryResult.value?.success) {
+        const data = activitySummaryResult.value.data
+        totalActivities.value = data?.total_activities || data?.count || data?.total || 0
+      }
+    }
+  } catch (error) {
+    console.error('获取统计数据失败:', error)
+    // 保持当前值不变，不显示错误提示
+  }
 }
 
 // 页面跳转方法
@@ -256,7 +321,7 @@ const goToNotices = () => {
 }
 
 const goToNoticeDetail = (id: number | string) => {
-  router.push(`/admin/content/notice-detail/${id}`)
+  router.push(`/admin/content/notice/${id}`)
 }
 
 // 统一的权限检查辅助函数

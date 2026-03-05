@@ -83,38 +83,12 @@
                 />
               </el-form-item>
 
-              <el-form-item label="性别" prop="gender">
-                <el-radio-group v-model="userInfo.gender">
-                  <el-radio value="male">男</el-radio>
-                  <el-radio value="female">女</el-radio>
-                  <el-radio value="other">其他</el-radio>
-                </el-radio-group>
-              </el-form-item>
-
-              <el-form-item label="出生日期" prop="birthday">
-                <el-date-picker
-                  v-model="userInfo.birthday"
-                  type="date"
-                  placeholder="选择出生日期"
-                  format="YYYY-MM-DD"
-                  value-format="YYYY-MM-DD"
-                  :disabled-date="disabledDate"
-                />
-              </el-form-item>
-
               <el-form-item label="邮箱" prop="email">
                 <el-input
                   v-model="userInfo.email"
                   placeholder="请输入邮箱地址"
                   type="email"
-                >
-                  <template #append>
-                    <el-button v-if="!userInfo.email_verified" @click="verifyEmail" type="primary">
-                      验证
-                    </el-button>
-                    <el-icon v-else color="#00b42a"><CircleCheck /></el-icon>
-                  </template>
-                </el-input>
+                />
               </el-form-item>
 
               <el-form-item label="手机号" prop="phone">
@@ -122,65 +96,12 @@
                   v-model="userInfo.phone"
                   placeholder="请输入手机号码"
                   maxlength="11"
-                >
-                  <template #append>
-                    <el-button v-if="!userInfo.phone_verified" @click="verifyPhone" type="primary">
-                      验证
-                    </el-button>
-                    <el-icon v-else color="#00b42a"><CircleCheck /></el-icon>
-                  </template>
-                </el-input>
-              </el-form-item>
-
-              <el-form-item label="所在地区" prop="region">
-                <el-cascader
-                  v-model="userInfo.region"
-                  :options="regionOptions"
-                  placeholder="请选择所在地区"
-                  clearable
-                  filterable
-                />
-              </el-form-item>
-
-              <el-form-item label="职业" prop="occupation">
-                <el-input
-                  v-model="userInfo.occupation"
-                  placeholder="请输入职业"
-                  maxlength="50"
-                />
-              </el-form-item>
-
-              <el-form-item label="个人简介" prop="bio">
-                <el-input
-                  v-model="userInfo.bio"
-                  type="textarea"
-                  :rows="4"
-                  placeholder="介绍一下自己..."
-                  maxlength="200"
-                  show-word-limit
                 />
               </el-form-item>
             </el-form>
           </el-card>
         </el-col>
       </el-row>
-
-      <!-- 兴趣爱好设置 -->
-      <el-card class="interests-card">
-        <template #header>
-          <span>兴趣爱好</span>
-        </template>
-        <div class="interests-section">
-          <el-checkbox-group v-model="userInfo.interests" class="interests-group">
-            <el-checkbox
-              v-for="interest in interestOptions"
-              :key="interest.value"
-              :value="interest.value"
-              :label="interest.label"
-            />
-          </el-checkbox-group>
-        </div>
-      </el-card>
     </div>
 
     <!-- 图片裁剪对话框 -->
@@ -221,14 +142,13 @@ import {
   Upload,
   Delete,
   Check,
-  Lock,
-  CircleCheck
+  Lock
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive, onMounted, computed } from 'vue'
 import { VueCropper } from 'vue-cropper'
 
-import { userApi } from '@/api'
+import { userApi } from '@/api/unified'
 import { useAuthStore } from '@/stores'
 
 
@@ -251,40 +171,25 @@ const cropperImage = ref('')
 // 从store获取用户信息
 const storeUser = computed(() => authStore.user)
 
-// 用户信息表单
+// 用户信息表单（只包含后端 UserInfo 类型中定义的字段）
 const userInfo = reactive({
   username: '',
   nickname: '',
   avatar: '',
-  gender: 'male',
-  birthday: '',
   email: '',
-  email_verified: false,
-  phone: '',
-  phone_verified: false,
-  region: [],
-  occupation: '',
-  bio: '',
-  interests: []
+  phone: ''
 })
 
 // 初始化用户信息
 const initUserInfo = () => {
   if (storeUser.value) {
+    // 只使用后端 UserInfo 类型中定义的字段
     Object.assign(userInfo, {
       username: storeUser.value.username || '',
       nickname: storeUser.value.nickname || storeUser.value.username || '',
       avatar: storeUser.value.avatar || '',
-      gender: storeUser.value.gender || 'male',
-      birthday: storeUser.value.birthday || '',
       email: storeUser.value.email || '',
-      email_verified: storeUser.value.email_verified || false,
-      phone: storeUser.value.phone || '',
-      phone_verified: storeUser.value.phone_verified || false,
-      region: storeUser.value.region || [],
-      occupation: storeUser.value.occupation || '',
-      bio: storeUser.value.bio || '',
-      interests: storeUser.value.interests || []
+      phone: storeUser.value.phone || ''
     })
   }
 }
@@ -301,40 +206,6 @@ const profileRules = reactive({
     { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
   ]
 })
-
-// 地区选项（示例数据）
-const regionOptions = [
-  {
-    value: '湖北省',
-    label: '湖北省',
-    children: [
-      { value: '武汉市', label: '武汉市' },
-      { value: '宜昌市', label: '宜昌市' },
-      { value: '襄阳市', label: '襄阳市' }
-    ]
-  },
-  {
-    value: '广东省',
-    label: '广东省',
-    children: [
-      { value: '广州市', label: '广州市' },
-      { value: '深圳市', label: '深圳市' },
-      { value: '珠海市', label: '珠海市' }
-    ]
-  }
-]
-
-// 兴趣爱好选项
-const interestOptions = [
-  { value: 'fishing', label: '垂钓' },
-  { value: 'outdoor', label: '户外活动' },
-  { value: 'photography', label: '摄影' },
-  { value: 'cooking', label: '烹饪' },
-  { value: 'reading', label: '阅读' },
-  { value: 'travel', label: '旅行' },
-  { value: 'sports', label: '运动' },
-  { value: 'music', label: '音乐' }
-]
 
 // 禁用未来日期
 const disabledDate = (time) => {
@@ -415,38 +286,6 @@ const removeAvatar = () => {
   })
 }
 
-// 验证邮箱
-const verifyEmail = async () => {
-  if (!userInfo.email) {
-    ElMessage.warning('请先输入邮箱地址')
-    return
-  }
-
-  try {
-    await userApi.sendEmailVerification(userInfo.email)
-    ElMessage.success('验证邮件已发送，请检查您的邮箱')
-  } catch (error) {
-    ElMessage.error('发送验证邮件失败')
-    console.error('邮箱验证失败:', error)
-  }
-}
-
-// 验证手机
-const verifyPhone = async () => {
-  if (!userInfo.phone) {
-    ElMessage.warning('请先输入手机号码')
-    return
-  }
-
-  try {
-    await userApi.sendPhoneVerification(userInfo.phone)
-    ElMessage.success('验证短信已发送，请检查您的手机')
-  } catch (error) {
-    ElMessage.error('发送验证短信失败')
-    console.error('手机验证失败:', error)
-  }
-}
-
 // 保存个人资料
 const saveProfile = async () => {
   try {
@@ -455,7 +294,7 @@ const saveProfile = async () => {
 
     saving.value = true
 
-    // 调用实际的保存API
+    // 调用保存API，只发送后端支持的字段
     await userApi.updateProfile(userInfo)
 
     // 更新store中的用户信息
@@ -565,20 +404,6 @@ onMounted(() => {
   max-width: 600px;
 }
 
-.interests-card {
-  margin-top: 20px;
-}
-
-.interests-section {
-  max-width: 800px;
-}
-
-.interests-group {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 16px;
-}
-
 .cropper-container {
   width: 100%;
   height: 400px;
@@ -601,10 +426,6 @@ onMounted(() => {
 
   .profile-form {
     max-width: 100%;
-  }
-
-  .interests-group {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   }
 }
 </style>

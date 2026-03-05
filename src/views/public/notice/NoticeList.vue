@@ -5,12 +5,8 @@
       <p>查看系统最新公告和通知</p>
     </div>
 
-    <div class="notice-container">
-      <div v-if="loading" class="loading">
-        <el-loading />
-      </div>
-
-      <div v-else-if="notices.length === 0" class="empty-state">
+    <div class="notice-container" v-loading="loading" element-loading-text="加载中...">
+      <div v-if="!loading && notices.length === 0" class="empty-state">
         <el-empty description="暂无公告" />
       </div>
 
@@ -62,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { ElMessage, ElLoading, ElEmpty } from 'element-plus'
+import { ElMessage, ElEmpty } from 'element-plus'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 

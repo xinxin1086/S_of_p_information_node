@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mock 模式设置工具</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+        'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 40px;
+      max-width: 500px;
+      width: 100%;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    .status {
+      background: #f5f7fa;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+      .status.enabled {
+        background: #f0f9ff;
+        border: 1px solid #67c23a;
+        color: #67c23a;
+      }
+
+      .status.disabled {
+        background: #fef0f0;
+        border: 1px solid #f56c6c;
+        color: #f56c6c;
+      }
+
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    button {
+      padding: 15px 30px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+    .btn-enable {
+      background: #67c23a;
+      color: white;
+    }
+
+      .btn-enable:hover {
+        background: #85ce61;
+      }
+
+    .btn-disable {
+      background: #f56c6c;
+      color: white;
+    }
+
+      .btn-disable:hover {
+        background: #f78989;
+      }
+
+    .btn-check {
+      background: #409eff;
+      color: white;
+    }
+
+      .btn-check:hover {
+        background: #66b1ff;
+      }
+
+    .btn-open {
+      background: #e6a23c;
+      color: white;
+    }
+
+      .btn-open:hover {
+        background: #ebb563;
+      }
+
+    .divider {
+      height: 1px;
+      background: #eee;
+      margin: 20px 0;
+    }
+
+    .info {
+      background: #f4f4f5;
+      border-radius: 8px;
+      padding: 15px;
+      font-size: 13px;
+      color: #666;
+      line-height: 1.6;
+    }
+
+      .info code {
+        background: #fff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        color: #e6a23c;
+      }
+
+    .icon {
+      font-size: 20px;
+    }
+
+    .success-msg {
+      color: #67c23a;
+      font-weight: bold;
+    }
+
+    .error-msg {
+      color: #f56c6c;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 Mock 模式设置工具</h1>
+    <p class="subtitle">快速切换 Mock API 和真实 API</p>
+
+    <div class="status" id="status">
+      检测中...
+    </div>
+
+    <div class="button-group">
+      <button class="btn-enable" onclick="enableMock()">
+        <span class="icon">✅</span>
+        <span>启用 Mock 模式</span>
+      </button>
+
+      <button class="btn-disable" onclick="disableMock()">
+        <span class="icon">❌</span>
+        <span>禁用 Mock 模式</span>
+      </button>
+
+      <button class="btn-check" onclick="checkStatus()">
+        <span class="icon">🔍</span>
+        <span>检查当前状态</span>
+      </button>
+
+      <div class="divider"></div>
+
+      <button class="btn-open" onclick="openApp()">
+        <span class="icon">🚀</span>
+        <span>打开应用</span>
+      </button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="info">
+      <strong>💡 使用说明：</strong><br><br>
+      1. 点击"启用 Mock 模式"将使用虚拟数据<br>
+      2. 点击"禁用 Mock 模式"将使用真实后端 API<br>
+      3. 切换后需要刷新应用页面<br>
+      4. 当前页面仅用于设置，设置后打开应用页面<br><br>
+      <strong>📍 应用地址：</strong><br>
+      <code>http://localhost:5173</code> 或 <code>http://localhost:5174</code>
+    </div>
+  </div>
+
+  <script>
+    // 检查当前状态
+    function checkStatus() {
+      const mockEnabled = localStorage.getItem('DEV_ENABLE_MOCK') === 'true';
+      const statusDiv = document.getElementById('status');
+
+      if (mockEnabled) {
+        statusDiv.className = 'status enabled';
+        statusDiv.innerHTML = '✅ <strong>当前状态：Mock 模式已启用</strong><br>正在使用虚拟数据';
+      } else {
+        statusDiv.className = 'status disabled';
+        statusDiv.innerHTML = '❌ <strong>当前状态：Mock 模式未启用</strong><br>正在使用真实 API';
+      }
+    }
+
+    // 启用 Mock 模式
+    function enableMock() {
+      localStorage.setItem('DEV_ENABLE_MOCK', 'true');
+      const statusDiv = document.getElementById('status');
+      statusDiv.className = 'status enabled';
+      statusDiv.innerHTML = '✅ <span class="success-msg">Mock 模式已启用！</span><br>请刷新应用页面';
+
+      setTimeout(() => {
+        alert('✅ Mock 模式已启用！\n\n请刷新您的应用页面以使用 Mock 数据。');
+      }, 300);
+    }
+
+    // 禁用 Mock 模式
+    function disableMock() {
+      localStorage.removeItem('DEV_ENABLE_MOCK');
+      const statusDiv = document.getElementById('status');
+      statusDiv.className = 'status disabled';
+      statusDiv.innerHTML = '❌ <span class="error-msg">Mock 模式已禁用！</span><br>请刷新应用页面';
+
+      setTimeout(() => {
+        alert('❌ Mock 模式已禁用！\n\n现在将使用真实后端 API。\n请刷新您的应用页面。');
+      }, 300);
+    }
+
+    // 打开应用
+    function openApp() {
+      // 尝试常见的开发服务器端口
+      const ports = [5173, 5174, 3000, 8080];
+      let opened = false;
+
+      for (const port of ports) {
+        if (window.location.port === String(port)) {
+          // 已经在应用页面，提示刷新
+          if (confirm('您已经在应用页面了。\n是否要刷新页面以应用设置？')) {
+            window.location.reload();
+          }
+          opened = true;
+          break;
+        }
+      }
+
+      if (!opened) {
+        // 尝试打开默认端口
+        const opened = window.open('http://localhost:5173', '_blank');
+        if (!opened) {
+          alert('请手动在浏览器中打开应用页面：\n\nhttp://localhost:5173\n\n或您配置的其他端口');
+        }
+      }
+    }
+
+    // 页面加载时自动检查状态
+    window.onload = function() {
+      checkStatus();
+    };
+
+    // 监听 localStorage 变化（如果有多个标签页）
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'DEV_ENABLE_MOCK') {
+        checkStatus();
+      }
+    });
+  </script>
+</body>
+</html>

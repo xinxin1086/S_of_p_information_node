@@ -49,16 +49,6 @@
                 <span class="form-tip">用户名不可修改</span>
               </el-form-item>
 
-              <el-form-item label="邮箱">
-                <el-input v-model="accountForm.email" />
-                <span class="form-tip">用于登录和接收通知</span>
-              </el-form-item>
-
-              <el-form-item label="手机号">
-                <el-input v-model="accountForm.phone" />
-                <span class="form-tip">用于账户验证</span>
-              </el-form-item>
-
               <el-form-item label="个人简介">
                 <el-input
                   v-model="accountForm.bio"
@@ -106,18 +96,18 @@
             <el-form label-width="200px" class="settings-form">
               <el-form-item label="个人资料可见性">
                 <el-radio-group v-model="privacySettings.profileVisibility">
-                  <el-radio label="public">公开</el-radio>
-                  <el-radio label="registered">仅注册用户</el-radio>
-                  <el-radio label="private">私密</el-radio>
+                  <el-radio value="public">公开</el-radio>
+                  <el-radio value="registered">仅注册用户</el-radio>
+                  <el-radio value="private">私密</el-radio>
                 </el-radio-group>
                 <div class="form-tip">控制谁可以查看您的个人资料</div>
               </el-form-item>
 
               <el-form-item label="活动记录可见性">
                 <el-radio-group v-model="privacySettings.activityVisibility">
-                  <el-radio label="public">公开</el-radio>
-                  <el-radio label="friends">仅好友</el-radio>
-                  <el-radio label="private">私密</el-radio>
+                  <el-radio value="public">公开</el-radio>
+                  <el-radio value="friends">仅好友</el-radio>
+                  <el-radio value="private">私密</el-radio>
                 </el-radio-group>
                 <div class="form-tip">控制谁可以查看您的活动记录</div>
               </el-form-item>
@@ -212,9 +202,9 @@
             <el-form label-width="200px" class="settings-form">
               <el-form-item label="主题模式">
                 <el-radio-group v-model="appearanceSettings.theme" @change="handleThemeChange">
-                  <el-radio label="light">浅色</el-radio>
-                  <el-radio label="dark">深色</el-radio>
-                  <el-radio label="auto">跟随系统</el-radio>
+                  <el-radio value="light">浅色</el-radio>
+                  <el-radio value="dark">深色</el-radio>
+                  <el-radio value="auto">跟随系统</el-radio>
                 </el-radio-group>
               </el-form-item>
 
@@ -287,16 +277,16 @@
 
               <el-form-item label="日期格式">
                 <el-radio-group v-model="languageSettings.dateFormat">
-                  <el-radio label="YYYY-MM-DD">2024-01-15</el-radio>
-                  <el-radio label="MM/DD/YYYY">01/15/2024</el-radio>
-                  <el-radio label="DD/MM/YYYY">15/01/2024</el-radio>
+                  <el-radio value="YYYY-MM-DD">2024-01-15</el-radio>
+                  <el-radio value="MM/DD/YYYY">01/15/2024</el-radio>
+                  <el-radio value="DD/MM/YYYY">15/01/2024</el-radio>
                 </el-radio-group>
               </el-form-item>
 
               <el-form-item label="时间格式">
                 <el-radio-group v-model="languageSettings.timeFormat">
-                  <el-radio label="24h">24小时制</el-radio>
-                  <el-radio label="12h">12小时制</el-radio>
+                  <el-radio value="24h">24小时制</el-radio>
+                  <el-radio value="12h">12小时制</el-radio>
                 </el-radio-group>
               </el-form-item>
 
@@ -324,7 +314,7 @@ import {
 import { ElMessage } from 'element-plus'
 import { ref, onMounted } from 'vue'
 
-import api from '@/api'
+import api from '@/api/unified'
 import { useAuthStore } from '@/stores/auth'
 
 defineOptions({ name: 'SettingsView' })
@@ -338,8 +328,6 @@ const saving = ref(false)
 // 账户设置表单
 const accountForm = ref({
   username: '',
-  email: '',
-  phone: '',
   bio: ''
 })
 
@@ -589,8 +577,6 @@ const loadUserSettings = async () => {
     if (authStore.user) {
       accountForm.value = {
         username: authStore.user.username || '',
-        email: authStore.user.email || '',
-        phone: authStore.user.phone || '',
         bio: authStore.user.bio || ''
       }
     }

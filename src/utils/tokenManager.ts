@@ -58,6 +58,14 @@ export class TokenManager {
   }
 
   /**
+   * 检查是否为本地Token（非JWT格式）
+   * 本地Token格式：local_token_{id}_{timestamp}
+   */
+  private isLocalToken(token: string): boolean {
+    return typeof token === 'string' && token.startsWith('local_token_')
+  }
+
+  /**
    * 解析JWT Token的payload部分
    * 提取为私有方法，避免在多个方法中重复相同的解析逻辑
    */
@@ -133,6 +141,12 @@ export class TokenManager {
     const token = this.getAccessToken()
     if (!token) return true
 
+    // 检查是否为本地 token（非 JWT 格式）
+    if (this.isLocalToken(token)) {
+      // 本地 token 永不过期
+      return false
+    }
+
     try {
       const payload = this.parseJwtPayload(token)
 
@@ -160,6 +174,12 @@ export class TokenManager {
   getTokenRemainingTime(): number {
     const token = this.getAccessToken()
     if (!token) return 0
+
+    // 检查是否为本地 token
+    if (this.isLocalToken(token)) {
+      // 本地 token 永不过期，返回一个很大的值
+      return 999999999
+    }
 
     try {
       const payload = this.parseJwtPayload(token)
